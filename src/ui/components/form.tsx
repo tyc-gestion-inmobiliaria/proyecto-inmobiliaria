@@ -9,9 +9,10 @@
  * - **El pie dice qué falta** cuando el botón principal está apagado. Un
  *   botón gris sin explicación obliga a adivinar qué campo no gustó.
  */
-import type { ReactNode } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef, type ReactNode } from "react";
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
+import { resolveInteraction, type EstadoPresionable } from "../pressable-state";
 import { textStyle } from "../theme/text-style";
 import { useStyles, useTheme } from "../theme/theme-provider";
 import type { Tema } from "../tokens";
@@ -139,6 +140,71 @@ export function FormFooter({
   );
 }
 
+/**
+ * El resumen de errores de arriba del formulario, después de intentar
+ * guardar. **Acompaña** al error junto al campo, no lo reemplaza: dice
+ * cuántas cosas hay que corregir aunque el campo quede fuera de la vista.
+ *
+ * - Cada línea lleva el nombre del campo y qué pasa; tocarla lleva el foco
+ *   al campo (`onPress`).
+ * - En la web, al cambiar `focusKey` (un intento fallido más) el foco salta
+ *   al resumen, para que el teclado y el lector de pantalla lo encuentren.
+ *   En el teléfono se anuncia como alerta.
+ * - Rojo, pero con el signo y el borde: el color no es la única señal.
+ */
+export function ErrorSummary({
+  title,
+  items,
+  focusKey,
+}: {
+  title: string;
+  items: { key: string; label: string; message: string; onPress?: () => void }[];
+  focusKey?: number;
+}) {
+  const t = useTheme();
+  const s = useStyles(makeStyles);
+  const caja = useRef<View>(null);
+
+  useEffect(() => {
+    if (focusKey && Platform.OS === "web") caja.current?.focus();
+  }, [focusKey]);
+
+  if (items.length === 0) return null;
+  return (
+    <View ref={caja} tabIndex={-1} accessibilityRole="alert" accessibilityLiveRegion="assertive" style={s.summary}>
+      <Text accessibilityRole="header" style={textStyle(t, "subtitle", t.color.danger.fg)}>
+        ⚠ {title}
+      </Text>
+      <View>
+        {items.map((item) =>
+          item.onPress ? (
+            <Pressable
+              key={item.key}
+              accessibilityRole="link"
+              accessibilityLabel={`${item.label}: ${item.message}`}
+              onPress={item.onPress}
+              style={(state: EstadoPresionable) => {
+                const i = resolveInteraction(state);
+                return [s.summaryItem, i === "hovered" && s.summaryItemHovered, i === "pressed" && s.summaryItemPressed];
+              }}
+            >
+              <Text style={[textStyle(t, "bodySmall", t.color.danger.fg), s.summaryLink]}>
+                <Text style={s.summaryField}>{item.label}:</Text> {item.message}
+              </Text>
+            </Pressable>
+          ) : (
+            <View key={item.key} style={s.summaryItem}>
+              <Text style={textStyle(t, "bodySmall", t.color.danger.fg)}>
+                <Text style={s.summaryField}>{item.label}:</Text> {item.message}
+              </Text>
+            </View>
+          ),
+        )}
+      </View>
+    </View>
+  );
+}
+
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
     form: { padding: t.space.xl + 4, gap: t.space.xl - 2 },
@@ -155,4 +221,26 @@ const makeStyles = (t: Tema) =>
     footerRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "flex-end", gap: t.space.md },
     missing: { flex: 1, minWidth: 160 },
     buttons: { flexDirection: "row", gap: t.space.sm + 2 },
+    summary: {
+      gap: t.space.xs,
+      padding: t.space.lg,
+      borderRadius: t.radius.md,
+      borderWidth: 1,
+      borderLeftWidth: 4,
+      borderColor: t.color.danger.fg,
+      backgroundColor: t.color.danger.bg,
+      outlineColor: t.color.border.focus,
+    },
+    // Las líneas van apiladas y sin hueco: cada una mide los 44 tocables por sí misma.
+    summaryItem: {
+      minHeight: t.minTouch,
+      justifyContent: "center",
+      paddingHorizontal: t.space.sm,
+      marginHorizontal: -t.space.sm,
+      borderRadius: t.radius.sm,
+    },
+    summaryItemHovered: { backgroundColor: t.color.danger.hoverBg, cursor: "pointer" },
+    summaryItemPressed: { backgroundColor: t.color.danger.hoverBg, transform: [{ scale: 0.99 }] },
+    summaryLink: { textDecorationLine: "underline" },
+    summaryField: { fontWeight: "600" },
   });
