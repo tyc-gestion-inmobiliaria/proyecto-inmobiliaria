@@ -5,21 +5,22 @@
  *   o de configuración va arriba del botón, porque no es de ningún campo.
  * - Con credenciales malas el mensaje es el mismo exista o no el correo.
  * - Enter en la contraseña envía el formulario.
+ * - "¿Olvidaste tu contraseña?" lleva a pedir el correo de recuperación. Si
+ *   la persona vuelve de un enlace vencido, el aviso aparece acá.
  */
+import { router } from "expo-router";
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { StyleSheet, View } from "react-native";
 
-import { Button, Card, ScreenTitle, TextField, textStyle, useStyles, useTheme, type Tema } from "@/ui";
+import { Button, TextField, useStyles, type Tema } from "@/ui";
 
 import type { ErroresCredenciales } from "../dominio/credenciales";
 import { useSesion } from "./sesion";
+import { AvisoGeneral, TarjetaDeAcceso } from "./tarjeta-de-acceso";
 
 export function PantallaEntrar() {
-  const t = useTheme();
   const s = useStyles(makeStyles);
-  const insets = useSafeAreaInsets();
-  const { entrar } = useSesion();
+  const { entrar, avisoDeEnlace } = useSesion();
 
   const [correo, setCorreo] = useState("");
   const [contrasena, setContrasena] = useState("");
@@ -39,61 +40,55 @@ export function PantallaEntrar() {
     setErrorGeneral(r.general ?? null);
   }
 
+  const aviso = errorGeneral ?? avisoDeEnlace;
+
   return (
-    <KeyboardAvoidingView style={s.fondo} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <ScrollView
-        contentContainerStyle={[s.contenido, { paddingTop: insets.top + t.space.xl, paddingBottom: insets.bottom + t.space.xl }]}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Card style={s.tarjeta} padding="xl">
-          <ScreenTitle>Iniciar sesión</ScreenTitle>
-          <View style={s.campos}>
-            <TextField
-              label="Correo"
-              value={correo}
-              onChangeText={(v) => {
-                setCorreo(v);
-                if (errores.correo) setErrores((e) => ({ ...e, correo: undefined }));
-              }}
-              placeholder="nombre@empresa.pe"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoFocus
-              required
-              error={errores.correo}
-              testID="entrar-correo"
-            />
-            <TextField
-              label="Contraseña"
-              value={contrasena}
-              onChangeText={(v) => {
-                setContrasena(v);
-                if (errores.contrasena) setErrores((e) => ({ ...e, contrasena: undefined }));
-              }}
-              secureTextEntry
-              autoCapitalize="none"
-              required
-              error={errores.contrasena}
-              onSubmitEditing={enviar}
-              testID="entrar-contrasena"
-            />
-          </View>
-          {errorGeneral ? (
-            <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={textStyle(t, "bodySmall", t.color.danger.fg)}>
-              ⚠ {errorGeneral}
-            </Text>
-          ) : null}
-          <Button label="Entrar" onPress={enviar} loading={enviando} full size="lg" testID="entrar-enviar" />
-        </Card>
-      </ScrollView>
-    </KeyboardAvoidingView>
+    <TarjetaDeAcceso titulo="Iniciar sesión">
+      <View style={s.campos}>
+        <TextField
+          label="Correo"
+          value={correo}
+          onChangeText={(v) => {
+            setCorreo(v);
+            if (errores.correo) setErrores((e) => ({ ...e, correo: undefined }));
+          }}
+          placeholder="nombre@empresa.pe"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoFocus
+          required
+          error={errores.correo}
+          testID="entrar-correo"
+        />
+        <TextField
+          label="Contraseña"
+          value={contrasena}
+          onChangeText={(v) => {
+            setContrasena(v);
+            if (errores.contrasena) setErrores((e) => ({ ...e, contrasena: undefined }));
+          }}
+          secureTextEntry
+          autoCapitalize="none"
+          required
+          error={errores.contrasena}
+          onSubmitEditing={enviar}
+          testID="entrar-contrasena"
+        />
+      </View>
+      {aviso ? <AvisoGeneral>{aviso}</AvisoGeneral> : null}
+      <Button label="Entrar" onPress={enviar} loading={enviando} full size="lg" testID="entrar-enviar" />
+      <Button
+        label="¿Olvidaste tu contraseña?"
+        variant="ghost"
+        full
+        onPress={() => router.push("/recuperar")}
+        testID="entrar-recuperar"
+      />
+    </TarjetaDeAcceso>
   );
 }
 
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
-    fondo: { flex: 1, backgroundColor: t.color.bg.canvas },
-    contenido: { flexGrow: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: t.space.lg },
-    tarjeta: { width: "100%", maxWidth: 400 },
     campos: { gap: t.space.lg },
   });

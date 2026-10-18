@@ -22,11 +22,18 @@ export function normalizarCorreo(correo: string): string {
   return correo.trim().toLowerCase();
 }
 
+/** El error del campo de correo, o nada si tiene la forma de un correo. */
+export function validarCorreo(correo: string): string | undefined {
+  const limpio = normalizarCorreo(correo);
+  if (!limpio) return "Escribe tu correo.";
+  if (!FORMATO_CORREO.test(limpio)) return "Revisa el correo: debe tener la forma nombre@empresa.pe.";
+  return undefined;
+}
+
 export function validarCredenciales({ correo, contrasena }: Credenciales): ErroresCredenciales {
   const errores: ErroresCredenciales = {};
-  const limpio = normalizarCorreo(correo);
-  if (!limpio) errores.correo = "Escribe tu correo.";
-  else if (!FORMATO_CORREO.test(limpio)) errores.correo = "Revisa el correo: debe tener la forma nombre@empresa.pe.";
+  const errorCorreo = validarCorreo(correo);
+  if (errorCorreo) errores.correo = errorCorreo;
   if (!contrasena) errores.contrasena = "Escribe tu contraseña.";
   return errores;
 }

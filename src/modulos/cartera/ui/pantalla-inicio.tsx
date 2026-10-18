@@ -1,20 +1,25 @@
 /**
  * Lo que se ve al entrar. Por ahora dice solo lo que la base sabe: a qué
- * administradora pertenece la persona y si ya tiene edificios. La tabla de la
- * cartera llega con PB-11.
+ * administradora pertenece la persona y si ya tiene edificios; con un
+ * edificio elegido en el selector de contexto, cuántas unidades tiene ese
+ * edificio (PB-10). La tabla de la cartera llega con PB-11.
  */
 import { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 
+import { useContextoDeTrabajo } from "@/compartido/contexto/proveedor-contexto";
 import { useOrganizacion } from "@/modulos/organizaciones/ui/organizacion";
 import type { EdificiosPuerto } from "@/modulos/padron/aplicacion/puertos";
 import { Button, Card, EmptyState, KeyValueRow, ScreenTitle, textStyle, useStyles, useTheme, type Tema } from "@/ui";
 
+import type { UnidadesPuerto } from "../aplicacion/puertos";
+
 type Conteo = { estado: "cargando" } | { estado: "error" } | { estado: "listo"; total: number };
 
-export function PantallaInicio({ edificios }: { edificios: EdificiosPuerto }) {
+export function PantallaInicio({ edificios, unidades }: { edificios: EdificiosPuerto; unidades: UnidadesPuerto }) {
   const s = useStyles(makeStyles);
   const { carga, enCurso, reintentar } = useOrganizacion();
+  const { edificio } = useContextoDeTrabajo();
   const [intento, setIntento] = useState(0);
 
   if (carga === "cargando") return <Cargando />;
@@ -42,36 +47,55 @@ export function PantallaInicio({ edificios }: { edificios: EdificiosPuerto }) {
     );
   }
 
+  const orgId = enCurso.orgId;
   return (
     <ScrollView contentContainerStyle={s.pantalla}>
-      <ScreenTitle>{enCurso.orgNombre}</ScreenTitle>
-      {/* La clave reinicia el conteo al cambiar de administradora o al reintentar. */}
-      <ResumenEdificios
-        key={`${enCurso.orgId}-${intento}`}
-        orgId={enCurso.orgId}
-        edificios={edificios}
-        onReintentar={() => setIntento((n) => n + 1)}
-      />
+      <ScreenTitle>{edificio ? edificio.nombre : enCurso.orgNombre}</ScreenTitle>
+      {/* La clave reinicia el conteo al cambiar de administradora, de edificio o al reintentar. */}
+      {edificio ? (
+        <Resumen
+          key={`${orgId}-${edificio.id}-${intento}`}
+          rotulo="Unidades registradas"
+          vacio="Este edificio todavía no tiene unidades registradas"
+          errorTitulo="No se pudieron leer las unidades"
+          contar={() => unidades.contarDelEdificio(orgId, edificio.id)}
+          onReintentar={() => setIntento((n) => n + 1)}
+        />
+      ) : (
+        <Resumen
+          key={`${orgId}-${intento}`}
+          rotulo="Edificios registrados"
+          vacio="Todavía no hay edificios registrados"
+          errorTitulo="No se pudieron leer los edificios"
+          contar={() => edificios.contar(orgId)}
+          onReintentar={() => setIntento((n) => n + 1)}
+        />
+      )}
     </ScrollView>
   );
 }
 
-function ResumenEdificios({
-  orgId,
-  edificios,
+function Resumen({
+  rotulo,
+  vacio,
+  errorTitulo,
+  contar,
   onReintentar,
 }: {
-  orgId: string;
-  edificios: EdificiosPuerto;
+  rotulo: string;
+  vacio: string;
+  errorTitulo: string;
+  /** Se llama una vez por montaje: la `key` del padre decide cuándo se vuelve a contar. */
+  contar: () => Promise<number>;
   onReintentar: () => void;
 }) {
   const s = useStyles(makeStyles);
   const [conteo, setConteo] = useState<Conteo>({ estado: "cargando" });
+  const [contarAlMontar] = useState(() => contar);
 
   useEffect(() => {
     let vigente = true;
-    edificios
-      .contar(orgId)
+    contarAlMontar()
       .then((total) => {
         if (vigente) setConteo({ estado: "listo", total });
       })
@@ -81,22 +105,22 @@ function ResumenEdificios({
     return () => {
       vigente = false;
     };
-  }, [edificios, orgId]);
+  }, [contarAlMontar]);
 
   if (conteo.estado === "cargando") return <Cargando />;
   if (conteo.estado === "error") {
     return (
       <EmptyState
-        title="No se pudieron leer los edificios"
+        title={errorTitulo}
         description="Revisa tu conexión y vuelve a intentarlo."
         action={<Button label="Reintentar" onPress={onReintentar} />}
       />
     );
   }
-  if (conteo.total === 0) return <EmptyState title="Todavía no hay edificios registrados" />;
+  if (conteo.total === 0) return <EmptyState title={vacio} />;
   return (
     <Card style={s.resumen}>
-      <KeyValueRow label="Edificios registrados" value={String(conteo.total)} strong />
+      <KeyValueRow label={rotulo} value={String(conteo.total)} strong />
     </Card>
   );
 }

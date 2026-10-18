@@ -6,6 +6,9 @@
  * - **Se pliega de verdad:** plegado quedan solo las iniciales y la pantalla
  *   gana el ancho. El nombre de cada entrada sigue yendo en su
  *   `accessibilityLabel` para quien no ve.
+ * - **Agrupa por tramos** (`group`): las entradas seguidas con el mismo
+ *   `group` van bajo su título; plegado, el título se vuelve una raya. Las
+ *   que no llevan `group` van sin título, arriba.
  * - **No navega por su cuenta:** avisa con `onSelect` y quien lo usa decide
  *   (con `router.push` de expo-router, con un estado, con lo que sea). Así el
  *   kit no depende del enrutador.
@@ -13,7 +16,7 @@
  * El plegado se puede controlar desde fuera (`collapsed` + `onToggleCollapsed`)
  * o dejar que el menú lo lleve solo.
  */
-import { useState, type ReactNode } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 
 import { resolveInteraction, type EstadoPresionable, type ForcedInteraction } from "../pressable-state";
@@ -27,6 +30,8 @@ export interface SideMenuItem<K extends string = string> {
   /** La letra del cuadrito. Si falta, la primera del nombre. */
   initial?: string;
   disabled?: boolean;
+  /** El tramo al que pertenece: "Operación", "Gestión". */
+  group?: string;
 }
 
 export interface SideMenuProps<K extends string> {
@@ -104,55 +109,66 @@ export function SideMenu<K extends string>({
       ) : null}
 
       <ScrollView contentContainerStyle={s.items}>
-        {items.map((item) => {
+        {items.map((item, index) => {
           const active = item.key === activeKey;
+          const abreTramo = item.group !== undefined && item.group !== items[index - 1]?.group;
           return (
-            <Pressable
-              key={item.key}
-              accessibilityRole="menuitem"
-              accessibilityLabel={item.label}
-              accessibilityState={{ selected: active, disabled: item.disabled }}
-              disabled={item.disabled}
-              onPress={() => onSelect(item.key)}
-              style={(state: EstadoPresionable) => {
-                const i = resolveInteraction(state, {
-                  selected: active,
-                  disabled: item.disabled,
-                  forced: forcedStates?.[item.key],
-                });
-                return [
-                  s.item,
-                  collapsed && s.itemCollapsed,
-                  i === "hovered" && s.itemHovered,
-                  i === "pressed" && s.itemPressed,
-                  i === "selected" && s.itemActive,
-                ];
-              }}
-            >
-              <View style={[s.initial, active ? s.initialActive : s.initialRest]}>
-                <Text
-                  style={[
-                    textStyle(t, "caption", active ? t.color.text.onAccent : t.color.text.secondary),
-                    s.initialText,
-                    item.disabled && { color: t.color.text.disabled },
-                  ]}
-                >
-                  {(item.initial ?? item.label.charAt(0)).toUpperCase()}
-                </Text>
-              </View>
-              {collapsed ? null : (
-                <Text
-                  numberOfLines={1}
-                  style={[
-                    textStyle(t, "body", active ? t.color.accent.text : t.color.text.primary),
-                    active && s.labelActive,
-                    item.disabled && { color: t.color.text.disabled },
-                  ]}
-                >
-                  {item.label}
-                </Text>
-              )}
-            </Pressable>
+            <Fragment key={item.key}>
+              {abreTramo ? (
+                collapsed ? (
+                  <View style={s.groupRule} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />
+                ) : (
+                  <Text accessibilityRole="header" style={[textStyle(t, "caption", t.color.text.secondary), s.groupTitle]}>
+                    {item.group}
+                  </Text>
+                )
+              ) : null}
+              <Pressable
+                accessibilityRole="menuitem"
+                accessibilityLabel={item.label}
+                accessibilityState={{ selected: active, disabled: item.disabled }}
+                disabled={item.disabled}
+                onPress={() => onSelect(item.key)}
+                style={(state: EstadoPresionable) => {
+                  const i = resolveInteraction(state, {
+                    selected: active,
+                    disabled: item.disabled,
+                    forced: forcedStates?.[item.key],
+                  });
+                  return [
+                    s.item,
+                    collapsed && s.itemCollapsed,
+                    i === "hovered" && s.itemHovered,
+                    i === "pressed" && s.itemPressed,
+                    i === "selected" && s.itemActive,
+                  ];
+                }}
+              >
+                <View style={[s.initial, active ? s.initialActive : s.initialRest]}>
+                  <Text
+                    style={[
+                      textStyle(t, "caption", active ? t.color.text.onAccent : t.color.text.secondary),
+                      s.initialText,
+                      item.disabled && { color: t.color.text.disabled },
+                    ]}
+                  >
+                    {(item.initial ?? item.label.charAt(0)).toUpperCase()}
+                  </Text>
+                </View>
+                {collapsed ? null : (
+                  <Text
+                    numberOfLines={1}
+                    style={[
+                      textStyle(t, "body", active ? t.color.accent.text : t.color.text.primary),
+                      active && s.labelActive,
+                      item.disabled && { color: t.color.text.disabled },
+                    ]}
+                  >
+                    {item.label}
+                  </Text>
+                )}
+              </Pressable>
+            </Fragment>
           );
         })}
       </ScrollView>
@@ -212,6 +228,8 @@ const makeStyles = (t: Tema) =>
     initialRest: { backgroundColor: t.color.bg.muted },
     initialText: { fontWeight: "600" },
     labelActive: { fontWeight: "600" },
+    groupTitle: { paddingLeft: t.space.lg + 4, paddingTop: t.space.lg, paddingBottom: t.space.xs, fontWeight: "600" },
+    groupRule: { height: 1, marginHorizontal: t.space.md, marginVertical: t.space.sm, backgroundColor: t.color.border.subtle },
     footer: {
       marginTop: "auto",
       paddingHorizontal: t.space.lg + 4,

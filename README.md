@@ -46,7 +46,7 @@ supabase/
   migrations/          el esquema, solo por migraciones versionadas
   tests/               pruebas pgTAP: RLS obligatoria, aislamiento, integridad
   seed.sql             datos ficticios para la base local
-docs/                  arquitectura, guía de trabajo y ADR
+docs/                  arquitectura, guía de trabajo, entornos y ADR
 tokens/                los tokens del kit en JSON para Figma (generados)
 ```
 
@@ -77,6 +77,9 @@ La semilla deja cuatro cuentas locales, todas con la contraseña
 | `personal.a@ejemplo.test` | Personal de "Administradora Demo A" |
 | `admin.b@ejemplo.test` | Administrador de "Administradora Demo B", sin edificios |
 | `sin.membresia@ejemplo.test` | Una cuenta que no pertenece a ninguna administradora |
+
+El correo de "¿Olvidaste tu contraseña?" no sale a internet: llega a Mailpit,
+en http://127.0.0.1:54324.
 
 ### Web
 
@@ -121,11 +124,12 @@ npx supabase start -x realtime,storage-api,imgproxy,kong,mailpit,postgrest,postg
 | `npm test` | Pruebas del dominio y del kit, incluido el contraste de cada tema |
 | `npm run tokens` | Regenera `tokens/` desde `src/ui/tokens.ts` |
 | `npm run tokens:check` | Falla si `tokens/` no está al día (lo corre el CI) |
+| `npm run claves:check` | Falla si una clave de servicio quedó en el repositorio o en una `EXPO_PUBLIC_*` (lo corre el CI) |
 | `npm run build:web` | Exporta la web estática a `dist/` |
 | `npm run db:start` / `db:reset` / `db:test` / `db:lint` | Atajos de la CLI de Supabase |
 
-El CI corre `tsc`, lint, pruebas, `tokens:check` y la exportación de la web en
-un job, y en otro levanta la base desde cero y corre `supabase db lint` y
+El CI corre `tsc`, lint, pruebas, `tokens:check`, `claves:check` y la
+exportación de la web en un job, y en otro levanta la base desde cero y corre `supabase db lint` y
 `supabase test db`.
 
 ## Entornos
@@ -133,8 +137,9 @@ un job, y en otro levanta la base desde cero y corre `supabase db lint` y
 | Entorno | Base | Web |
 |---|---|---|
 | Local | `supabase start` en Docker | `npx expo start --web` |
-| Staging | Proyecto Supabase propio (por crear) | Desde `main` (hosting por decidir, ADR-007) |
+| Staging | Proyecto Supabase propio (por crear); migraciones desde `main` con `staging.yml` | Desde `main` (hosting por decidir, ADR-007) |
 | Producción | Proyecto Supabase propio, `sa-east-1` (por crear) | Al publicar una etiqueta `vX.Y.Z` |
 
 Las variables `EXPO_PUBLIC_*` se fijan al construir: cambiar de entorno pide
-construir otra vez.
+construir otra vez. Cómo se crea y se enlaza staging, en
+[`docs/entornos.md`](docs/entornos.md).
