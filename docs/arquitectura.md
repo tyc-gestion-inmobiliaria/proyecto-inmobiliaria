@@ -243,6 +243,7 @@ Las apps usan `runtimeVersion` con política `fingerprint`: EAS Update solo entr
   ```
 
   Las políticas de escritura agregan el rol: `private.tiene_rol(org_id, 'administrador')`.
+- **Alcance por rol dentro de la administradora** (supuesto de PB-04): el administrador lee y escribe todo; el personal lee todo y no escribe; el residente ve solo lo suyo. Por eso, desde que hay datos personales en la base, la lectura del padrón pide `org_id in (select private.orgs_del_equipo())` (administrador o personal) **o** que la fila sea del residente: `private.mis_personas()`, `private.mis_unidades()` y `private.edificios_de_mis_unidades()`, que parten de `persona.usuario_id` y respetan la membresía activa. `organizacion` sigue con `private.mis_orgs()`. Las pruebas están en `supabase/tests/04_alcance_por_rol.sql`.
 - **Integridad entre inquilinos:** las claves foráneas incluyen `org_id` (`foreign key (org_id, edificio_id) references edificio (org_id, id)`), así una unidad no puede colgar de un edificio de otra administradora aunque alguien lo intente con la clave de servicio.
 - **Acceso por edificio**, si T&C lo confirma (pregunta P4 de la Visión): una tabla `acceso_edificio` y una segunda función `private.mis_edificios()`, con el mismo patrón.
 - **Storage:** buckets privados; la ruta empieza por `org_id` y la política compara `(storage.foldername(name))[1]::uuid` con `private.mis_orgs()`. Los recibos se comparten con enlaces firmados de vida corta.

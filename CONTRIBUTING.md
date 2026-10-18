@@ -108,7 +108,8 @@ Una historia se cierra cuando:
 1. `npx supabase migration new <nombre>` y el SQL en ese archivo.
 2. `org_id uuid not null`, también en las tablas hijas; claves foráneas
    compuestas con `org_id`.
-3. RLS activada y políticas por operación con `private.mis_orgs()` y
+3. RLS activada y políticas por operación (lectura, alta, edición y baja)
+   con `private.orgs_del_equipo()`, el alcance del residente y
    `private.tiene_rol()`.
 4. La tabla en la lista de `supabase/tests/01_rls_activada.sql` y su caso en
    `supabase/tests/02_aislamiento.sql`. Sin eso el CI falla.
