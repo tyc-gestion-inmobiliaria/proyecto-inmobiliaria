@@ -7,10 +7,13 @@ export interface Seccion {
   key: string;
   label: string;
   /** La ruta de expo-router a la que lleva. */
-  ruta: "/";
+  ruta: "/" | "/edificios";
 }
 
-export const SECCIONES: readonly Seccion[] = [{ key: "inicio", label: "Inicio", ruta: "/" }];
+export const SECCIONES: readonly Seccion[] = [
+  { key: "inicio", label: "Inicio", ruta: "/" },
+  { key: "edificios", label: "Edificios", ruta: "/edificios" },
+];
 
 /** La sección que corresponde a una ruta: la de prefijo más largo. */
 export function seccionDeRuta(ruta: string, secciones: readonly Seccion[] = SECCIONES): Seccion | undefined {
