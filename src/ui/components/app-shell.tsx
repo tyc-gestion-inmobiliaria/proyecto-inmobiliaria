@@ -20,6 +20,8 @@ export interface AppShellProps {
   sidebar?: ReactNode;
   /** La barra de arriba: el nombre, la cuenta, lo que el proyecto quiera. */
   topBar?: ReactNode;
+  /** La barra de abajo: en el teléfono, las secciones (`BottomNav`) en vez del menú lateral. */
+  bottomBar?: ReactNode;
   loading?: boolean;
   loadingLabel?: string;
   /** Lo que se dibuja encima de todo: los menús abiertos desde la barra. */
@@ -28,7 +30,7 @@ export interface AppShellProps {
   style?: StyleProp<ViewStyle>;
 }
 
-export function AppShell({ sidebar, topBar, loading, loadingLabel = "Cargando…", overlay, children, style }: AppShellProps) {
+export function AppShell({ sidebar, topBar, bottomBar, loading, loadingLabel = "Cargando…", overlay, children, style }: AppShellProps) {
   const t = useTheme();
   const s = useStyles(makeStyles);
   return (
@@ -47,6 +49,7 @@ export function AppShell({ sidebar, topBar, loading, loadingLabel = "Cargando…
           )}
         </View>
       </View>
+      {bottomBar}
       {/* Al final: en React Native Web los hermanos se apilan por orden de aparición. */}
       {overlay}
     </View>

@@ -57,6 +57,11 @@ export {
 } from "./components/data-table";
 export type { TableRowProps } from "./components/data-table";
 export { SideMenu } from "./components/side-menu";
+export { BottomNav } from "./components/bottom-nav";
+export type { BottomNavProps } from "./components/bottom-nav";
+export { ActionMenu } from "./components/action-menu";
+export type { ActionMenuItem, ActionMenuProps } from "./components/action-menu";
+export { menuPosition, orderActions } from "./components/action-menu-logic";
 export type { SideMenuItem, SideMenuProps } from "./components/side-menu";
 export { AppShell, Menu, MenuBackdrop, MenuItem, MenuNote } from "./components/app-shell";
 export type { AppShellProps } from "./components/app-shell";
