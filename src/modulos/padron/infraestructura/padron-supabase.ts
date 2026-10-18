@@ -17,14 +17,14 @@ import type {
   Resultado,
   UnidadesPuerto,
   VinculosPuerto,
-} from "../aplicacion/puertos-padron";
+} from "../aplicacion/puertos";
 import { esMoneda, type CuentaBancaria, type CuentaLimpia } from "../dominio/cuenta-bancaria";
 import { esTipoDocumento, type Persona, type PersonaLimpia } from "../dominio/persona";
 import { compararNumeroDeUnidad, type Unidad } from "../dominio/unidad";
 import { esRelacion, type Vinculo } from "../dominio/vinculo";
-import { falloDePostgres } from "./fallo-de-postgres";
+import { clasificarFalloDelPadron, type ErrorPostgrest } from "./clasificar-fallo";
 
-type ErrorPg = { code?: string; message?: string } | null;
+type ErrorPg = ErrorPostgrest | null;
 
 function cliente(): SupabaseClient {
   const c = clienteSupabase();
@@ -42,11 +42,11 @@ async function escribir<F, T>(
   if (!c) return { ok: false, fallo: "sin-configurar" };
   try {
     const { data, error } = await pedido(c);
-    if (error) return { ok: false, fallo: falloDePostgres(error) };
+    if (error) return { ok: false, fallo: clasificarFalloDelPadron(error) };
     if (data === null) return { ok: false, fallo: "no-existe" };
     return { ok: true, valor: convertir(data) };
   } catch (error) {
-    return { ok: false, fallo: falloDePostgres(error as ErrorPg) };
+    return { ok: false, fallo: clasificarFalloDelPadron(error as ErrorPg) };
   }
 }
 
@@ -266,10 +266,10 @@ export const vinculosSupabase: VinculosPuerto = {
     if (!c) return { ok: false, fallo: "sin-configurar" };
     try {
       const { error } = await c.rpc("elegir_responsable_pago", { p_vinculo_id: id });
-      if (error) return { ok: false, fallo: falloDePostgres(error) };
+      if (error) return { ok: false, fallo: clasificarFalloDelPadron(error) };
       return { ok: true, valor: null };
     } catch (error) {
-      return { ok: false, fallo: falloDePostgres(error as ErrorPg) };
+      return { ok: false, fallo: clasificarFalloDelPadron(error as ErrorPg) };
     }
   },
 

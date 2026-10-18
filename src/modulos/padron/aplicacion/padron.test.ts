@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import type { Unidad } from "../dominio/unidad";
-import { falloDePostgres } from "../infraestructura/fallo-de-postgres";
+import { clasificarFalloDelPadron } from "../infraestructura/clasificar-fallo";
 import { PadronFalso } from "../infraestructura/padron-falso";
 import { guardarPersona } from "./guardar-persona";
 
@@ -108,20 +108,20 @@ describe("PadronFalso: cuentas bancarias", () => {
   });
 });
 
-describe("falloDePostgres", () => {
+describe("clasificarFalloDelPadron", () => {
   it("distingue el segundo responsable de pago de un repetido cualquiera", () => {
     assert.equal(
-      falloDePostgres({ code: "23505", message: 'duplicate key value violates unique constraint "unidad_persona_un_responsable_uq"' }),
+      clasificarFalloDelPadron({ code: "23505", message: 'duplicate key value violates unique constraint "unidad_persona_un_responsable_uq"' }),
       "otro-responsable",
     );
-    assert.equal(falloDePostgres({ code: "23505", message: "persona_documento_uq" }), "repetido");
+    assert.equal(clasificarFalloDelPadron({ code: "23505", message: "persona_documento_uq" }), "repetido");
   });
 
   it("traduce permiso, clave foránea y check", () => {
-    assert.equal(falloDePostgres({ code: "42501" }), "sin-permiso");
-    assert.equal(falloDePostgres({ code: "23503" }), "no-existe");
-    assert.equal(falloDePostgres({ code: "23514" }), "invalido");
-    assert.equal(falloDePostgres({ message: "TypeError: Failed to fetch" }), "sin-conexion");
-    assert.equal(falloDePostgres(null), "desconocido");
+    assert.equal(clasificarFalloDelPadron({ code: "42501" }), "sin-permiso");
+    assert.equal(clasificarFalloDelPadron({ code: "23503" }), "no-existe");
+    assert.equal(clasificarFalloDelPadron({ code: "23514" }), "invalido");
+    assert.equal(clasificarFalloDelPadron({ message: "TypeError: Failed to fetch" }), "sin-conexion");
+    assert.equal(clasificarFalloDelPadron(null), "desconocido");
   });
 });

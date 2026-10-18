@@ -12,7 +12,7 @@ import type {
   Resultado,
   UnidadesPuerto,
   VinculosPuerto,
-} from "../aplicacion/puertos-padron";
+} from "../aplicacion/puertos";
 import type { CuentaBancaria, CuentaLimpia } from "../dominio/cuenta-bancaria";
 import { resumirParticipacion } from "../dominio/participacion";
 import type { Persona, PersonaLimpia } from "../dominio/persona";

@@ -4,7 +4,7 @@
  * causó: un documento repetido se dice en el número de documento.
  */
 import { validarPersona, type DatosPersona, type ErroresPersona, type Persona } from "../dominio/persona";
-import type { FalloDelPadron, PersonasPuerto } from "./puertos-padron";
+import type { FalloDelPadron, PersonasPuerto } from "./puertos";
 
 export type ResultadoGuardarPersona =
   | { ok: true; persona: Persona }
