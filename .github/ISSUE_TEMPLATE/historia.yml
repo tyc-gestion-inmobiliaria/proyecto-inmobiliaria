@@ -1,0 +1,63 @@
+name: Historia de usuario
+description: Algo que una persona necesita hacer con la plataforma.
+title: "PB-XX · "
+labels: ["historia"]
+body:
+  - type: textarea
+    id: historia
+    attributes:
+      label: Historia
+      description: Quién, qué y para qué.
+      value: |
+        Como **…**, quiero **…**, para **…**.
+    validations:
+      required: true
+  - type: textarea
+    id: criterios
+    attributes:
+      label: Criterios de aceptación
+      description: Dado / Cuando / Entonces, comprobables.
+      value: |
+        - **Dado** …, **cuando** …, **entonces** …
+    validations:
+      required: true
+  - type: input
+    id: modulo
+    attributes:
+      label: Módulo
+      description: El mismo nombre que el scope de los commits (organizaciones, padron, cobranza, cartera, auditoria, kit, db…).
+    validations:
+      required: true
+  - type: dropdown
+    id: plataforma
+    attributes:
+      label: Plataforma
+      options:
+        - web
+        - móvil
+        - ambas
+        - backend
+    validations:
+      required: true
+  - type: textarea
+    id: supuestos
+    attributes:
+      label: Supuestos y preguntas abiertas
+      description: Reglas de negocio que no están confirmadas por el cliente y con qué supuesto se avanza.
+  - type: textarea
+    id: datos
+    attributes:
+      label: Tablas que toca
+      description: Si toca la base, qué tablas se crean o cambian.
+  - type: checkboxes
+    id: listo
+    attributes:
+      label: Definición de Listo
+      options:
+        - label: Está escrita como historia (quién, qué, para qué).
+        - label: Tiene criterios de aceptación verificables.
+        - label: Las reglas de negocio están respondidas o el supuesto está escrito.
+        - label: Si tiene pantalla, el wireframe o diseño está aprobado.
+        - label: Si toca la base, se sabe qué tablas cambian.
+        - label: Está estimada y cabe en un sprint (8 puntos o menos).
+        - label: No tiene dependencias bloqueantes abiertas.

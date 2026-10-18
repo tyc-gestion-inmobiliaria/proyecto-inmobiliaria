@@ -1,0 +1,74 @@
+# Lo que tiene que pasar antes de que algo entre a main (Guía de trabajo §2.2,
+# Arquitectura §7.1): tipos, lint, pruebas, tokens al día y que la web
+# construya; y la base desde cero con sus pruebas pgTAP, incluidas las de
+# aislamiento entre administradoras.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Las acciones van fijadas a un commit, no a una etiqueta: una etiqueta se
+# puede mover y cambiar lo que corre acá sin que nadie lo vea.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    name: App (tipos, lint, pruebas, build web)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Expo lo genera al arrancar y no se versiona; sin él tsc no conoce los
+      # tipos de la web.
+      - name: Tipos de Expo
+        run: echo '/// <reference types="expo/types" />' > expo-env.d.ts
+      - name: Tipos
+        run: npx tsc --noEmit
+      - name: Lint
+        run: npm run lint
+      - name: Pruebas
+        run: npm test
+      - name: Tokens al día con src/ui/tokens.ts
+        run: npm run tokens:check
+      - name: La web construye
+        run: npx expo export --platform web
+
+  base:
+    name: Base (migraciones y pgTAP)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.121.0
+      # Solo Postgres y Auth: las pruebas no necesitan el resto, y así levanta
+      # en menos tiempo. `start` aplica las migraciones y la semilla en una
+      # base vacía, que es lo que pide PB-02.
+      - name: Base local desde cero
+        run: >
+          supabase start
+          -x realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+      - name: Lint del esquema
+        run: supabase db lint --level warning --fail-on warning
+      - name: Pruebas pgTAP
+        run: supabase test db
+      - name: Apagar
+        if: always()
+        run: supabase stop --no-backup

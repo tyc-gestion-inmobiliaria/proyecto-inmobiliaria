@@ -1,0 +1,66 @@
+name: Defecto
+description: Algo que no funciona como debería.
+title: "fix: "
+labels: ["defecto"]
+body:
+  - type: textarea
+    id: que-pasa
+    attributes:
+      label: Qué pasa
+      description: Lo que se ve, con el mensaje de error si lo hay.
+    validations:
+      required: true
+  - type: textarea
+    id: que-deberia
+    attributes:
+      label: Qué debería pasar
+    validations:
+      required: true
+  - type: textarea
+    id: pasos
+    attributes:
+      label: Cómo reproducirlo
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: dropdown
+    id: entorno
+    attributes:
+      label: Entorno
+      options:
+        - local
+        - staging
+        - producción
+    validations:
+      required: true
+  - type: dropdown
+    id: plataforma
+    attributes:
+      label: Plataforma
+      multiple: true
+      options:
+        - web
+        - iOS
+        - Android
+        - backend
+    validations:
+      required: true
+  - type: dropdown
+    id: inquilinos
+    attributes:
+      label: ¿Se ven datos de otra administradora?
+      description: Si la respuesta es sí, es una fuga entre inquilinos y va primero.
+      options:
+        - "No"
+        - "Sí"
+        - No lo sé
+    validations:
+      required: true
+  - type: textarea
+    id: capturas
+    attributes:
+      label: Capturas
+      description: Sin datos personales reales.

@@ -1,0 +1,41 @@
+# Actualizaciones de dependencias, una vez por semana.
+#
+# Expo fija las versiones compatibles de cada SDK: los paquetes de Expo y
+# React Native no se suben de a uno, se suben juntos con `npx expo install
+# --fix` al cambiar de SDK. Por eso quedan fuera de Dependabot.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: America/Lima
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+      include: scope
+    ignore:
+      - dependency-name: "expo"
+      - dependency-name: "expo-*"
+      - dependency-name: "@expo/*"
+      - dependency-name: "eslint-config-expo"
+      - dependency-name: "react"
+      - dependency-name: "react-dom"
+      - dependency-name: "react-native"
+      - dependency-name: "react-native-*"
+      - dependency-name: "@types/react"
+    groups:
+      desarrollo:
+        dependency-type: development
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: America/Lima
+    commit-message:
+      prefix: ci
+      include: scope

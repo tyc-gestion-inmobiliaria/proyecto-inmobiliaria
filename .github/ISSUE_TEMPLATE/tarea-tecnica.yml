@@ -1,0 +1,31 @@
+name: Tarea técnica
+description: Trabajo que no es una funcionalidad para el usuario (CI, entornos, deuda, pruebas, seguridad).
+title: "chore: "
+labels: ["tarea técnica"]
+body:
+  - type: textarea
+    id: objetivo
+    attributes:
+      label: Objetivo
+      description: Qué queda resuelto y por qué hace falta.
+    validations:
+      required: true
+  - type: textarea
+    id: criterios
+    attributes:
+      label: Criterios de aceptación
+      value: |
+        - **Dado** …, **cuando** …, **entonces** …
+    validations:
+      required: true
+  - type: input
+    id: area
+    attributes:
+      label: Área
+      description: El scope de los commits (ci, db, kit, docs…).
+    validations:
+      required: true
+  - type: textarea
+    id: riesgos
+    attributes:
+      label: Riesgos y cómo se revierte

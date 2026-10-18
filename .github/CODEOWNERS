@@ -1,0 +1,15 @@
+# Quién revisa qué. Sin dueños asignados todavía: se completa cuando se
+# definan los roles del equipo (Guía de trabajo §6.4). Mientras tanto, todas
+# las líneas van comentadas y GitHub no pide revisores automáticos.
+#
+# Formato: <patrón> <@usuario o @organización/equipo>
+#
+# El líder técnico aprueba los cambios de esquema y los ADR:
+# /supabase/migrations/   @<lider-tecnico>
+# /docs/adr/              @<lider-tecnico>
+#
+# El kit de interfaz:
+# /src/ui/                @<responsable-del-kit>
+#
+# El CI y la configuración del repositorio:
+# /.github/               @<lider-tecnico>
