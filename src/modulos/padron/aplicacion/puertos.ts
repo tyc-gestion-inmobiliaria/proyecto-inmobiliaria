@@ -85,3 +85,11 @@ export interface CuentasBancariasPuerto {
   actualizar(orgId: string, id: string, datos: CuentaLimpia): Promise<Resultado<CuentaBancaria>>;
   borrar(orgId: string, id: string): Promise<Resultado<null>>;
 }
+
+/** Lo que usan las pantallas de unidades y personas, juntos. */
+export interface PuertosDelPadron {
+  edificios: EdificiosPuerto;
+  unidades: UnidadesPuerto;
+  personas: PersonasPuerto;
+  vinculos: VinculosPuerto;
+}

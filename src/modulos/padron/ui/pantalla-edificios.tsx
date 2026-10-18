@@ -5,6 +5,8 @@
  * - Registrar y editar solo se ofrecen a quien la base deja escribir (el
  *   administrador). Los demás ven la lista sin botones que no les sirven.
  * - Un solo primario: arriba si ya hay edificios; si no, en el vacío.
+ * - Cada fila abre las unidades del edificio, para todos los roles; editar
+ *   el edificio se ofrece desde ahí al administrador.
  * - En una ventana angosta la fila apila nombre y dirección, para que la
  *   tabla quepa en 390 de ancho sin desplazarse de costado.
  */
@@ -83,30 +85,30 @@ function ListaEdificios({ orgId, editable, puerto }: { orgId: string; editable: 
           />
         )
       ) : (
-        <Tabla edificios={carga.edificios} editable={editable} />
+        <Tabla edificios={carga.edificios} />
       )}
     </ScrollView>
   );
 }
 
-function Tabla({ edificios, editable }: { edificios: Edificio[]; editable: boolean }) {
+function Tabla({ edificios }: { edificios: Edificio[] }) {
   const t = useTheme();
   const s = useStyles(makeStyles);
   const { width } = useWindowDimensions();
   const angosto = width < ANCHO_ANGOSTO;
-  const abrir = (e: Edificio) => (editable ? () => router.push({ pathname: "/edificios/[id]", params: { id: e.id } }) : undefined);
+  const abrir = (e: Edificio) => () => router.push({ pathname: "/edificios/[id]/unidades", params: { id: e.id } });
   // La flecha dice que la fila se abre sin tener que pasar el puntero.
-  const flecha = editable ? (
+  const flecha = (
     <Text aria-hidden style={[textStyle(t, "label", t.color.accent.text), s.flecha]}>
-      Editar ›
+      Unidades ›
     </Text>
-  ) : null;
+  );
 
   if (angosto) {
     return (
       <DataTable minWidth={0}>
         {edificios.map((e) => (
-          <TableRow key={e.id} onPress={abrir(e)} accessibilityLabel={`Editar ${e.nombre}`}>
+          <TableRow key={e.id} onPress={abrir(e)} accessibilityLabel={`Ver las unidades de ${e.nombre}`}>
             <TdView flex={1}>
               <Text style={textStyle(t, "body")}>{e.nombre}</Text>
               {e.direccion ? <Text style={textStyle(t, "bodySmall", t.color.text.secondary)}>{e.direccion}</Text> : null}
@@ -123,10 +125,10 @@ function Tabla({ edificios, editable }: { edificios: Edificio[]; editable: boole
       <TableHead>
         <Th flex={2}>Nombre</Th>
         <Th flex={3}>Dirección</Th>
-        {editable ? <View style={s.flecha} /> : null}
+        <View style={s.flecha} />
       </TableHead>
       {edificios.map((e) => (
-        <TableRow key={e.id} onPress={abrir(e)} accessibilityLabel={`Editar ${e.nombre}`}>
+        <TableRow key={e.id} onPress={abrir(e)} accessibilityLabel={`Ver las unidades de ${e.nombre}`}>
           <Td flex={2}>{e.nombre}</Td>
           <Td flex={3} muted>
             {e.direccion ?? "—"}
@@ -142,5 +144,5 @@ const makeStyles = (t: Tema) =>
   StyleSheet.create({
     pantalla: { flexGrow: 1, gap: t.space.xl, padding: t.space.xl, maxWidth: 960, width: "100%" },
     cabecera: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: t.space.md },
-    flecha: { width: 64, textAlign: "right" },
+    flecha: { width: 88, textAlign: "right" },
   });
