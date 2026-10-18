@@ -6,7 +6,7 @@ import type { CuentaBancaria, CuentaLimpia } from "../dominio/cuenta-bancaria";
 import type { Edificio, EdificioLimpio } from "../dominio/edificio";
 import type { ResumenParticipacion } from "../dominio/participacion";
 import type { Persona, PersonaLimpia } from "../dominio/persona";
-import type { Unidad } from "../dominio/unidad";
+import type { Unidad, UnidadLimpia } from "../dominio/unidad";
 import type { Relacion, Vinculo } from "../dominio/vinculo";
 
 /** Por qué no se pudo guardar, en categorías que la pantalla sabe decir. */
@@ -49,6 +49,8 @@ export interface UnidadesPuerto {
   delEdificio(orgId: string, edificioId: string): Promise<Unidad[]>;
   /** La suma de participaciones del edificio, como la calcula la base. */
   participacion(orgId: string, edificioId: string): Promise<ResumenParticipacion>;
+  crear(orgId: string, edificioId: string, datos: UnidadLimpia): Promise<Resultado<Unidad>>;
+  actualizar(orgId: string, id: string, datos: UnidadLimpia): Promise<Resultado<Unidad>>;
 }
 
 export interface PersonasPuerto {

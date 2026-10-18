@@ -60,3 +60,37 @@ export function leerParticipacion(texto: string): LecturaParticipacion {
   if (valor > 100) return { ok: false, error: "No puede pasar de 100 %" };
   return { ok: true, valor };
 }
+
+const PORCENTAJE = new Intl.NumberFormat("es-PE", { maximumFractionDigits: 4 });
+
+/** "12,5 %": la participación como se lee, con hasta cuatro decimales. */
+export function textoDePorcentaje(valor: number): string {
+  return `${PORCENTAJE.format(valor)} %`;
+}
+
+/**
+ * Qué decirle al administrador cuando las participaciones del edificio no
+ * cuadran, con la diferencia: cuánto falta o cuánto sobra, y cuántas
+ * unidades no tienen la suya. `null` si suman 100 % o si no hay unidades.
+ */
+export function avisoDeParticipacion(r: ResumenParticipacion): string | null {
+  if (r.sumaCien || r.unidades === 0) return null;
+  const partes: string[] = [];
+  if (r.diferencia > 0) partes.push(`Faltan ${textoDePorcentaje(r.diferencia)} para llegar a 100 %.`);
+  else if (r.diferencia < 0) partes.push(`Se pasa de 100 % por ${textoDePorcentaje(-r.diferencia)}.`);
+  if (r.sinParticipacion === 1) partes.push("1 unidad no tiene participación.");
+  else if (r.sinParticipacion > 1) partes.push(`${r.sinParticipacion} unidades no tienen participación.`);
+  return partes.join(" ");
+}
+
+/**
+ * Cómo queda el edificio si esta unidad se guarda con `valor`: las demás
+ * unidades más esta. Para decirlo junto al campo mientras se escribe.
+ */
+export function participacionConEsta(
+  otras: readonly { id: string; participacion: number | null }[],
+  valor: number | null,
+  idEditado?: string,
+): ResumenParticipacion {
+  return resumirParticipacion([...otras.filter((u) => u.id !== idEditado).map((u) => u.participacion), valor]);
+}

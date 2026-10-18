@@ -16,14 +16,16 @@ import type {
 import type { CuentaBancaria, CuentaLimpia } from "../dominio/cuenta-bancaria";
 import { resumirParticipacion } from "../dominio/participacion";
 import type { Persona, PersonaLimpia } from "../dominio/persona";
-import { compararNumeroDeUnidad, type Unidad } from "../dominio/unidad";
+import { compararNumeroDeUnidad, type Unidad, type UnidadLimpia } from "../dominio/unidad";
 import type { Relacion, Vinculo } from "../dominio/vinculo";
 
 const bien = <T>(valor: T): Resultado<T> => ({ ok: true, valor });
 const repetido = { ok: false, fallo: "repetido" } as const;
 const noExiste = { ok: false, fallo: "no-existe" } as const;
 
-export class PadronFalso implements UnidadesPuerto, PersonasPuerto, VinculosPuerto {
+// `crear` y `actualizar` son de personas: las de unidades se entregan con
+// `comoUnidades()`, sobre el mismo estado.
+export class PadronFalso implements Omit<UnidadesPuerto, "crear" | "actualizar">, PersonasPuerto, VinculosPuerto {
   unidades: Unidad[] = [];
   personas: Persona[] = [];
   vinculos: Vinculo[] = [];
@@ -52,6 +54,36 @@ export class PadronFalso implements UnidadesPuerto, PersonasPuerto, VinculosPuer
   async participacion(orgId: string, edificioId: string) {
     const unidades = await this.delEdificio(orgId, edificioId);
     return resumirParticipacion(unidades.map((u) => u.participacion));
+  }
+
+  /** Lo que el falso le hace a las unidades en `crear` y `actualizar`, por nombre propio. */
+  comoUnidades(): UnidadesPuerto {
+    return {
+      delEdificio: (orgId, edificioId) => this.delEdificio(orgId, edificioId),
+      participacion: (orgId, edificioId) => this.participacion(orgId, edificioId),
+      crear: (orgId, edificioId, datos) => this.crearUnidad(orgId, edificioId, datos),
+      actualizar: (orgId, id, datos) => this.actualizarUnidad(orgId, id, datos),
+    };
+  }
+
+  private numeroOcupado(orgId: string, edificioId: string, numero: string, salvo?: string): boolean {
+    // Como `unique (org_id, edificio_id, numero)`: solo el idéntico.
+    return this.unidades.some((u) => u.orgId === orgId && u.edificioId === edificioId && u.id !== salvo && u.numero === numero);
+  }
+
+  async crearUnidad(orgId: string, edificioId: string, datos: UnidadLimpia): Promise<Resultado<Unidad>> {
+    if (this.numeroOcupado(orgId, edificioId, datos.numero)) return repetido;
+    const unidad: Unidad = { id: this.id("unidad"), orgId, edificioId, ...datos };
+    this.unidades.push(unidad);
+    return bien(unidad);
+  }
+
+  async actualizarUnidad(orgId: string, id: string, datos: UnidadLimpia): Promise<Resultado<Unidad>> {
+    const i = this.unidades.findIndex((u) => u.orgId === orgId && u.id === id);
+    if (i < 0) return noExiste;
+    if (this.numeroOcupado(orgId, this.unidades[i].edificioId, datos.numero, id)) return repetido;
+    this.unidades[i] = { ...this.unidades[i], ...datos };
+    return bien(this.unidades[i]);
   }
 
   // PersonasPuerto ----------------------------------------------------------------
