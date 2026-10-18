@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { seccionDeRuta, type Seccion } from "./secciones";
+import { ordenarPorTramo, seccionDeRuta, type Seccion } from "./secciones";
 
 const secciones = [
   { key: "inicio", label: "Inicio", ruta: "/" },
@@ -19,5 +19,20 @@ describe("seccionDeRuta", () => {
 
   it("un prefijo parecido no cuenta como la sección", () => {
     assert.equal(seccionDeRuta("/padronx", secciones)?.key, "inicio");
+  });
+});
+
+describe("ordenarPorTramo", () => {
+  it("pone primero las sin tramo y después Operación y Gestión, sin mezclar", () => {
+    const desordenadas = [
+      { key: "reportes", grupo: "Gestión" as const },
+      { key: "cobranza", grupo: "Operación" as const },
+      { key: "inicio" },
+      { key: "reservas", grupo: "Operación" as const },
+    ];
+    assert.deepEqual(
+      ordenarPorTramo(desordenadas).map((s) => s.key),
+      ["inicio", "cobranza", "reservas", "reportes"],
+    );
   });
 });
