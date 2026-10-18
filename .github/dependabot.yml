@@ -25,6 +25,11 @@ updates:
       - dependency-name: "react-native"
       - dependency-name: "react-native-*"
       - dependency-name: "@types/react"
+      # TypeScript y ESLint suben de versión mayor cuando Expo lo haga; antes rompen el CI.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
     groups:
       desarrollo:
         dependency-type: development
