@@ -13,7 +13,7 @@
  * - **El ✕ de limpiar** solo aparece con algo escrito: un ✕ sobre un campo
  *   vacío es un botón que no hace nada.
  */
-import { useState } from "react";
+import { useState, type Ref } from "react";
 import {
   Pressable,
   StyleSheet,
@@ -72,6 +72,8 @@ export interface TextFieldProps {
   clearLabel?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
+  /** Para llevar el foco al campo, por ejemplo desde un resumen de errores. */
+  inputRef?: Ref<TextInput>;
 }
 
 export function TextField({
@@ -96,6 +98,7 @@ export function TextField({
   clearLabel = "Limpiar el campo",
   style,
   testID,
+  inputRef,
 }: TextFieldProps) {
   const t = useTheme();
   const s = useStyles(makeStyles);
@@ -111,6 +114,7 @@ export function TextField({
       {editable ? (
         <View style={s.box} onPointerEnter={() => setHovered(true)} onPointerLeave={() => setHovered(false)}>
           <TextInput
+            ref={inputRef}
             testID={testID}
             accessibilityLabel={accessibilityLabel ?? label}
             accessibilityHint={hasError ? (error ?? undefined) : helper}

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { seccionDeRuta, type Seccion } from "./secciones";
+import { SECCIONES, seccionDeRuta, type Seccion } from "./secciones";
 
 const secciones = [
   { key: "inicio", label: "Inicio", ruta: "/" },
@@ -19,5 +19,13 @@ describe("seccionDeRuta", () => {
 
   it("un prefijo parecido no cuenta como la sección", () => {
     assert.equal(seccionDeRuta("/padronx", secciones)?.key, "inicio");
+  });
+});
+
+describe("SECCIONES", () => {
+  it("el alta y la edición de un edificio marcan Edificios en el menú", () => {
+    assert.equal(seccionDeRuta("/edificios", SECCIONES)?.key, "edificios");
+    assert.equal(seccionDeRuta("/edificios/nuevo", SECCIONES)?.key, "edificios");
+    assert.equal(seccionDeRuta("/edificios/abc-123", SECCIONES)?.key, "edificios");
   });
 });
