@@ -22,7 +22,7 @@ DOCUMENTO INTERNO DEL EQUIPO
 
 Cómo trabaja el equipo en este proyecto, en cinco reglas:
 
-1. **`main` está protegida.** Todo entra por pull request, con una revisión aprobada y el CI en verde.
+1. **`main` se trata como protegida.** Todo entra por pull request, con una revisión aprobada y el CI en verde. GitHub no lo bloquea mientras la organización siga en el plan gratuito.
 2. **Una rama por historia**, con prefijo de tipo: `feat/…`, `fix/…`, `docs/…`.
 3. **Conventional Commits en español**, con scope y en primera persona: `feat(cobranza): agrego la vista previa de recibos`.
 4. **Una historia está lista para empezar** cuando cumple la Definición de Listo, y **está hecha** cuando cumple la de Hecho (sección 4). No hay "casi hecho".

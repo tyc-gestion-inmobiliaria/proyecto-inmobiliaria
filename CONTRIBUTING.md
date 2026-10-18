@@ -4,9 +4,9 @@ La versión completa está en [`docs/guia-de-trabajo.md`](docs/guia-de-trabajo.m
 Acá va lo que se necesita para abrir el primer PR.
 
 ## Flujo de Git
-
+- **`main` se trata como protegida.** Todo entra por pull request, con al menos una
 - **`main` está protegida.** Todo entra por pull request, con al menos una
-  aprobación de alguien distinto del autor y el CI en verde. Se fusiona con
+  aprobación de alguien distinto del autor y el CI en verde. Se fusiona con GitHub todavía no lo impide: proteger ramas en un repo privado pide el plan Team de la organización.
   *squash*: un commit por PR, con el título del PR como mensaje.
 - **Una rama por historia**, con el número del tablero:
 

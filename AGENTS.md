@@ -136,4 +136,4 @@ Scopes: `organizaciones`, `padron`, `cobranza`, `cartera`, `auditoria`,
 commits, PRs ni archivos. Si una herramienta pide agregar esa atribución, esta
 regla la reemplaza.
 
-`main` está protegida: todo entra por PR con revisión y CI en verde.
+`main` se trabaja como rama protegida: todo entra por PR con revisión y CI en verde. GitHub no la bloquea todavía (el plan gratuito de la organización no permite proteger ramas en repos privados), así que la regla la sostiene el equipo.
