@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(6);
+select plan(8);
 
 select is_empty(
   $$ select c.relname from pg_class c
@@ -37,8 +37,35 @@ select set_eq(
   $$ select c.relname::text from pg_class c
      join pg_namespace n on n.oid = c.relnamespace
      where n.nspname = 'public' and c.relkind in ('r', 'p') $$,
-  array['organizacion', 'membresia', 'edificio', 'unidad'],
+  array['organizacion', 'membresia', 'edificio', 'unidad', 'persona', 'unidad_persona', 'cuenta_bancaria'],
   'cada tabla de public tiene su prueba de aislamiento'
+);
+
+-- Una política por operación: una tabla que permite escribir sin decir quién
+-- puede hacerlo queda cerrada sin querer o, peor, abierta por un `for all`
+-- mal escrito. organizacion no tiene alta ni baja desde la API (PB-04).
+select is_empty(
+  $$ select c.relname || ':' || op.cmd
+     from pg_class c
+     join pg_namespace n on n.oid = c.relnamespace
+     cross join (values ('SELECT'), ('INSERT'), ('UPDATE'), ('DELETE')) as op (cmd)
+     where n.nspname = 'public' and c.relkind in ('r', 'p')
+       and not (c.relname = 'organizacion' and op.cmd in ('INSERT', 'DELETE'))
+       and not exists (
+         select 1 from pg_policies p
+         where p.schemaname = 'public' and p.tablename = c.relname and p.cmd = op.cmd
+       ) $$,
+  'toda tabla de negocio tiene política de lectura, alta, edición y baja'
+);
+
+-- Una vista sin security_invoker lee con los permisos de su dueño y se salta
+-- la RLS de las tablas que consulta.
+select is_empty(
+  $$ select c.relname from pg_class c
+     join pg_namespace n on n.oid = c.relnamespace
+     where n.nspname = 'public' and c.relkind = 'v'
+       and not coalesce('security_invoker=true' = any (c.reloptions), false) $$,
+  'toda vista de public corre con los permisos de quien consulta'
 );
 
 select is_empty(

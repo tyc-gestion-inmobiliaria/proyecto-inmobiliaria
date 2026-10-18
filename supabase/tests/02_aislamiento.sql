@@ -9,7 +9,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(24);
+select plan(44);
 
 -- Datos (como postgres, sin RLS) ----------------------------------------------
 
@@ -35,6 +35,22 @@ insert into public.edificio (id, org_id, nombre) values
 insert into public.unidad (id, org_id, edificio_id, numero) values
   ('40000000-0000-4000-8000-00000000000a', '20000000-0000-4000-8000-00000000000a', '30000000-0000-4000-8000-00000000000a', '101'),
   ('40000000-0000-4000-8000-00000000000b', '20000000-0000-4000-8000-00000000000b', '30000000-0000-4000-8000-00000000000b', '101');
+
+insert into public.persona (id, org_id, nombre) values
+  ('50000000-0000-4000-8000-00000000000a', '20000000-0000-4000-8000-00000000000a', 'Persona A'),
+  ('50000000-0000-4000-8000-00000000000b', '20000000-0000-4000-8000-00000000000b', 'Persona B');
+
+insert into public.unidad_persona (id, org_id, unidad_id, persona_id, relacion, responsable_pago) values
+  ('60000000-0000-4000-8000-00000000000a', '20000000-0000-4000-8000-00000000000a',
+   '40000000-0000-4000-8000-00000000000a', '50000000-0000-4000-8000-00000000000a', 'propietario', true),
+  ('60000000-0000-4000-8000-00000000000b', '20000000-0000-4000-8000-00000000000b',
+   '40000000-0000-4000-8000-00000000000b', '50000000-0000-4000-8000-00000000000b', 'propietario', true);
+
+insert into public.cuenta_bancaria (id, org_id, edificio_id, nombre, banco, numero) values
+  ('70000000-0000-4000-8000-00000000000a', '20000000-0000-4000-8000-00000000000a',
+   '30000000-0000-4000-8000-00000000000a', 'Cuenta principal', 'Banco de prueba', '000-0000001'),
+  ('70000000-0000-4000-8000-00000000000b', '20000000-0000-4000-8000-00000000000b',
+   '30000000-0000-4000-8000-00000000000b', 'Cuenta principal', 'Banco de prueba', '000-0000002');
 
 -- Entra como un usuario: rol authenticated y su id en el JWT.
 create function pg_temp.como(p_usuario uuid) returns void language sql as $$
@@ -131,6 +147,62 @@ select results_eq(
   'organizacion: A no puede renombrar B'
 );
 
+-- persona, vínculo y cuenta bancaria: lo mismo, tabla por tabla ---------------
+
+select results_eq($$ select id from public.persona $$,
+  $$ values ('50000000-0000-4000-8000-00000000000a'::uuid) $$, 'persona: A solo ve sus personas');
+select results_eq($$ select id from public.unidad_persona $$,
+  $$ values ('60000000-0000-4000-8000-00000000000a'::uuid) $$, 'unidad_persona: A solo ve sus vínculos');
+select results_eq($$ select id from public.cuenta_bancaria $$,
+  $$ values ('70000000-0000-4000-8000-00000000000a'::uuid) $$, 'cuenta_bancaria: A solo ve sus cuentas');
+select results_eq($$ select edificio_id from public.participacion_por_edificio $$,
+  $$ values ('30000000-0000-4000-8000-00000000000a'::uuid) $$, 'participacion_por_edificio: A solo ve sus edificios');
+
+select throws_ok(
+  $$ insert into public.persona (org_id, nombre) values ('20000000-0000-4000-8000-00000000000b', 'Intrusa') $$,
+  '42501', null, 'persona: A no puede insertar en B');
+select throws_ok(
+  $$ insert into public.unidad_persona (org_id, unidad_id, persona_id, relacion)
+     values ('20000000-0000-4000-8000-00000000000b', '40000000-0000-4000-8000-00000000000b',
+             '50000000-0000-4000-8000-00000000000b', 'inquilino') $$,
+  '42501', null, 'unidad_persona: A no puede insertar en B');
+select throws_ok(
+  $$ insert into public.cuenta_bancaria (org_id, edificio_id, nombre, banco, numero)
+     values ('20000000-0000-4000-8000-00000000000b', '30000000-0000-4000-8000-00000000000b', 'Otra', 'Banco', '000-9999999') $$,
+  '42501', null, 'cuenta_bancaria: A no puede insertar en B');
+
+select results_eq(
+  $$ with x as (update public.persona set nombre = 'Cambiada' where id = '50000000-0000-4000-8000-00000000000b' returning 1)
+     select count(*)::int from x $$,
+  $$ values (0) $$, 'persona: A no puede modificar una de B');
+select results_eq(
+  $$ with x as (update public.unidad_persona set responsable_pago = false where id = '60000000-0000-4000-8000-00000000000b' returning 1)
+     select count(*)::int from x $$,
+  $$ values (0) $$, 'unidad_persona: A no puede modificar uno de B');
+select results_eq(
+  $$ with x as (update public.cuenta_bancaria set banco = 'Otro' where id = '70000000-0000-4000-8000-00000000000b' returning 1)
+     select count(*)::int from x $$,
+  $$ values (0) $$, 'cuenta_bancaria: A no puede modificar una de B');
+
+select results_eq(
+  $$ with x as (delete from public.persona where id = '50000000-0000-4000-8000-00000000000b' returning 1)
+     select count(*)::int from x $$,
+  $$ values (0) $$, 'persona: A no puede borrar una de B');
+select results_eq(
+  $$ with x as (delete from public.unidad_persona where id = '60000000-0000-4000-8000-00000000000b' returning 1)
+     select count(*)::int from x $$,
+  $$ values (0) $$, 'unidad_persona: A no puede borrar uno de B');
+select results_eq(
+  $$ with x as (delete from public.cuenta_bancaria where id = '70000000-0000-4000-8000-00000000000b' returning 1)
+     select count(*)::int from x $$,
+  $$ values (0) $$, 'cuenta_bancaria: A no puede borrar una de B');
+
+select throws_ok(
+  $$ insert into public.unidad_persona (org_id, unidad_id, persona_id, relacion)
+     values ('20000000-0000-4000-8000-00000000000a', '40000000-0000-4000-8000-00000000000a',
+             '50000000-0000-4000-8000-00000000000b', 'inquilino') $$,
+  '23503', null, 'unidad_persona: A no puede vincular a su unidad una persona de B');
+
 select lives_ok(
   $$ insert into public.edificio (org_id, nombre) values ('20000000-0000-4000-8000-00000000000a', 'Edificio A2') $$,
   'edificio: A sí puede registrar un edificio propio'
@@ -154,6 +226,12 @@ select throws_ok(
   'edificio: el personal no puede registrar edificios'
 );
 
+select throws_ok(
+  $$ insert into public.persona (org_id, nombre) values ('20000000-0000-4000-8000-00000000000a', 'Sin permiso') $$,
+  '42501', null,
+  'persona: el personal no puede registrar personas'
+);
+
 -- Sin membresía: no ve nada ---------------------------------------------------
 
 reset role;
@@ -164,6 +242,10 @@ select is_empty($$ select 1 from public.organizacion $$, 'sin membresía no ve o
 select is_empty($$ select 1 from public.membresia $$, 'sin membresía no ve membresías');
 select is_empty($$ select 1 from public.edificio $$, 'sin membresía no ve edificios');
 select is_empty($$ select 1 from public.unidad $$, 'sin membresía no ve unidades');
+select is_empty($$ select 1 from public.persona $$, 'sin membresía no ve personas');
+select is_empty($$ select 1 from public.unidad_persona $$, 'sin membresía no ve vínculos');
+select is_empty($$ select 1 from public.cuenta_bancaria $$, 'sin membresía no ve cuentas bancarias');
+select is_empty($$ select 1 from public.participacion_por_edificio $$, 'sin membresía no ve participaciones');
 
 -- Anónimo: no llega a las tablas --------------------------------------------
 
@@ -175,6 +257,12 @@ select throws_ok(
   $$ select 1 from public.edificio $$,
   '42501', null,
   'anon no tiene permiso sobre edificio'
+);
+
+select throws_ok(
+  $$ select 1 from public.persona $$,
+  '42501', null,
+  'anon no tiene permiso sobre persona'
 );
 
 -- Membresía desactivada: corta el acceso al instante -------------------------

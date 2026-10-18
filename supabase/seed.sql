@@ -6,6 +6,7 @@
 --
 --   admin.a@ejemplo.test       administrador de "Administradora Demo A"
 --   personal.a@ejemplo.test    personal de "Administradora Demo A"
+--   residente.a@ejemplo.test   residente de "Administradora Demo A", propietaria de la 101
 --   admin.b@ejemplo.test       administrador de "Administradora Demo B" (sin edificios)
 --   sin.membresia@ejemplo.test cuenta sin administradora
 
@@ -13,6 +14,7 @@ with cuentas (id, email) as (
   values
     ('00000000-0000-4000-8000-0000000000a1'::uuid, 'admin.a@ejemplo.test'),
     ('00000000-0000-4000-8000-0000000000a2'::uuid, 'personal.a@ejemplo.test'),
+    ('00000000-0000-4000-8000-0000000000a3'::uuid, 'residente.a@ejemplo.test'),
     ('00000000-0000-4000-8000-0000000000b1'::uuid, 'admin.b@ejemplo.test'),
     ('00000000-0000-4000-8000-000000000001'::uuid, 'sin.membresia@ejemplo.test')
 )
@@ -40,11 +42,20 @@ insert into public.organizacion (id, nombre) values
 insert into public.membresia (org_id, usuario_id, rol) values
   ('00000000-0000-4000-8000-00000000000a', '00000000-0000-4000-8000-0000000000a1', 'administrador'),
   ('00000000-0000-4000-8000-00000000000a', '00000000-0000-4000-8000-0000000000a2', 'personal'),
+  ('00000000-0000-4000-8000-00000000000a', '00000000-0000-4000-8000-0000000000a3', 'residente'),
   ('00000000-0000-4000-8000-00000000000b', '00000000-0000-4000-8000-0000000000b1', 'administrador');
 
 insert into public.edificio (id, org_id, nombre) values
   ('00000000-0000-4000-8000-0000000000e1', '00000000-0000-4000-8000-00000000000a', 'Edificio Demo 1');
 
-insert into public.unidad (org_id, edificio_id, numero) values
-  ('00000000-0000-4000-8000-00000000000a', '00000000-0000-4000-8000-0000000000e1', '101'),
-  ('00000000-0000-4000-8000-00000000000a', '00000000-0000-4000-8000-0000000000e1', '102');
+insert into public.unidad (id, org_id, edificio_id, numero) values
+  ('00000000-0000-4000-8000-000000000101', '00000000-0000-4000-8000-00000000000a', '00000000-0000-4000-8000-0000000000e1', '101'),
+  ('00000000-0000-4000-8000-000000000102', '00000000-0000-4000-8000-00000000000a', '00000000-0000-4000-8000-0000000000e1', '102');
+
+insert into public.persona (id, org_id, nombre, correo, usuario_id) values
+  ('00000000-0000-4000-8000-0000000000f1', '00000000-0000-4000-8000-00000000000a', 'Propietaria Demo 101', 'residente.a@ejemplo.test', '00000000-0000-4000-8000-0000000000a3'),
+  ('00000000-0000-4000-8000-0000000000f2', '00000000-0000-4000-8000-00000000000a', 'Inquilino Demo 102', null, null);
+
+insert into public.unidad_persona (org_id, unidad_id, persona_id, relacion, responsable_pago) values
+  ('00000000-0000-4000-8000-00000000000a', '00000000-0000-4000-8000-000000000101', '00000000-0000-4000-8000-0000000000f1', 'propietario', true),
+  ('00000000-0000-4000-8000-00000000000a', '00000000-0000-4000-8000-000000000102', '00000000-0000-4000-8000-0000000000f2', 'inquilino', true);

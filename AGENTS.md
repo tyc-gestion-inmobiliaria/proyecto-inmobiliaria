@@ -13,8 +13,11 @@ datos de otra administradora.
 - **Toda tabla de negocio lleva `org_id uuid not null`**, también las hijas
   (no se deduce por join).
 - **RLS activada en todas las tablas de `public`**, con políticas por
-  operación. Leer pide `org_id in (select private.mis_orgs())`; escribir pide
-  además el rol con `private.tiene_rol(org_id, '<rol>')`.
+  operación. Leer pide `org_id in (select private.orgs_del_equipo())`
+  (administrador o personal) o que la fila sea del residente
+  (`private.mis_personas()`, `private.mis_unidades()`); escribir pide el rol
+  con `private.tiene_rol(org_id, '<rol>')`. Toda vista lleva
+  `security_invoker = true`. Detalle en `docs/arquitectura.md` §8.1.
 - **Claves foráneas compuestas con `org_id`**:
   `foreign key (org_id, edificio_id) references edificio (org_id, id)`.
 - **Las funciones `security definer` van en `private`**, con
