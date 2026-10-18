@@ -44,6 +44,8 @@ jobs:
         run: npm test
       - name: Tokens al día con src/ui/tokens.ts
         run: npm run tokens:check
+      - name: Ninguna clave de servicio en el repositorio ni en el cliente
+        run: npm run claves:check
       - name: La web construye
         run: npx expo export --platform web
 
