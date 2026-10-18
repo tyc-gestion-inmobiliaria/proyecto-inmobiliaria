@@ -20,7 +20,7 @@ import type {
 } from "../aplicacion/puertos";
 import { esMoneda, type CuentaBancaria, type CuentaLimpia } from "../dominio/cuenta-bancaria";
 import { esTipoDocumento, type Persona, type PersonaLimpia } from "../dominio/persona";
-import { compararNumeroDeUnidad, type Unidad } from "../dominio/unidad";
+import { compararNumeroDeUnidad, type Unidad, type UnidadLimpia } from "../dominio/unidad";
 import { esRelacion, type Vinculo } from "../dominio/vinculo";
 import { clasificarFalloDelPadron, type ErrorPostgrest } from "./clasificar-fallo";
 
@@ -86,6 +86,12 @@ function aUnidad(f: FilaUnidad): Unidad {
   };
 }
 
+const COLUMNAS_UNIDAD = "id, org_id, edificio_id, numero, tipo, area_m2, participacion";
+
+function filaDeUnidad(u: UnidadLimpia) {
+  return { numero: u.numero, tipo: u.tipo, area_m2: u.areaM2, participacion: u.participacion };
+}
+
 interface FilaParticipacion {
   unidades: number;
   sin_participacion: number;
@@ -98,7 +104,7 @@ export const unidadesSupabase: UnidadesPuerto = {
   async delEdificio(orgId, edificioId) {
     const { data, error } = await cliente()
       .from("unidad")
-      .select("id, org_id, edificio_id, numero, tipo, area_m2, participacion")
+      .select(COLUMNAS_UNIDAD)
       .eq("org_id", orgId)
       .eq("edificio_id", edificioId)
       .returns<FilaUnidad[]>();
@@ -121,6 +127,25 @@ export const unidadesSupabase: UnidadesPuerto = {
       diferencia: Number(data.diferencia),
       sumaCien: data.suma_cien,
     };
+  },
+
+  crear(orgId, edificioId, datos) {
+    return escribir(
+      (c) =>
+        c
+          .from("unidad")
+          .insert({ org_id: orgId, edificio_id: edificioId, ...filaDeUnidad(datos) })
+          .select(COLUMNAS_UNIDAD)
+          .single<FilaUnidad>(),
+      aUnidad,
+    );
+  },
+
+  actualizar(orgId, id, datos) {
+    return escribir(
+      (c) => c.from("unidad").update(filaDeUnidad(datos)).eq("org_id", orgId).eq("id", id).select(COLUMNAS_UNIDAD).single<FilaUnidad>(),
+      aUnidad,
+    );
   },
 };
 

@@ -6,6 +6,10 @@
  *   (H1: la causa y qué hacer). Tocar la fila elige ese edificio en el
  *   selector de contexto, que es "ir al edificio" (PB-10).
  * - **Un edificio elegido:** el mismo estado, con sus pendientes enteros.
+ *   Para el administrador, cada pendiente que ya tiene pantalla lleva a ella
+ *   (las unidades y su participación); la cuenta bancaria todavía no tiene.
+ *   En la tabla no: la fila entera ya se toca, y un botón dentro de otro no
+ *   se puede alcanzar bien con el teclado ni con el lector de pantalla.
  * - **Indicadores solo con datos (H8):** los que no tienen nada que contar no
  *   se arman. Recaudación, morosidad, incidencias y reservas no existen en la
  *   base todavía y no se muestran.
@@ -43,13 +47,27 @@ import {
 } from "@/ui";
 
 import type { EstadoDeLaCarteraPuerto } from "../aplicacion/puertos";
-import { formatoPorcentaje, indicadoresDeLaCartera, type FilaCartera, type Pendiente } from "../dominio/cartera";
+import { formatoPorcentaje, indicadoresDeLaCartera, type FilaCartera, type Pendiente, type TipoPendiente } from "../dominio/cartera";
 import { useCartera } from "./usar-cartera";
 
 /** Por debajo de este ancho de ventana, la fila apila sus datos. */
 const ANCHO_ANGOSTO = 720;
 
 const LISTO = "Listo para cobrar";
+
+/** Adónde lleva cada pendiente, si ya hay una pantalla donde resolverlo. */
+function irAlPaso(tipo: TipoPendiente, edificioId: string): (() => void) | null {
+  switch (tipo) {
+    case "sin-unidades":
+      return () => router.push({ pathname: "/edificios/[id]/unidades/nueva", params: { id: edificioId } });
+    case "sin-participacion":
+    case "participacion-incompleta":
+    case "participacion-excedida":
+      return () => router.push({ pathname: "/edificios/[id]/unidades", params: { id: edificioId } });
+    default:
+      return null;
+  }
+}
 
 function unidades(n: number): string {
   return `${n} ${n === 1 ? "unidad" : "unidades"}`;
@@ -104,7 +122,7 @@ function Cartera({
   } else if (edificio) {
     const fila = carga.filas.find((f) => f.id === edificio.id);
     contenido = fila ? (
-      <DelEdificio fila={fila} />
+      <DelEdificio fila={fila} editable={editable} />
     ) : (
       <EmptyState
         title="No se encontró el edificio"
@@ -242,7 +260,7 @@ function SiguientePaso({ pendientes }: { pendientes: Pendiente[] }) {
   );
 }
 
-function DelEdificio({ fila }: { fila: FilaCartera }) {
+function DelEdificio({ fila, editable }: { fila: FilaCartera; editable: boolean }) {
   const t = useTheme();
   const s = useStyles(makeStyles);
   return (
@@ -257,12 +275,21 @@ function DelEdificio({ fila }: { fila: FilaCartera }) {
       ) : (
         <View style={s.pendientes}>
           <SectionTitle>Pendientes</SectionTitle>
-          {fila.pendientes.map((p) => (
-            <Card key={p.tipo} style={s.pendiente}>
-              <Text style={[textStyle(t, "body"), s.fuerte]}>{p.paso}</Text>
-              <StatusDot tone="warning" label={p.causa} />
-            </Card>
-          ))}
+          {fila.pendientes.map((p) => {
+            const ir = editable ? irAlPaso(p.tipo, fila.id) : null;
+            return (
+              <Card key={p.tipo} style={s.pendiente}>
+                {ir ? (
+                  <View style={s.enlace}>
+                    <Button variant="secondary" label={`${p.paso} ›`} onPress={ir} testID={`inicio-paso-${p.tipo}`} />
+                  </View>
+                ) : (
+                  <Text style={[textStyle(t, "body"), s.fuerte]}>{p.paso}</Text>
+                )}
+                <StatusDot tone="warning" label={p.causa} />
+              </Card>
+            );
+          })}
         </View>
       )}
     </>
@@ -280,4 +307,5 @@ const makeStyles = (t: Tema) =>
     ficha: { maxWidth: 420, gap: t.space.sm },
     pendientes: { gap: t.space.md, maxWidth: 560 },
     pendiente: { gap: t.space.xs },
+    enlace: { alignSelf: "flex-start" },
   });

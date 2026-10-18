@@ -102,3 +102,24 @@ export function validarPersona(datos: DatosPersona): ValidacionPersona {
     },
   };
 }
+
+export const CAMPOS_PERSONA: readonly CampoPersona[] = ["nombre", "documentoTipo", "documentoNumero", "correo", "telefono"];
+
+export const ETIQUETA_CAMPO_PERSONA: Record<CampoPersona, string> = {
+  nombre: "Nombre",
+  documentoTipo: "Tipo de documento",
+  documentoNumero: "Número de documento",
+  correo: "Correo",
+  telefono: "Teléfono",
+};
+
+/** Para llenar el formulario al editar. Sin persona, el formulario vacío. */
+export function datosDePersona(p?: Persona): DatosPersona {
+  return {
+    nombre: p?.nombre ?? "",
+    documentoTipo: p?.documentoTipo ?? "",
+    documentoNumero: p?.documentoNumero ?? "",
+    correo: p?.correo ?? "",
+    telefono: p?.telefono ?? "",
+  };
+}
