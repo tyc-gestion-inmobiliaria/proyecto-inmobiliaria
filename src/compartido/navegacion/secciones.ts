@@ -17,12 +17,15 @@ export interface Seccion {
   key: string;
   label: string;
   /** La ruta de expo-router a la que lleva. */
-  ruta: "/";
+  ruta: "/" | "/edificios";
   /** El tramo del menú; sin tramo va arriba, sin título. */
   grupo?: Tramo;
 }
 
-export const SECCIONES: readonly Seccion[] = [{ key: "inicio", label: "Inicio", ruta: "/" }];
+export const SECCIONES: readonly Seccion[] = [
+  { key: "inicio", label: "Inicio", ruta: "/" },
+  { key: "edificios", label: "Edificios", ruta: "/edificios" },
+];
 
 const ORDEN_DE_TRAMOS: readonly (Tramo | undefined)[] = [undefined, "Operación", "Gestión"];
 

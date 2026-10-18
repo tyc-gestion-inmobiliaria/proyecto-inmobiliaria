@@ -26,7 +26,7 @@ export function edificioEnCurso(
   return edificios.find((e) => e.id === elegido) ?? null;
 }
 
-/** Lo que el puerto necesita de afuera: los edificios de la administradora. */
+/** Lo que el selector necesita de afuera: los edificios de la administradora (los da el padrón). */
 export interface EdificiosDelContextoPuerto {
   listar(orgId: string): Promise<EdificioDelContexto[]>;
 }

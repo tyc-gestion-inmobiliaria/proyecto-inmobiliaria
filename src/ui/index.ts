@@ -79,7 +79,7 @@ export type { CellWithBarProps } from "./components/cell-with-bar";
 export { FitNumber } from "./components/fit-number";
 export type { FitNumberProps } from "./components/fit-number";
 export { barWidth, fitFontSize } from "./components/number-logic";
-export { ChoiceChips, Form, FormCell, FormFooter, FormGroup, FormRow } from "./components/form";
+export { ChoiceChips, ErrorSummary, Form, FormCell, FormFooter, FormGroup, FormRow } from "./components/form";
 export { Checkbox } from "./components/checkbox";
 export type { CheckboxProps } from "./components/checkbox";
 export { Avatar } from "./components/avatar";

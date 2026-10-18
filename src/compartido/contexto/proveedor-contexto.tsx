@@ -3,7 +3,9 @@
  * administradora en curso y cuál está elegido.
  *
  * Se monta con `key` por administradora: al cambiarla, la elección vuelve a
- * la cartera entera en vez de arrastrar un edificio de otra.
+ * la cartera entera en vez de arrastrar un edificio de otra. La lista se
+ * vuelve a leer al cambiar de ruta (`ruta`), para que un edificio recién dado
+ * de alta aparezca en el selector sin recargar la app.
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
@@ -30,10 +32,12 @@ const SIN_ADMINISTRADORA: EstadoContexto = {
 
 export function ProveedorContexto({
   orgId,
+  ruta,
   puerto,
   children,
 }: {
   orgId: string | null;
+  ruta: string;
   puerto: EdificiosDelContextoPuerto;
   children: ReactNode;
 }) {
@@ -57,7 +61,7 @@ export function ProveedorContexto({
     return () => {
       vigente = false;
     };
-  }, [orgId, puerto]);
+  }, [orgId, puerto, ruta]);
 
   const elegirEdificio = useCallback((id: string | null) => setElegido(id), []);
   const edificio = useMemo(() => edificioEnCurso(edificios, elegido), [edificios, elegido]);
