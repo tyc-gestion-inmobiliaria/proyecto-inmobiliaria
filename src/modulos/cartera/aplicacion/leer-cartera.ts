@@ -1,0 +1,23 @@
+/**
+ * Lee la cartera de la administradora: la lista de edificios del padrón y su
+ * estado, en tres pedidos que van a la vez. Si uno falla, falla todo: una
+ * fila a medias diría pendientes que no son.
+ */
+import type { EdificiosPuerto } from "@/modulos/padron/aplicacion/puertos";
+import { ordenarEdificios } from "@/modulos/padron/dominio/edificio";
+
+import { armarCartera, type FilaCartera } from "../dominio/cartera";
+import type { EstadoDeLaCarteraPuerto } from "./puertos";
+
+export async function leerCartera(
+  edificios: Pick<EdificiosPuerto, "listar">,
+  estado: EstadoDeLaCarteraPuerto,
+  orgId: string,
+): Promise<FilaCartera[]> {
+  const [lista, padron, conCuenta] = await Promise.all([
+    edificios.listar(orgId),
+    estado.padronPorEdificio(orgId),
+    estado.edificiosConCuenta(orgId),
+  ]);
+  return armarCartera(ordenarEdificios(lista), padron, conCuenta);
+}

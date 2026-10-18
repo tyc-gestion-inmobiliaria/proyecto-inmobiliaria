@@ -1,144 +1,283 @@
 /**
- * Lo que se ve al entrar. Por ahora dice solo lo que la base sabe: a qué
- * administradora pertenece la persona y si ya tiene edificios; con un
- * edificio elegido en el selector de contexto, cuántas unidades tiene ese
- * edificio (PB-10). La tabla de la cartera llega con PB-11.
+ * Lo que se ve al entrar: la cartera de la administradora (PB-11).
+ *
+ * - **Toda la cartera:** una fila por edificio con sus unidades, si la
+ *   participación suma 100 %, si tiene cuenta bancaria y el siguiente paso
+ *   (H1: la causa y qué hacer). Tocar la fila elige ese edificio en el
+ *   selector de contexto, que es "ir al edificio" (PB-10).
+ * - **Un edificio elegido:** el mismo estado, con sus pendientes enteros.
+ * - **Indicadores solo con datos (H8):** los que no tienen nada que contar no
+ *   se arman. Recaudación, morosidad, incidencias y reservas no existen en la
+ *   base todavía y no se muestran.
+ * - **Sin edificios:** el vacío con "Registrar edificio" para quien puede
+ *   registrarlos; a los demás, a quién pedírselo.
+ * - En una ventana angosta la fila apila sus datos, para caber en 390 de
+ *   ancho sin desplazarse de costado.
  */
-import { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
+import { router } from "expo-router";
+import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
 import { useContextoDeTrabajo } from "@/compartido/contexto/proveedor-contexto";
-import { useOrganizacion } from "@/modulos/organizaciones/ui/organizacion";
+import { Cargando, ConOrganizacion } from "@/modulos/organizaciones/ui/con-organizacion";
 import type { EdificiosPuerto } from "@/modulos/padron/aplicacion/puertos";
-import { Button, Card, EmptyState, KeyValueRow, ScreenTitle, textStyle, useStyles, useTheme, type Tema } from "@/ui";
+import { puedeEditarEdificios } from "@/modulos/padron/dominio/edificio";
+import {
+  Button,
+  Card,
+  DataTable,
+  EmptyState,
+  KeyValueRow,
+  ScreenTitle,
+  SectionTitle,
+  StatTile,
+  StatusDot,
+  TableHead,
+  TableRow,
+  Td,
+  TdView,
+  Th,
+  textStyle,
+  useStyles,
+  useTheme,
+  type Tema,
+} from "@/ui";
 
-import type { UnidadesPuerto } from "../aplicacion/puertos";
+import type { EstadoDeLaCarteraPuerto } from "../aplicacion/puertos";
+import { formatoPorcentaje, indicadoresDeLaCartera, type FilaCartera, type Pendiente } from "../dominio/cartera";
+import { useCartera } from "./usar-cartera";
 
-type Conteo = { estado: "cargando" } | { estado: "error" } | { estado: "listo"; total: number };
+/** Por debajo de este ancho de ventana, la fila apila sus datos. */
+const ANCHO_ANGOSTO = 720;
 
-export function PantallaInicio({ edificios, unidades }: { edificios: EdificiosPuerto; unidades: UnidadesPuerto }) {
-  const s = useStyles(makeStyles);
-  const { carga, enCurso, reintentar } = useOrganizacion();
-  const { edificio } = useContextoDeTrabajo();
-  const [intento, setIntento] = useState(0);
+const LISTO = "Listo para cobrar";
 
-  if (carga === "cargando") return <Cargando />;
+function unidades(n: number): string {
+  return `${n} ${n === 1 ? "unidad" : "unidades"}`;
+}
 
-  if (carga === "error") {
-    return (
-      <View style={s.pantalla}>
-        <EmptyState
-          title="No se pudo leer tu cuenta"
-          description="Revisa tu conexión y vuelve a intentarlo."
-          action={<Button label="Reintentar" onPress={reintentar} />}
-        />
-      </View>
-    );
-  }
-
-  if (!enCurso) {
-    return (
-      <View style={s.pantalla}>
-        <EmptyState
-          title="Tu cuenta no está en ninguna administradora"
-          description="Pide a quien administra tu empresa que te invite."
-        />
-      </View>
-    );
-  }
-
-  const orgId = enCurso.orgId;
+export function PantallaInicio({ edificios, estado }: { edificios: EdificiosPuerto; estado: EstadoDeLaCarteraPuerto }) {
   return (
-    <ScrollView contentContainerStyle={s.pantalla}>
-      <ScreenTitle>{edificio ? edificio.nombre : enCurso.orgNombre}</ScreenTitle>
-      {/* La clave reinicia el conteo al cambiar de administradora, de edificio o al reintentar. */}
-      {edificio ? (
-        <Resumen
-          key={`${orgId}-${edificio.id}-${intento}`}
-          rotulo="Unidades registradas"
-          vacio="Este edificio todavía no tiene unidades registradas"
-          errorTitulo="No se pudieron leer las unidades"
-          contar={() => unidades.contarDelEdificio(orgId, edificio.id)}
-          onReintentar={() => setIntento((n) => n + 1)}
-        />
-      ) : (
-        <Resumen
-          key={`${orgId}-${intento}`}
-          rotulo="Edificios registrados"
-          vacio="Todavía no hay edificios registrados"
-          errorTitulo="No se pudieron leer los edificios"
-          contar={() => edificios.contar(orgId)}
-          onReintentar={() => setIntento((n) => n + 1)}
+    <ConOrganizacion>
+      {(enCurso) => (
+        // La clave descarta la cartera anterior al cambiar de administradora.
+        <Cartera
+          key={enCurso.orgId}
+          orgId={enCurso.orgId}
+          orgNombre={enCurso.orgNombre}
+          editable={puedeEditarEdificios(enCurso.rol)}
+          edificios={edificios}
+          estado={estado}
         />
       )}
+    </ConOrganizacion>
+  );
+}
+
+function Cartera({
+  orgId,
+  orgNombre,
+  editable,
+  edificios,
+  estado,
+}: {
+  orgId: string;
+  orgNombre: string;
+  editable: boolean;
+  edificios: EdificiosPuerto;
+  estado: EstadoDeLaCarteraPuerto;
+}) {
+  const s = useStyles(makeStyles);
+  const { edificio, elegirEdificio } = useContextoDeTrabajo();
+  const { carga, reintentar } = useCartera(edificios, estado, orgId);
+
+  let contenido;
+  if (carga.estado === "cargando") {
+    contenido = <Cargando />;
+  } else if (carga.estado === "error") {
+    contenido = (
+      <EmptyState
+        title="No se pudo leer la cartera"
+        description="Revisa tu conexión y vuelve a intentarlo."
+        action={<Button label="Reintentar" onPress={reintentar} />}
+      />
+    );
+  } else if (edificio) {
+    const fila = carga.filas.find((f) => f.id === edificio.id);
+    contenido = fila ? (
+      <DelEdificio fila={fila} />
+    ) : (
+      <EmptyState
+        title="No se encontró el edificio"
+        action={<Button variant="secondary" label="Ver toda la cartera" onPress={() => elegirEdificio(null)} />}
+      />
+    );
+  } else if (carga.filas.length === 0) {
+    contenido = editable ? (
+      <EmptyState
+        title="Todavía no hay edificios registrados"
+        action={<Button label="Registrar edificio" onPress={() => router.push("/edificios/nuevo")} testID="inicio-registrar" />}
+      />
+    ) : (
+      <EmptyState title="Todavía no hay edificios registrados" description="Pide a un administrador de tu empresa que los registre." />
+    );
+  } else {
+    contenido = <DeLaCartera filas={carga.filas} abrir={elegirEdificio} />;
+  }
+
+  return (
+    <ScrollView contentContainerStyle={s.pantalla}>
+      <ScreenTitle>{edificio ? edificio.nombre : orgNombre}</ScreenTitle>
+      {contenido}
     </ScrollView>
   );
 }
 
-function Resumen({
-  rotulo,
-  vacio,
-  errorTitulo,
-  contar,
-  onReintentar,
-}: {
-  rotulo: string;
-  vacio: string;
-  errorTitulo: string;
-  /** Se llama una vez por montaje: la `key` del padre decide cuándo se vuelve a contar. */
-  contar: () => Promise<number>;
-  onReintentar: () => void;
-}) {
+function DeLaCartera({ filas, abrir }: { filas: FilaCartera[]; abrir: (id: string) => void }) {
   const s = useStyles(makeStyles);
-  const [conteo, setConteo] = useState<Conteo>({ estado: "cargando" });
-  const [contarAlMontar] = useState(() => contar);
-
-  useEffect(() => {
-    let vigente = true;
-    contarAlMontar()
-      .then((total) => {
-        if (vigente) setConteo({ estado: "listo", total });
-      })
-      .catch(() => {
-        if (vigente) setConteo({ estado: "error" });
-      });
-    return () => {
-      vigente = false;
-    };
-  }, [contarAlMontar]);
-
-  if (conteo.estado === "cargando") return <Cargando />;
-  if (conteo.estado === "error") {
-    return (
-      <EmptyState
-        title={errorTitulo}
-        description="Revisa tu conexión y vuelve a intentarlo."
-        action={<Button label="Reintentar" onPress={onReintentar} />}
-      />
-    );
-  }
-  if (conteo.total === 0) return <EmptyState title={vacio} />;
+  const indicadores = indicadoresDeLaCartera(filas);
   return (
-    <Card style={s.resumen}>
-      <KeyValueRow label={rotulo} value={String(conteo.total)} strong />
-    </Card>
+    <>
+      {indicadores.length > 0 ? (
+        <View style={s.indicadores}>
+          {indicadores.map((i) => (
+            <StatTile key={i.clave} label={i.etiqueta} value={String(i.valor)} />
+          ))}
+        </View>
+      ) : null}
+      <Tabla filas={filas} abrir={abrir} />
+    </>
   );
 }
 
-function Cargando() {
+function etiquetaDeFila(f: FilaCartera): string {
+  const estado = f.pendientes.length === 0 ? LISTO : f.pendientes.map((p) => `${p.causa}: ${p.paso}`).join(". ");
+  return `${f.nombre}, ${unidades(f.unidades)}. ${estado}`;
+}
+
+function Tabla({ filas, abrir }: { filas: FilaCartera[]; abrir: (id: string) => void }) {
+  const t = useTheme();
+  const s = useStyles(makeStyles);
+  const { width } = useWindowDimensions();
+  // La flecha dice que la fila se abre sin tener que pasar el puntero.
+  const flecha = (
+    <Text aria-hidden style={[textStyle(t, "label", t.color.accent.text), s.flecha]}>
+      ›
+    </Text>
+  );
+
+  if (width < ANCHO_ANGOSTO) {
+    return (
+      <DataTable minWidth={0}>
+        {filas.map((f) => (
+          <TableRow key={f.id} onPress={() => abrir(f.id)} accessibilityLabel={etiquetaDeFila(f)}>
+            <TdView flex={1} style={s.apilada}>
+              <Text style={[textStyle(t, "body"), s.fuerte]}>{f.nombre}</Text>
+              <Text style={textStyle(t, "bodySmall", t.color.text.secondary)}>
+                {unidades(f.unidades)}
+                {f.participacion ? ` · participación ${formatoPorcentaje(f.participacion.total)}` : ""}
+              </Text>
+              <SiguientePaso pendientes={f.pendientes} />
+            </TdView>
+            {flecha}
+          </TableRow>
+        ))}
+      </DataTable>
+    );
+  }
+
+  return (
+    <DataTable minWidth={640}>
+      <TableHead>
+        <Th flex={2}>Edificio</Th>
+        <Th flex={1} align="right">
+          Unidades
+        </Th>
+        <Th flex={1.2}>Participación</Th>
+        <Th flex={1}>Cuenta</Th>
+        <Th flex={2.4}>Siguiente paso</Th>
+        <View style={s.flecha} />
+      </TableHead>
+      {filas.map((f) => (
+        <TableRow key={f.id} onPress={() => abrir(f.id)} accessibilityLabel={etiquetaDeFila(f)}>
+          <Td flex={2}>{f.nombre}</Td>
+          <Td flex={1} mono align="right">
+            {f.unidades}
+          </Td>
+          <TdView flex={1.2}>
+            {f.participacion ? (
+              <StatusDot tone={f.participacion.sumaCien ? "success" : "warning"} label={formatoPorcentaje(f.participacion.total)} />
+            ) : (
+              <Text style={textStyle(t, "bodySmall", t.color.text.secondary)}>—</Text>
+            )}
+          </TdView>
+          <TdView flex={1}>
+            <StatusDot tone={f.tieneCuenta ? "success" : "warning"} label={f.tieneCuenta ? "Registrada" : "Falta"} />
+          </TdView>
+          <TdView flex={2.4}>
+            <SiguientePaso pendientes={f.pendientes} />
+          </TdView>
+          {flecha}
+        </TableRow>
+      ))}
+    </DataTable>
+  );
+}
+
+/** El primer pendiente con su paso y su causa; si hay más, cuántos. */
+function SiguientePaso({ pendientes }: { pendientes: Pendiente[] }) {
+  const t = useTheme();
+  const s = useStyles(makeStyles);
+  const [primero, ...resto] = pendientes;
+  if (!primero) return <StatusDot tone="success" label={LISTO} />;
+  return (
+    <View style={s.paso}>
+      <Text style={[textStyle(t, "bodySmall"), s.fuerte]}>{primero.paso}</Text>
+      <StatusDot tone="warning" label={primero.causa} />
+      {resto.length > 0 ? (
+        <Text style={textStyle(t, "caption", t.color.text.secondary)}>
+          y {resto.length} {resto.length === 1 ? "pendiente más" : "pendientes más"}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+function DelEdificio({ fila }: { fila: FilaCartera }) {
   const t = useTheme();
   const s = useStyles(makeStyles);
   return (
-    <View style={s.cargando} accessibilityLiveRegion="polite">
-      <ActivityIndicator color={t.color.text.secondary} />
-      <Text style={textStyle(t, "body", t.color.text.secondary)}>Cargando…</Text>
-    </View>
+    <>
+      <Card style={s.ficha}>
+        <KeyValueRow label="Unidades" value={String(fila.unidades)} />
+        {fila.participacion ? <KeyValueRow label="Participación" value={formatoPorcentaje(fila.participacion.total)} /> : null}
+        <KeyValueRow label="Cuenta bancaria" value={fila.tieneCuenta ? "Registrada" : "Falta"} />
+      </Card>
+      {fila.pendientes.length === 0 ? (
+        <StatusDot tone="success" label={LISTO} />
+      ) : (
+        <View style={s.pendientes}>
+          <SectionTitle>Pendientes</SectionTitle>
+          {fila.pendientes.map((p) => (
+            <Card key={p.tipo} style={s.pendiente}>
+              <Text style={[textStyle(t, "body"), s.fuerte]}>{p.paso}</Text>
+              <StatusDot tone="warning" label={p.causa} />
+            </Card>
+          ))}
+        </View>
+      )}
+    </>
   );
 }
 
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
-    pantalla: { flexGrow: 1, gap: t.space.xl, padding: t.space.xl, maxWidth: 960, width: "100%" },
-    resumen: { maxWidth: 360 },
-    cargando: { alignItems: "center", justifyContent: "center", gap: t.space.sm, paddingVertical: t.space.xxl },
+    pantalla: { flexGrow: 1, gap: t.space.xl, padding: t.space.xl, maxWidth: 1080, width: "100%" },
+    indicadores: { flexDirection: "row", flexWrap: "wrap", gap: t.space.md },
+    apilada: { gap: t.space.xs },
+    paso: { gap: t.space.xxs },
+    fuerte: { fontWeight: "600" },
+    flecha: { width: 32, textAlign: "right" },
+    ficha: { maxWidth: 420, gap: t.space.sm },
+    pendientes: { gap: t.space.md, maxWidth: 560 },
+    pendiente: { gap: t.space.xs },
   });
