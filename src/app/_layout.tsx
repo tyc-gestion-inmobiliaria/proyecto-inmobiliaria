@@ -17,13 +17,14 @@ export default function RootLayout() {
 }
 
 /**
- * Sin sesión solo existe `/entrar`; con sesión, el grupo `(app)`. Las rutas
+ * Sin sesión existen `/entrar` y `/recuperar`; con sesión, el grupo `(app)`;
+ * al volver del enlace del correo, solo `/nueva-contrasena`. Las rutas
  * protegidas no se pueden abrir por URL sin haber entrado.
  */
 function Rutas() {
   const t = useTheme();
   const s = useStyles(makeStyles);
-  const { cuenta, cargando } = useSesion();
+  const { cuenta, cargando, recuperando } = useSesion();
 
   if (cargando) {
     return (
@@ -35,11 +36,16 @@ function Rutas() {
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={cuenta !== null}>
+      {/* Desde el enlace del correo solo existe la contraseña nueva. */}
+      <Stack.Protected guard={recuperando}>
+        <Stack.Screen name="nueva-contrasena" />
+      </Stack.Protected>
+      <Stack.Protected guard={!recuperando && cuenta !== null}>
         <Stack.Screen name="(app)" />
       </Stack.Protected>
-      <Stack.Protected guard={cuenta === null}>
+      <Stack.Protected guard={!recuperando && cuenta === null}>
         <Stack.Screen name="entrar" />
+        <Stack.Screen name="recuperar" />
       </Stack.Protected>
     </Stack>
   );
