@@ -1,0 +1,4 @@
+# Fin de línea LF en el repositorio, también desde Windows: el JSON de tokens
+# se compara byte a byte en el CI.
+* text=auto eol=lf
+*.png binary
