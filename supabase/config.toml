@@ -220,8 +220,11 @@ web3 = 30
 
 [auth.email]
 # Allow/disallow new user signups via email to your project.
-# El alta de cuentas la hace el equipo o una invitación (PB-04): no hay registro público.
-enable_signup = false
+# El alta de cuentas la hace el equipo o una invitación (PB-04): no hay registro
+# público. Eso lo corta `enable_signup = false` de [auth]; acá tiene que quedar
+# en true, porque en false Supabase apaga el proveedor de correo entero y nadie
+# puede entrar con su contraseña ("Email logins are disabled").
+enable_signup = true
 # If enabled, a user will be required to confirm any email change on both the old, and new email
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
