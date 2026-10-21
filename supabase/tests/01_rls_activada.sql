@@ -32,12 +32,14 @@ select is_empty(
   'toda tabla de negocio lleva org_id not null'
 );
 
--- Al agregar una tabla, se suma acá y se escribe su caso en 02_aislamiento.sql.
+-- Al agregar una tabla, se suma acá y se escribe su caso en 02_aislamiento.sql
+-- (las de cobranza tienen el suyo en 05_cobranza.sql).
 select set_eq(
   $$ select c.relname::text from pg_class c
      join pg_namespace n on n.oid = c.relnamespace
      where n.nspname = 'public' and c.relkind in ('r', 'p') $$,
-  array['organizacion', 'membresia', 'edificio', 'unidad', 'persona', 'unidad_persona', 'cuenta_bancaria'],
+  array['organizacion', 'membresia', 'edificio', 'unidad', 'persona', 'unidad_persona', 'cuenta_bancaria',
+        'cierre', 'lectura', 'partida', 'recibo'],
   'cada tabla de public tiene su prueba de aislamiento'
 );
 
