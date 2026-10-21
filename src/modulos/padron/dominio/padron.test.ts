@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { validarCuenta } from "./cuenta-bancaria";
+import { nombreDeMoneda, textoDeCci, validarCuenta } from "./cuenta-bancaria";
 import { leerParticipacion, resumirParticipacion } from "./participacion";
 import { validarPersona, type DatosPersona } from "./persona";
 import { compararNumeroDeUnidad } from "./unidad";
@@ -146,6 +146,23 @@ describe("validarCuenta", () => {
   it("el CCI tiene 20 dígitos y el número solo números y guiones", () => {
     const r = validarCuenta({ nombre: "Cuenta", banco: "Banco", numero: "12AB", cci: "123", moneda: "USD" });
     assert.ok(!r.ok && r.errores.cci && r.errores.numero);
+  });
+
+  it("dice cuántos dígitos del CCI lleva", () => {
+    const r = validarCuenta({ nombre: "Cuenta", banco: "Banco", numero: "000-0000001", cci: "0011 0234", moneda: "PEN" });
+    assert.ok(!r.ok && r.errores.cci === "El CCI tiene 20 dígitos y llevas 8");
+  });
+
+  it("avisa del número repetido en el edificio, salvo la cuenta que se edita", () => {
+    const otras = [{ id: "c1", numero: "000-0000001" }];
+    const d = { nombre: "Cuenta", banco: "Banco", numero: "000 - 0000001", cci: "", moneda: "PEN" as const };
+    assert.ok(!validarCuenta({ ...d, numero: "000-0000001" }, otras).ok);
+    assert.ok(validarCuenta({ ...d, numero: "000-0000001" }, otras, "c1").ok);
+  });
+
+  it("muestra el CCI en grupos de cuatro y nombra la moneda", () => {
+    assert.equal(textoDeCci("00110234567890123456"), "0011 0234 5678 9012 3456");
+    assert.equal(nombreDeMoneda("USD"), "Dólares");
   });
 });
 
