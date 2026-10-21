@@ -92,4 +92,5 @@ export interface PuertosDelPadron {
   unidades: UnidadesPuerto;
   personas: PersonasPuerto;
   vinculos: VinculosPuerto;
+  cuentas: CuentasBancariasPuerto;
 }
