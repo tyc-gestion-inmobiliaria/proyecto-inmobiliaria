@@ -56,9 +56,10 @@ Módulos de hoy: `organizaciones` (sesión, membresías y roles), `padron`
 cuenta) y `cartera` (el inicio, con el paso del cierre de cada edificio).
 Vendrá `auditoria`.
 
-Los módulos no se importan entre sí: lo que comparten va en `src/compartido/`
-y, cuando una pantalla junta dos módulos (la ficha de la unidad, con el
-padrón y la cobranza), los junta la ruta de `src/app/`.
+La cobranza no importa de otros módulos: lo que comparte va en
+`src/compartido/` y, cuando una pantalla junta dos módulos (la ficha de la
+unidad, con el padrón y la cobranza), los junta la ruta de `src/app/`. La
+cartera sí lee la lista de edificios del padrón, desde antes.
 
 El dinero lo calcula la base: `recibos_del_cierre` arma la vista previa
 (prorrateo por participación al céntimo, agua por consumo, deuda previa) y
