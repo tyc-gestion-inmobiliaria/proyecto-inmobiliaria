@@ -41,8 +41,8 @@ import type { PuertosDelPadron } from "../aplicacion/puertos";
 import { nombreDeMoneda, textoDeCci, type CuentaBancaria } from "../dominio/cuenta-bancaria";
 import { avisoDeParticipacion, textoDePorcentaje, type ResumenParticipacion } from "../dominio/participacion";
 import { ordenarUnidades, puedeEditarPadron, textoDeArea, type Unidad } from "../dominio/unidad";
-import { Aviso, Volver } from "./piezas";
-import { useCarga } from "./usar-carga";
+import { Aviso, Volver } from "@/compartido/ui/piezas";
+import { useCarga } from "@/compartido/ui/usar-carga";
 
 const ANCHO_ANGOSTO = 640;
 
@@ -122,7 +122,10 @@ function Lista({
               label="Editar edificio"
               onPress={() => router.push({ pathname: "/edificios/[id]", params: { id: edificioId } })}
             />
-            {unidades.length > 0 ? <Button label="Registrar unidad" onPress={registrar} testID="unidades-registrar" /> : null}
+            {unidades.length > 0 ? <Button variant="secondary" label="Registrar unidad" onPress={registrar} testID="unidades-registrar" /> : null}
+            {unidades.length > 0 ? (
+              <Button label="Cierre del mes" onPress={() => router.push({ pathname: "/edificios/[id]/cierre", params: { id: edificioId } })} testID="unidades-cierre" />
+            ) : null}
           </View>
         ) : null}
       </View>
