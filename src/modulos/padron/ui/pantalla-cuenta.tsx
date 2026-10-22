@@ -32,9 +32,9 @@ import {
   type Moneda,
 } from "../dominio/cuenta-bancaria";
 import { puedeEditarPadron } from "../dominio/unidad";
-import { CampoDeOpciones } from "./piezas";
+import { CampoDeOpciones } from "@/compartido/ui/piezas";
 import { irALasUnidades } from "./pantalla-unidades";
-import { useCarga } from "./usar-carga";
+import { useCarga } from "@/compartido/ui/usar-carga";
 
 /** Sin `id`, el alta; con `id`, la edición de esa cuenta. */
 export function PantallaCuenta({ cuentas, edificioId, id }: { cuentas: CuentasBancariasPuerto; edificioId: string; id?: string }) {

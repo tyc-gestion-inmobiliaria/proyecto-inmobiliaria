@@ -53,8 +53,8 @@ import {
 } from "../dominio/persona";
 import { puedeEditarPadron, type Unidad } from "../dominio/unidad";
 import { nombreDeLaRelacion, RELACIONES, type Relacion, type Vinculo } from "../dominio/vinculo";
-import { CampoDeOpciones, Volver } from "./piezas";
-import { useCarga } from "./usar-carga";
+import { CampoDeOpciones, Volver } from "@/compartido/ui/piezas";
+import { useCarga } from "@/compartido/ui/usar-carga";
 
 interface Props {
   padron: PuertosDelPadron;
