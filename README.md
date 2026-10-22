@@ -51,8 +51,20 @@ tokens/                los tokens del kit en JSON para Figma (generados)
 ```
 
 Módulos de hoy: `organizaciones` (sesión, membresías y roles), `padron`
-(edificios y unidades), `cartera` (el inicio). Vendrán `cobranza` y
-`auditoria`.
+(edificios, unidades, personas, cuentas bancarias y la ficha de la unidad),
+`cobranza` (el cierre mensual en cuatro pasos, los recibos y el estado de
+cuenta) y `cartera` (el inicio, con el paso del cierre de cada edificio).
+Vendrá `auditoria`.
+
+Los módulos no se importan entre sí: lo que comparten va en `src/compartido/`
+y, cuando una pantalla junta dos módulos (la ficha de la unidad, con el
+padrón y la cobranza), los junta la ruta de `src/app/`.
+
+El dinero lo calcula la base: `recibos_del_cierre` arma la vista previa
+(prorrateo por participación al céntimo, agua por consumo, deuda previa) y
+`emitir_cierre` la congela en `recibo` en una transacción, con numeración
+correlativa por edificio y sin duplicar si se repite. El cliente solo repite
+el prorrateo para mostrar la cuota mientras se escribe el presupuesto.
 
 ## Correr el proyecto
 
