@@ -4,23 +4,25 @@ import { describe, it } from "node:test";
 import {
   armarCartera,
   formatoPorcentaje,
-  indicadoresDeLaCartera,
+  estadoDelEdificio,
   pasoDelCierre,
   pendientesDelEdificio,
   periodoEnCurso,
+  resumenDelMes,
+  tareasDeLaCartera,
   type EstadoDelPadron,
 } from "./cartera";
 
 const completo: EstadoDelPadron = { unidades: 3, sinParticipacion: 0, total: 100, sumaCien: true };
 
 describe("formatoPorcentaje", () => {
-  it("usa coma decimal y quita los ceros de más", () => {
+  it("usa punto decimal, como los montos, y quita los ceros de más", () => {
     assert.equal(formatoPorcentaje(100), "100 %");
-    assert.equal(formatoPorcentaje(92.5), "92,5 %");
-    assert.equal(formatoPorcentaje(33.3333), "33,3333 %");
+    assert.equal(formatoPorcentaje(92.5), "92.5 %");
+    assert.equal(formatoPorcentaje(33.3333), "33.3333 %");
   });
   it("no arrastra errores de coma flotante", () => {
-    assert.equal(formatoPorcentaje(0.1 + 0.2), "0,3 %");
+    assert.equal(formatoPorcentaje(0.1 + 0.2), "0.3 %");
   });
 });
 
@@ -49,7 +51,7 @@ describe("pendientesDelEdificio", () => {
   it("si no llega a 100 dice cuánto suma y pide completarla", () => {
     const [p] = pendientesDelEdificio({ unidades: 2, sinParticipacion: 0, total: 92.5, sumaCien: false }, true);
     assert.equal(p.tipo, "participacion-incompleta");
-    assert.equal(p.causa, "La participación suma 92,5 %");
+    assert.equal(p.causa, "La participación suma 92.5 %");
     assert.equal(p.paso, "Completar participación");
   });
 
@@ -134,37 +136,43 @@ describe("armarCartera", () => {
   });
 });
 
-describe("indicadoresDeLaCartera", () => {
+describe("estado, resumen y tareas de la cartera", () => {
   const edificios = [
-    { id: "e1", nombre: "A" },
-    { id: "e2", nombre: "B" },
+    { id: "e1", nombre: "Al día" },
+    { id: "e2", nombre: "En lecturas" },
+    { id: "e3", nombre: "Sin cuenta" },
   ];
+  const filas = armarCartera(
+    edificios,
+    new Map([
+      ["e1", completo],
+      ["e2", completo],
+      ["e3", { ...completo, sinParticipacion: 1 }],
+    ]),
+    new Set(["e1", "e2"]),
+    new Map([["e1", { estado: "emitido", paso: 4 }]]),
+  );
 
-  it("suma las unidades y cuenta los edificios con pendientes", () => {
-    const filas = armarCartera(edificios, new Map([["e1", completo], ["e2", { ...completo, unidades: 4 }]]), new Set(["e1"]));
+  it("dice el estado de cada edificio", () => {
+    assert.deepEqual(filas.map(estadoDelEdificio), ["al-dia", "en-cierre", "por-completar"]);
+  });
+
+  it("cuenta los edificios por estado", () => {
+    assert.deepEqual(resumenDelMes(filas), { edificios: 3, alDia: 1, enCierre: 1, porCompletar: 1 });
+    assert.deepEqual(resumenDelMes([]), { edificios: 0, alDia: 0, enCierre: 0, porCompletar: 0 });
+  });
+
+  it("pone primero lo del padrón y después el cierre, sin tareas para el que está al día", () => {
+    const tareas = tareasDeLaCartera(filas);
     assert.deepEqual(
-      indicadoresDeLaCartera(filas).map((i) => [i.clave, i.valor]),
+      tareas.map((t) => [t.edificioId, t.tipo, t.paso]),
       [
-        ["unidades", 7],
-        ["por-completar", 1],
+        ["e3", "sin-participacion", "Completar participación"],
+        ["e3", "sin-cuenta", "Registrar cuenta bancaria"],
+        ["e2", "cierre", "Cargar lecturas"],
       ],
     );
-  });
-
-  it("no arma una tarjeta en cero", () => {
-    const todoCompleto = armarCartera(edificios, new Map([["e1", completo], ["e2", completo]]), new Set(["e1", "e2"]));
-    assert.deepEqual(
-      indicadoresDeLaCartera(todoCompleto).map((i) => i.clave),
-      ["unidades"],
-    );
-    const sinUnidades = armarCartera(edificios, new Map(), new Set(["e1", "e2"]));
-    assert.deepEqual(
-      indicadoresDeLaCartera(sinUnidades).map((i) => i.clave),
-      ["por-completar"],
-    );
-  });
-
-  it("sin edificios no hay indicadores", () => {
-    assert.deepEqual(indicadoresDeLaCartera([]), []);
+    assert.equal(tareas[2].pasoDelCierre, 1);
+    assert.equal(tareas[2].causa, "Paso 1 de 4 del cierre");
   });
 });
