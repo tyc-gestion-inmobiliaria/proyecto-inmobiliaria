@@ -58,6 +58,9 @@ src/modulos/<modulo>/
 - `src/app/` lleva **solo rutas**: cada archivo es una URL y re-exporta una
   pantalla de un módulo.
 - Lo que usan varios módulos va en `src/compartido/`.
+- De quién es cada concepto y qué módulo puede importar a cuál: skill
+  `ddd-modulos` (`.claude/skills/ddd-modulos/SKILL.md`). Se carga antes de
+  crear un módulo, una tabla o un caso de uso.
 
 ## Nada de datos inventados
 
@@ -131,8 +134,9 @@ feat(padron): agrego el alta de unidades con su participación
 fix(db): corrijo la política de edición de unidad
 ```
 
-Scopes: `organizaciones`, `padron`, `cobranza`, `cartera`, `auditoria`,
-`kit`, `db`, `ci`, `docs`, `repo`. Detalle en [`CONTRIBUTING.md`](CONTRIBUTING.md).
+Scopes: `organizaciones`, `padron`, `cobranza`, `pagos`, `residente`,
+`campo`, `notificaciones`, `cartera`, `auditoria`, `kit`, `db`, `ci`, `docs`,
+`repo`. Detalle en [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 **El commit lo firma la persona, con su `git config`.** Nada de
 `Co-Authored-By` de herramientas, "Generated with" ni enlaces a sesiones, en

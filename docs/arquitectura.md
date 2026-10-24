@@ -156,6 +156,8 @@ src/modulos/<modulo>/
 
 Módulos iniciales, uno por flujo de la Visión: `organizaciones` (inquilinos, usuarios, roles), `padron` (edificios, unidades, personas, espacios, medidores), `cobranza` (cierre, recibos, pagos, moras), `cartera` (inicio), `auditoria`.
 
+Con el Sprint 3 los pagos salen de `cobranza` a su propio contexto, `pagos`, y se suman `residente` (portal del residente), `campo` (el personal en el edificio) y `notificaciones` (correo). El mapa de contextos, sus agregados y qué puede importar cada uno está en la skill `ddd-modulos` (`.claude/skills/ddd-modulos/SKILL.md`).
+
 ## 6. Vista de ejecución
 
 ### 6.1 Cierre mensual: emitir y notificar (paso 4)
