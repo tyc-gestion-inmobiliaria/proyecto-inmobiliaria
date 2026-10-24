@@ -31,7 +31,6 @@ import {
   ErrorSummary,
   FormFooter,
   Icon,
-  KeyValueRow,
   PageHeader,
   SectionTitle,
   TableRow,
@@ -240,8 +239,8 @@ function FichaConPestanas({
       ) : (
         <View style={anchoDeColumnas ? s.columnas : s.apilado}>
           <View style={anchoDeColumnas ? s.columnaAncha : s.apilado}>
-            <Ficha unidad={unidad} />
             {cuenta.resumen}
+            <Ficha unidad={unidad} />
           </View>
           <View style={anchoDeColumnas ? s.columnaAncha : s.apilado}>{personas}</View>
         </View>
@@ -385,17 +384,30 @@ function Formulario({
   );
 }
 
+/** Los datos de la unidad en una fila de tres: el rótulo arriba y el valor abajo, que es lo que se lee. */
 function Ficha({ unidad }: { unidad: Unidad }) {
+  const t = useTheme();
   const s = useStyles(makeStyles);
+  const datos: { etiqueta: string; valor: string; falta?: boolean }[] = [
+    { etiqueta: "Tipo", valor: unidad.tipo ?? "—" },
+    { etiqueta: "Área", valor: textoDeArea(unidad.areaM2) },
+    {
+      etiqueta: "Participación",
+      valor: unidad.participacion === null ? "! Sin participación" : textoDePorcentaje(unidad.participacion),
+      falta: unidad.participacion === null,
+    },
+  ];
   return (
     <Card style={s.bloque} padding="lg">
       <SectionTitle>Datos de la unidad</SectionTitle>
-      <KeyValueRow label="Tipo" value={unidad.tipo ?? "—"} />
-      <KeyValueRow label="Área" value={textoDeArea(unidad.areaM2)} />
-      <KeyValueRow
-        label="Participación"
-        value={unidad.participacion === null ? "Sin participación" : textoDePorcentaje(unidad.participacion)}
-      />
+      <View style={s.datos}>
+        {datos.map((d) => (
+          <View key={d.etiqueta} style={s.dato} accessible accessibilityLabel={`${d.etiqueta}: ${d.valor}`}>
+            <Text style={textStyle(t, "bodySmall", t.color.text.secondary)}>{d.etiqueta}</Text>
+            <Text style={textStyle(t, "subtitle", d.falta ? t.color.warning.fg : t.color.text.primary)}>{d.valor}</Text>
+          </View>
+        ))}
+      </View>
     </Card>
   );
 }
@@ -490,5 +502,7 @@ const makeStyles = (t: Tema) =>
     titulo: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.sm },
     persona: { gap: t.space.xs },
     insignias: { flexDirection: "row", flexWrap: "wrap", gap: t.space.xs },
+    datos: { flexDirection: "row", flexWrap: "wrap", gap: t.space.lg },
+    dato: { flexGrow: 1, flexBasis: 90, gap: t.space.xxs },
 
   });
