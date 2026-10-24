@@ -29,6 +29,7 @@ export interface Seccion {
     | "/edificios"
     | "/unidades"
     | "/cobranza"
+    | "/lecturas"
     | "/pagos"
     | "/reservas"
     | "/incidencias"
@@ -48,21 +49,26 @@ export interface Seccion {
   soloRoles?: readonly string[];
 }
 
+/** La gestión es del equipo de la administradora; el residente ve lo suyo (su unidad, reservas, incidencias, comunicados). */
+const EQUIPO = ["administrador", "personal"];
+
 export const TODAS_LAS_SECCIONES: readonly Seccion[] = [
   { key: "inicio", label: "Inicio", ruta: "/", icono: "home" },
-  { key: "edificios", label: "Edificios", ruta: "/edificios", icono: "building" },
-  { key: "unidades", label: "Unidades y personas", ruta: "/unidades", icono: "users", soloEnMaqueta: true },
-  { key: "cobranza", label: "Cobranza", ruta: "/cobranza", grupo: "Operación", icono: "receipt", soloEnMaqueta: true },
+  { key: "edificios", label: "Edificios", ruta: "/edificios", icono: "building", soloRoles: EQUIPO },
+  { key: "unidades", label: "Unidades y personas", ruta: "/unidades", icono: "users", soloEnMaqueta: true, soloRoles: EQUIPO },
+  { key: "cobranza", label: "Cobranza", ruta: "/cobranza", grupo: "Operación", icono: "receipt", soloEnMaqueta: true, soloRoles: EQUIPO },
+  // PB-29: el recorrido de lecturas del personal, con el teléfono en el edificio.
+  { key: "lecturas", label: "Lecturas", ruta: "/lecturas", grupo: "Operación", icono: "droplet", soloRoles: EQUIPO },
   // La cola de pagos por validar (PB-27). En los wireframes los pagos eran el
   // último tramo de Cobranza; mientras Cobranza no los muestre, van aparte.
-  { key: "pagos", label: "Pagos", ruta: "/pagos", grupo: "Operación", icono: "inbox" },
+  { key: "pagos", label: "Pagos", ruta: "/pagos", grupo: "Operación", icono: "inbox", soloRoles: EQUIPO },
   { key: "reservas", label: "Reservas", ruta: "/reservas", grupo: "Operación", icono: "calendar-check", soloEnMaqueta: true },
   { key: "incidencias", label: "Incidencias", ruta: "/incidencias", grupo: "Operación", icono: "alert-triangle", soloEnMaqueta: true },
-  { key: "accesos", label: "Accesos y paquetes", ruta: "/accesos", grupo: "Operación", icono: "door", soloEnMaqueta: true },
-  { key: "finanzas", label: "Finanzas", ruta: "/finanzas", grupo: "Gestión", icono: "wallet", soloEnMaqueta: true },
-  { key: "mantenimiento", label: "Mantenimiento", ruta: "/mantenimiento", grupo: "Gestión", icono: "gauge", soloEnMaqueta: true },
+  { key: "accesos", label: "Accesos y paquetes", ruta: "/accesos", grupo: "Operación", icono: "door", soloEnMaqueta: true, soloRoles: EQUIPO },
+  { key: "finanzas", label: "Finanzas", ruta: "/finanzas", grupo: "Gestión", icono: "wallet", soloEnMaqueta: true, soloRoles: EQUIPO },
+  { key: "mantenimiento", label: "Mantenimiento", ruta: "/mantenimiento", grupo: "Gestión", icono: "gauge", soloEnMaqueta: true, soloRoles: EQUIPO },
   { key: "comunicados", label: "Comunicados", ruta: "/comunicados", grupo: "Gestión", icono: "send", soloEnMaqueta: true },
-  { key: "reportes", label: "Reportes", ruta: "/reportes", grupo: "Gestión", icono: "file-text", soloEnMaqueta: true },
+  { key: "reportes", label: "Reportes", ruta: "/reportes", grupo: "Gestión", icono: "file-text", soloEnMaqueta: true, soloRoles: EQUIPO },
   // PB-23: invitar y ver quién tiene acceso. Fuera de los once tramos de los
   // wireframes; va en Gestión porque es tarea de administración.
   { key: "usuarios", label: "Usuarios", ruta: "/usuarios", grupo: "Gestión", icono: "user", soloRoles: ["administrador"] },

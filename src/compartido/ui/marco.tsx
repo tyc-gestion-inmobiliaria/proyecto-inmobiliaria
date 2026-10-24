@@ -44,22 +44,29 @@ const ANCHO_ANGOSTO = 768;
 const ALTO_BARRA = 56;
 const ALTO_BARRA_ABAJO = 64;
 
-/** Las que quedan a la vista en la barra del teléfono; el resto va en "Más". */
-const EN_LA_BARRA = ["inicio", "edificios", "cobranza", "unidades"];
+/**
+ * Las que quedan a la vista en la barra del teléfono; el resto va en "Más".
+ * El personal trabaja en el edificio: a mano, las lecturas.
+ */
+const EN_LA_BARRA: Record<string, string[]> = {
+  personal: ["inicio", "lecturas", "unidades", "edificios"],
+  otro: ["inicio", "edificios", "cobranza", "unidades"],
+};
 const MAS = "mas";
 
 /** Las secciones que ve el rol, para el menú lateral, la barra del teléfono y su "Más". */
 function entradasDelRol(rol: string | undefined) {
   const todas = ordenarPorTramo(seccionesDelRol(rol)).map((x) => ({ key: x.key, label: x.label, group: x.grupo, icon: x.icono }));
   const conMas = todas.length > 5;
+  const enLaBarra = EN_LA_BARRA[rol ?? ""] ?? EN_LA_BARRA.otro;
   const barra = conMas
     ? [
         // En la barra va el nombre corto: el largo no entra en el ancho de un teléfono.
-        ...EN_LA_BARRA.flatMap((k) => todas.filter((e) => e.key === k)).map((e) => ({ ...e, label: e.key === "unidades" ? "Unidades" : e.label })),
+        ...enLaBarra.flatMap((k) => todas.filter((e) => e.key === k)).map((e) => ({ ...e, label: e.key === "unidades" ? "Unidades" : e.label })),
         { key: MAS, label: "Más", group: undefined, icon: "more-horizontal" as const },
       ]
     : todas;
-  return { todas, conMas, barra, mas: todas.filter((e) => !EN_LA_BARRA.includes(e.key)) };
+  return { todas, conMas, enLaBarra, barra, mas: todas.filter((e) => !enLaBarra.includes(e.key)) };
 }
 
 function irA(key: string, activa: string | undefined) {
@@ -110,7 +117,7 @@ export function Marco({ children }: { children: ReactNode }) {
               {enCurso.orgNombre}
             </Text>
           ) : null)}
-        {edificios.length > 0 ? (
+        {edificios.length > 0 && enCurso?.rol !== "residente" ? (
           <View style={angosto ? s.selectorAngosto : s.selector}>
             <Select
               size="sm"
@@ -141,7 +148,7 @@ export function Marco({ children }: { children: ReactNode }) {
 
   const nota = enCurso ? `${correo}\n${nombreDelRol(enCurso.rol)} · ${enCurso.orgNombre}` : correo;
 
-  const activaEnLaBarra = entradas.conMas && activa && !EN_LA_BARRA.includes(activa) ? MAS : activa;
+  const activaEnLaBarra = entradas.conMas && activa && !entradas.enLaBarra.includes(activa) ? MAS : activa;
 
   const mas = menuMas ? (
     <>
