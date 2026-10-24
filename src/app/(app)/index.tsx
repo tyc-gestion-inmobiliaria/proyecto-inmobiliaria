@@ -1,7 +1,7 @@
-import { estadoCarteraSupabase } from "@/modulos/cartera/infraestructura/estado-cartera-supabase";
+import { estadoCartera } from "@/modulos/cartera/infraestructura/estado-cartera";
 import { PantallaInicio } from "@/modulos/cartera/ui/pantalla-inicio";
-import { edificiosSupabase } from "@/modulos/padron/infraestructura/edificios-supabase";
+import { edificios } from "@/modulos/padron/infraestructura/padron";
 
 export default function Inicio() {
-  return <PantallaInicio edificios={edificiosSupabase} estado={estadoCarteraSupabase} />;
+  return <PantallaInicio edificios={edificios} estado={estadoCartera} />;
 }

@@ -2,7 +2,7 @@ import { Stack } from "expo-router";
 import { ActivityIndicator, StyleSheet, View, useColorScheme } from "react-native";
 
 import { cargarFuente } from "@/compartido/ui/fuente";
-import { sesionSupabase } from "@/modulos/organizaciones/infraestructura/sesion-supabase";
+import { sesion } from "@/modulos/organizaciones/infraestructura/sesion";
 import { ProveedorSesion, useSesion } from "@/modulos/organizaciones/ui/sesion";
 import { temaDelProyecto, temaOscuroDelProyecto } from "@/tema";
 import { ThemeProvider, useStyles, useTheme, type Tema } from "@/ui";
@@ -15,7 +15,7 @@ export default function RootLayout() {
   const esquema = useColorScheme();
   return (
     <ThemeProvider theme={esquema === "dark" ? temaOscuroDelProyecto : temaDelProyecto}>
-      <ProveedorSesion puerto={sesionSupabase}>
+      <ProveedorSesion puerto={sesion}>
         <Rutas />
       </ProveedorSesion>
     </ThemeProvider>

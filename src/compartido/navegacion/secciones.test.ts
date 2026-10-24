@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { ordenarPorTramo, SECCIONES, seccionDeRuta, type Seccion } from "./secciones";
+import { ordenarPorTramo, SECCIONES, seccionDeRuta, seccionesDelModo, type Seccion } from "./secciones";
 
 const secciones = [
   { key: "inicio", label: "Inicio", ruta: "/" },
@@ -42,5 +42,15 @@ describe("ordenarPorTramo", () => {
       ordenarPorTramo(desordenadas).map((s) => s.key),
       ["inicio", "cobranza", "reservas", "reportes"],
     );
+  });
+});
+
+describe("seccionesDelModo", () => {
+  it("con datos reales quedan solo las que tienen función", () => {
+    const claves = seccionesDelModo(false).map((s) => s.key);
+    assert.deepEqual(claves, ["inicio", "edificios"]);
+  });
+  it("la maqueta muestra las once del mapa", () => {
+    assert.equal(seccionesDelModo(true).length, 11);
   });
 });
