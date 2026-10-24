@@ -30,6 +30,14 @@ describe("SECCIONES", () => {
   });
 });
 
+describe("Pagos", () => {
+  it("la cola de pagos tiene su sección en Operación", () => {
+    const pagos = seccionDeRuta("/pagos", SECCIONES);
+    assert.equal(pagos?.key, "pagos");
+    assert.equal(pagos?.grupo, "Operación");
+  });
+});
+
 describe("ordenarPorTramo", () => {
   it("pone primero las sin tramo y después Operación y Gestión, sin mezclar", () => {
     const desordenadas = [

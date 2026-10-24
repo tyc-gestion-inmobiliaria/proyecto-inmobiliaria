@@ -49,15 +49,20 @@ export function CuentaDeLaUnidad({
   cobranza,
   orgId,
   unidadId,
+  version = 0,
   children,
 }: {
   cobranza: CobranzaPuerto;
   orgId: string;
   unidadId: string;
+  /** Al cambiar (se registró un pago), la cuenta se vuelve a leer. */
+  version?: number;
   children: (cuenta: CuentaParaLaFicha) => ReactNode;
 }) {
   const hoy = hoyEnLima();
-  const leer = useCallback(() => estadoDeCuenta(cobranza, orgId, unidadId, hoy), [cobranza, orgId, unidadId, hoy]);
+  // `version` no se usa adentro: está para que la lectura se repita al cambiar.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const leer = useCallback(() => estadoDeCuenta(cobranza, orgId, unidadId, hoy), [cobranza, orgId, unidadId, hoy, version]);
   const { carga } = useCarga(leer);
 
   // Si no se pudo leer, la ficha sigue: el padrón se muestra igual y la cuenta avisa.
@@ -102,7 +107,8 @@ function Resumen({ cuenta }: { cuenta: EstadoDeCuenta }) {
   return (
     <Card style={s.tarjeta} padding="lg">
       <SectionTitle>Cuenta</SectionTitle>
-      <KeyValueRow label="Saldo" value={textoDeSoles(cuenta.saldo)} strong danger={cuenta.estado.tono === "danger"} />
+      <Saldo cuenta={cuenta} />
+      {cuenta.porValidar > 0 ? <KeyValueRow label="Pagos por validar" value={textoDeSoles(cuenta.porValidar)} /> : null}
       {ultimo ? (
         <KeyValueRow
           label="Último recibo"
@@ -113,6 +119,12 @@ function Resumen({ cuenta }: { cuenta: EstadoDeCuenta }) {
       )}
     </Card>
   );
+}
+
+/** El saldo lo calcula la base con los pagos aplicados; si es negativo, queda a favor de la unidad. */
+function Saldo({ cuenta }: { cuenta: EstadoDeCuenta }) {
+  if (cuenta.saldo < 0) return <KeyValueRow label="Saldo a favor" value={textoDeSoles(-cuenta.saldo)} strong />;
+  return <KeyValueRow label="Saldo" value={textoDeSoles(cuenta.saldo)} strong danger={cuenta.estado.tono === "danger"} />;
 }
 
 function Tabla({ cobranza, orgId, cuenta, hoy }: { cobranza: CobranzaPuerto; orgId: string; cuenta: EstadoDeCuenta; hoy: string }) {
@@ -131,7 +143,7 @@ function Tabla({ cobranza, orgId, cuenta, hoy }: { cobranza: CobranzaPuerto; org
 
   return (
     <View style={s.columna}>
-      <KeyValueRow label="Saldo" value={textoDeSoles(cuenta.saldo)} strong />
+      <Saldo cuenta={cuenta} />
       <DataTable minWidth={angosto ? 0 : 560}>
         {angosto ? null : (
           <TableHead>
