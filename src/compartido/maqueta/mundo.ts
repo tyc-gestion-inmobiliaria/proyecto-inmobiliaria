@@ -5,6 +5,8 @@
  * - Edificio Los Olivos: padrón completo, cuenta bancaria y el mes emitido.
  * - Residencial Las Acacias: padrón completo y el cierre en lecturas.
  * - Torre del Parque: unidades sin participación y sin cuenta bancaria.
+ * - residente@demo.test: la persona de la 101 de Los Olivos, inquilina
+ *   además de la 101 de Las Acacias.
  * - Pagos en Los Olivos: dos por validar, uno aceptado entero, uno a cuenta
  *   y uno rechazado, para que la cola y la ficha tengan de todo.
  *
@@ -88,6 +90,8 @@ export interface LecturaM {
   anterior: number | null;
   actual: number | null;
   foto: string | null;
+  tomadaPor?: string | null;
+  tomadaEn?: string | null;
 }
 
 export interface PartidaM {
@@ -320,6 +324,12 @@ function crearMundo(): Mundo {
       });
     }
   }
+  // La cuenta residente@demo.test es la persona de la 101 de Los Olivos, que
+  // además alquila la 101 de Las Acacias: así el portal tiene dos unidades.
+  const residente = m.personas.find((p) => p.id === "p1");
+  if (residente) Object.assign(residente, { usuarioId: "cuenta-residente@demo.test", correo: "residente@demo.test" });
+  m.vinculos.push({ id: "v-residente-acacias", orgId: ORG_DEMO, unidadId: "ed-acacias-u101", personaId: "p1", relacion: "inquilino", responsablePago: false });
+
   // Un pago no puede tener fecha futura: a comienzos de mes, se corre a hoy.
   const hoy = Number(new Date().toLocaleString("en-US", { timeZone: "America/Lima", day: "numeric" }));
   const pago = (unidad: string, monto: number, diaPedido: number, estado: PagoM["estado"], origen: PagoM["origen"], motivo: string | null = null) => {
