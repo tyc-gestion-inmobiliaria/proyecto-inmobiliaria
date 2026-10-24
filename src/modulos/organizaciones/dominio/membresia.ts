@@ -40,3 +40,21 @@ export function organizacionEnCurso(membresias: Membresia[], elegida?: string | 
   if (encontrada) return encontrada;
   return [...membresias].sort((a, b) => a.orgNombre.localeCompare(b.orgNombre, "es"))[0];
 }
+
+/** Una cuenta del equipo o un residente, como lo ve el administrador. */
+export interface Miembro {
+  usuarioId: string;
+  correo: string;
+  rol: Rol;
+  activa: boolean;
+}
+
+/** Primero los activos; dentro, por rol (administradores arriba) y por correo. */
+export function ordenarMiembros<T extends Miembro>(lista: readonly T[]): T[] {
+  return [...lista].sort(
+    (a, b) =>
+      Number(b.activa) - Number(a.activa) ||
+      ROLES.indexOf(a.rol) - ROLES.indexOf(b.rol) ||
+      a.correo.localeCompare(b.correo, "es"),
+  );
+}
