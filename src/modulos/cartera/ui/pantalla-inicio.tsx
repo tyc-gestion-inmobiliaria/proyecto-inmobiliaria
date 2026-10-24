@@ -1,7 +1,7 @@
 /**
  * Lo que se ve al entrar: la cartera de la administradora (PB-11, PB-21).
  *
- * - **Toda la cartera:** arriba, cuántos edificios están al día este mes y
+ * - **Toda la cartera:** arriba, cuántos edificios ya emitieron el mes y
  *   la lista de lo que hay que hacer, con lo del padrón primero (sin eso no
  *   se cobra) y después el paso del cierre de cada edificio. Cada tarea lleva
  *   adonde se resuelve. Debajo, una tarjeta por edificio con su estado en
@@ -228,7 +228,7 @@ function DeLaCartera({ filas, editable, abrir }: { filas: FilaCartera[]; editabl
   );
 }
 
-/** Cuántos edificios están al día este mes, con las casillas de los que faltan. */
+/** Cuántos edificios ya emitieron los recibos del mes, con las casillas de los que faltan. */
 function ResumenDelMes({ filas, style }: { filas: FilaCartera[]; style?: StyleProp<ViewStyle> }) {
   const t = useTheme();
   const s = useStyles(makeStyles);
@@ -236,14 +236,14 @@ function ResumenDelMes({ filas, style }: { filas: FilaCartera[]; style?: StylePr
   return (
     <Card padding="lg" style={[s.tarjeta, style]}>
       <SectionTitle>{textoCortoDePeriodo(periodoEnCurso())}</SectionTitle>
-      <View accessible accessibilityLabel={`${r.alDia} de ${r.edificios} edificios al día`}>
+      <View accessible accessibilityLabel={`${r.alDia} de ${r.edificios} edificios con el mes emitido`}>
         <Text style={textStyle(t, "display")}>
           {r.alDia}
           <Text style={textStyle(t, "title", t.color.text.secondary)}>{` de ${r.edificios}`}</Text>
         </Text>
-        <Text style={textStyle(t, "body", t.color.text.secondary)}>{r.edificios === 1 ? "edificio al día" : "edificios al día"}</Text>
+        <Text style={textStyle(t, "body", t.color.text.secondary)}>{r.edificios === 1 ? "edificio con el mes emitido" : "edificios con el mes emitido"}</Text>
       </View>
-      <Meter value={r.alDia} total={r.edificios} unit="edificios al día" label="" />
+      <Meter value={r.alDia} total={r.edificios} unit="edificios con el mes emitido" label="" />
       <View style={s.leyenda}>
         {r.enCierre > 0 ? <StatusDot tone="info" label={`${r.enCierre} en cierre`} /> : null}
         {r.porCompletar > 0 ? <StatusDot tone="warning" label={`${r.porCompletar} por completar`} /> : null}
@@ -266,7 +266,7 @@ function PorHacer({ tareas, editable, conEdificio, style }: { tareas: Tarea[]; e
       {tareas.length === 0 ? (
         <Card padding="lg" style={s.alDia}>
           <Icon name="check-circle" color={t.color.success.fg} />
-          <Text style={textStyle(t, "body")}>Todo al día este mes.</Text>
+          <Text style={textStyle(t, "body")}>Nada pendiente este mes.</Text>
         </Card>
       ) : (
         <DataTable minWidth={0}>

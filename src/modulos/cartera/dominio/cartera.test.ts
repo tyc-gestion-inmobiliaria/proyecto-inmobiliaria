@@ -89,7 +89,7 @@ describe("pasoDelCierre", () => {
     assert.deepEqual(pasoDelCierre(undefined), { texto: "Cargar lecturas", paso: 1 });
     assert.deepEqual(pasoDelCierre({ estado: "borrador", paso: 1 }), { texto: "Cargar lecturas", paso: 1 });
     assert.deepEqual(pasoDelCierre({ estado: "borrador", paso: 2 }), { texto: "Emitir recibos", paso: 2 });
-    assert.deepEqual(pasoDelCierre({ estado: "emitido", paso: 4 }), { texto: "Al día", paso: null });
+    assert.deepEqual(pasoDelCierre({ estado: "emitido", paso: 4 }), { texto: "Mes emitido", paso: null });
   });
 
   it("toma el mes en curso con la hora de Lima", () => {

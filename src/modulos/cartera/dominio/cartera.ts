@@ -42,7 +42,7 @@ export interface CierreDelMes {
 
 /** Lo que toca en el cierre del mes, y a qué paso lleva (PB-21). */
 export interface PasoDelCierre {
-  texto: "Cargar lecturas" | "Emitir recibos" | "Al día";
+  texto: "Cargar lecturas" | "Emitir recibos" | "Mes emitido";
   /** El paso del cierre al que lleva, o null si no hay nada que hacer. */
   paso: 1 | 2 | 3 | 4 | null;
 }
@@ -50,7 +50,8 @@ export interface PasoDelCierre {
 export function pasoDelCierre(cierre: CierreDelMes | null | undefined): PasoDelCierre {
   if (!cierre || (cierre.estado === "borrador" && cierre.paso === 1)) return { texto: "Cargar lecturas", paso: 1 };
   if (cierre.estado === "borrador") return { texto: "Emitir recibos", paso: cierre.paso };
-  return { texto: "Al día", paso: null };
+  // "Mes emitido" y no "Al día": los recibos salieron, pero eso no dice que se hayan pagado.
+  return { texto: "Mes emitido", paso: null };
 }
 
 /** El mes en curso en Lima, como su primer día: "2026-10-01". */
@@ -152,7 +153,7 @@ export type EstadoDelEdificio = "por-completar" | "en-cierre" | "al-dia";
 export const TEXTO_DEL_ESTADO: Record<EstadoDelEdificio, string> = {
   "por-completar": "Por completar",
   "en-cierre": "En cierre",
-  "al-dia": "Al día",
+  "al-dia": "Mes emitido",
 };
 
 export function estadoDelEdificio(f: Pick<FilaCartera, "pendientes" | "cierre">): EstadoDelEdificio {
@@ -167,7 +168,7 @@ export interface ResumenDelMes {
   porCompletar: number;
 }
 
-/** Cuántos edificios hay en cada estado. Lo que se mira es cuántos faltan para estar al día. */
+/** Cuántos edificios hay en cada estado. Lo que se mira es cuántos faltan para emitir el mes. */
 export function resumenDelMes(filas: readonly FilaCartera[]): ResumenDelMes {
   const r: ResumenDelMes = { edificios: filas.length, alDia: 0, enCierre: 0, porCompletar: 0 };
   for (const f of filas) {
