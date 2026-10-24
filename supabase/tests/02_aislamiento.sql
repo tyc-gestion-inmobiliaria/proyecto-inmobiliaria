@@ -9,7 +9,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(44);
+select plan(49);
 
 -- Datos (como postgres, sin RLS) ----------------------------------------------
 
@@ -51,6 +51,12 @@ insert into public.cuenta_bancaria (id, org_id, edificio_id, nombre, banco, nume
    '30000000-0000-4000-8000-00000000000a', 'Cuenta principal', 'Banco de prueba', '000-0000001'),
   ('70000000-0000-4000-8000-00000000000b', '20000000-0000-4000-8000-00000000000b',
    '30000000-0000-4000-8000-00000000000b', 'Cuenta principal', 'Banco de prueba', '000-0000002');
+
+insert into public.pago (id, org_id, edificio_id, unidad_id, monto, fecha, origen, clave) values
+  ('80000000-0000-4000-8000-00000000000a', '20000000-0000-4000-8000-00000000000a',
+   '30000000-0000-4000-8000-00000000000a', '40000000-0000-4000-8000-00000000000a', 100, '2026-10-01', 'reportado', gen_random_uuid()),
+  ('80000000-0000-4000-8000-00000000000b', '20000000-0000-4000-8000-00000000000b',
+   '30000000-0000-4000-8000-00000000000b', '40000000-0000-4000-8000-00000000000b', 100, '2026-10-01', 'reportado', gen_random_uuid());
 
 -- Entra como un usuario: rol authenticated y su id en el JWT.
 create function pg_temp.como(p_usuario uuid) returns void language sql as $$
@@ -203,6 +209,21 @@ select throws_ok(
              '50000000-0000-4000-8000-00000000000b', 'inquilino') $$,
   '23503', null, 'unidad_persona: A no puede vincular a su unidad una persona de B');
 
+-- pago: se lee por RLS; se escribe solo por las funciones de pagos (06_pagos.sql).
+select results_eq($$ select id from public.pago $$,
+  $$ values ('80000000-0000-4000-8000-00000000000a'::uuid) $$, 'pago: A solo ve sus pagos');
+select throws_ok(
+  $$ insert into public.pago (org_id, edificio_id, unidad_id, monto, fecha, origen, clave)
+     values ('20000000-0000-4000-8000-00000000000b', '30000000-0000-4000-8000-00000000000b',
+             '40000000-0000-4000-8000-00000000000b', 1, '2026-10-01', 'reportado', gen_random_uuid()) $$,
+  '42501', null, 'pago: A no puede insertar en B');
+select throws_ok(
+  $$ update public.pago set monto = 1 where id = '80000000-0000-4000-8000-00000000000b' $$,
+  '42501', null, 'pago: A no puede modificar uno de B');
+select throws_ok(
+  $$ delete from public.pago where id = '80000000-0000-4000-8000-00000000000b' $$,
+  '42501', null, 'pago: A no puede borrar uno de B');
+
 select lives_ok(
   $$ insert into public.edificio (org_id, nombre) values ('20000000-0000-4000-8000-00000000000a', 'Edificio A2') $$,
   'edificio: A sí puede registrar un edificio propio'
@@ -246,6 +267,7 @@ select is_empty($$ select 1 from public.persona $$, 'sin membresía no ve person
 select is_empty($$ select 1 from public.unidad_persona $$, 'sin membresía no ve vínculos');
 select is_empty($$ select 1 from public.cuenta_bancaria $$, 'sin membresía no ve cuentas bancarias');
 select is_empty($$ select 1 from public.participacion_por_edificio $$, 'sin membresía no ve participaciones');
+select is_empty($$ select 1 from public.pago $$, 'sin membresía no ve pagos');
 
 -- Anónimo: no llega a las tablas --------------------------------------------
 
