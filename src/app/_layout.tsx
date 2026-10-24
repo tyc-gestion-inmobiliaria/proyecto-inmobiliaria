@@ -25,7 +25,8 @@ export default function RootLayout() {
 /**
  * Sin sesión existen `/entrar` y `/recuperar`; con sesión, el grupo `(app)`;
  * al volver del enlace del correo, solo `/nueva-contrasena`. Las rutas
- * protegidas no se pueden abrir por URL sin haber entrado.
+ * protegidas no se pueden abrir por URL sin haber entrado. `/invitacion`
+ * existe siempre: se llega sin sesión y la abre el propio enlace.
  */
 function Rutas() {
   const t = useTheme();
@@ -42,6 +43,7 @@ function Rutas() {
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="invitacion" />
       {/* Desde el enlace del correo solo existe la contraseña nueva. */}
       <Stack.Protected guard={recuperando}>
         <Stack.Screen name="nueva-contrasena" />

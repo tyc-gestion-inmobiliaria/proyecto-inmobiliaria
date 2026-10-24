@@ -139,10 +139,13 @@ export interface InvitacionM {
   correo: string;
   rol: "administrador" | "personal" | "residente";
   unidadId: string | null;
-  estado: "pendiente" | "aceptada" | "revocada";
+  personaId: string | null;
+  nombre: string | null;
   token: string;
-  creadaEn: string;
   venceEn: string;
+  usadaEn: string | null;
+  canceladaEn: string | null;
+  creadoEn: string;
 }
 
 export interface MiembroM {
@@ -150,7 +153,7 @@ export interface MiembroM {
   orgId: string;
   correo: string;
   rol: "administrador" | "personal" | "residente";
-  desde: string;
+  activa: boolean;
 }
 
 export interface Mundo {
@@ -347,35 +350,31 @@ function crearMundo(): Mundo {
   pago("201", 100, 7, "rechazado", "reportado", "El número de operación no aparece en el banco.");
 
   const hace = (dias: number) => new Date(Date.now() - dias * 86_400_000).toISOString();
+  const en = (dias: number) => new Date(Date.now() + dias * 86_400_000).toISOString();
   m.miembros.push(
-    { usuarioId: "cuenta-admin", orgId: ORG_DEMO, correo: "admin@demo.test", rol: "administrador", desde: hace(120) },
-    { usuarioId: "cuenta-personal", orgId: ORG_DEMO, correo: "personal@demo.test", rol: "personal", desde: hace(60) },
-    { usuarioId: "cuenta-residente", orgId: ORG_DEMO, correo: "residente@demo.test", rol: "residente", desde: hace(20) },
+    { usuarioId: "cuenta-admin@demo.test", orgId: ORG_DEMO, correo: "admin@demo.test", rol: "administrador", activa: true },
+    { usuarioId: "cuenta-personal@demo.test", orgId: ORG_DEMO, correo: "personal@demo.test", rol: "personal", activa: true },
+    { usuarioId: "cuenta-residente@demo.test", orgId: ORG_DEMO, correo: "residente@demo.test", rol: "residente", activa: true },
   );
-  m.invitaciones.push(
-    {
-      id: "inv-1",
+  const invitacion = (correo: string, rol: InvitacionM["rol"], dias: number, extra: Partial<InvitacionM> = {}) =>
+    m.invitaciones.push({
+      id: `inv-${m.invitaciones.length + 1}`,
       orgId: ORG_DEMO,
-      correo: "conserje@ejemplo.test",
-      rol: "personal",
+      correo,
+      rol,
       unidadId: null,
-      estado: "pendiente",
-      token: "demo-invitacion",
-      creadaEn: hace(2),
-      venceEn: new Date(Date.now() + 5 * 86_400_000).toISOString(),
-    },
-    {
-      id: "inv-2",
-      orgId: ORG_DEMO,
-      correo: "persona3@ejemplo.test",
-      rol: "residente",
-      unidadId: "ed-olivos-u103",
-      estado: "pendiente",
-      token: "demo-residente",
-      creadaEn: hace(1),
-      venceEn: new Date(Date.now() + 6 * 86_400_000).toISOString(),
-    },
-  );
+      personaId: null,
+      nombre: null,
+      token: `demo-${m.invitaciones.length + 1}`,
+      venceEn: en(7 - dias),
+      usadaEn: null,
+      canceladaEn: null,
+      creadoEn: hace(dias),
+      ...extra,
+    });
+  invitacion("conserje@ejemplo.test", "personal", 2);
+  invitacion("persona3@ejemplo.test", "residente", 1, { unidadId: "ed-olivos-u103", personaId: "p3" });
+  invitacion("contadora@ejemplo.test", "personal", 9);
   return m;
 }
 

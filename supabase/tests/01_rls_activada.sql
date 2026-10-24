@@ -34,13 +34,13 @@ select is_empty(
 
 -- Al agregar una tabla, se suma acá y se escribe su caso en 02_aislamiento.sql
 -- (las de cobranza tienen el suyo en 05_cobranza.sql; pago_aplicacion, en
--- 06_pagos.sql).
+-- 06_pagos.sql; invitacion, además, en 06_invitaciones.sql).
 select set_eq(
   $$ select c.relname::text from pg_class c
      join pg_namespace n on n.oid = c.relnamespace
      where n.nspname = 'public' and c.relkind in ('r', 'p') $$,
   array['organizacion', 'membresia', 'edificio', 'unidad', 'persona', 'unidad_persona', 'cuenta_bancaria',
-        'cierre', 'lectura', 'partida', 'recibo', 'pago', 'pago_aplicacion'],
+        'cierre', 'lectura', 'partida', 'recibo', 'pago', 'pago_aplicacion', 'invitacion'],
   'cada tabla de public tiene su prueba de aislamiento'
 );
 

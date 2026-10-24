@@ -10,7 +10,7 @@
 import { Platform } from "react-native";
 
 import { demora, EN_MAQUETA } from "@/compartido/maqueta/modo";
-import { NOMBRE_ORG_DEMO, ORG_DEMO } from "@/compartido/maqueta/mundo";
+import { mundo, NOMBRE_ORG_DEMO, ORG_DEMO } from "@/compartido/maqueta/mundo";
 
 import type { Cuenta, MembresiasPuerto, SesionPuerto } from "../aplicacion/puertos";
 import type { Rol } from "../dominio/membresia";
@@ -82,7 +82,9 @@ function membresiasDeMaqueta(s: SesionPuerto): MembresiasPuerto {
     async mias() {
       const cuenta = await s.cuentaActual();
       if (!cuenta) return [];
-      return demora([{ orgId: ORG_DEMO, orgNombre: NOMBRE_ORG_DEMO, rol: rolDelCorreo(cuenta.correo) }]);
+      // Quien entró por una invitación tiene el rol de la invitación; los demás, el de su correo.
+      const miembro = mundo.miembros.find((m) => m.orgId === ORG_DEMO && m.correo === cuenta.correo);
+      return demora([{ orgId: ORG_DEMO, orgNombre: NOMBRE_ORG_DEMO, rol: miembro?.rol ?? rolDelCorreo(cuenta.correo) }]);
     },
   };
 }

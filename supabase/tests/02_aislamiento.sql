@@ -9,7 +9,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(49);
+select plan(59);
 
 -- Datos (como postgres, sin RLS) ----------------------------------------------
 
@@ -57,6 +57,12 @@ insert into public.pago (id, org_id, edificio_id, unidad_id, monto, fecha, orige
    '30000000-0000-4000-8000-00000000000a', '40000000-0000-4000-8000-00000000000a', 100, '2026-10-01', 'reportado', gen_random_uuid()),
   ('80000000-0000-4000-8000-00000000000b', '20000000-0000-4000-8000-00000000000b',
    '30000000-0000-4000-8000-00000000000b', '40000000-0000-4000-8000-00000000000b', 100, '2026-10-01', 'reportado', gen_random_uuid());
+
+insert into public.invitacion (id, org_id, correo, rol, token_hash, creada_por) values
+  ('90000000-0000-4000-8000-00000000000a', '20000000-0000-4000-8000-00000000000a', 'nuevo.a@prueba.test', 'personal',
+   sha256('token-a'::bytea), '10000000-0000-4000-8000-00000000000a'),
+  ('90000000-0000-4000-8000-00000000000b', '20000000-0000-4000-8000-00000000000b', 'nuevo.b@prueba.test', 'personal',
+   sha256('token-b'::bytea), '10000000-0000-4000-8000-00000000000b');
 
 -- Entra como un usuario: rol authenticated y su id en el JWT.
 create function pg_temp.como(p_usuario uuid) returns void language sql as $$
@@ -203,6 +209,33 @@ select results_eq(
      select count(*)::int from x $$,
   $$ values (0) $$, 'cuenta_bancaria: A no puede borrar una de B');
 
+-- invitacion: lo mismo, y el hash del token no se lee desde la API -------------
+
+select results_eq($$ select id from public.invitacion $$,
+  $$ values ('90000000-0000-4000-8000-00000000000a'::uuid) $$, 'invitacion: A solo ve sus invitaciones');
+select throws_ok(
+  $$ insert into public.invitacion (org_id, correo, rol, token_hash)
+     values ('20000000-0000-4000-8000-00000000000b', 'intruso@prueba.test', 'administrador', sha256('x'::bytea)) $$,
+  '42501', null, 'invitacion: A no puede invitar en B');
+select results_eq(
+  $$ with x as (update public.invitacion set vence_en = now() + interval '1 year'
+                where id = '90000000-0000-4000-8000-00000000000b' returning 1)
+     select count(*)::int from x $$,
+  $$ values (0) $$, 'invitacion: A no puede reenviar una de B');
+select results_eq(
+  $$ with x as (delete from public.invitacion where id = '90000000-0000-4000-8000-00000000000b' returning 1)
+     select count(*)::int from x $$,
+  $$ values (0) $$, 'invitacion: A no puede borrar una de B');
+select throws_ok(
+  $$ select public.cancelar_invitacion('90000000-0000-4000-8000-00000000000b') $$,
+  'P0001', null, 'invitacion: A no puede cancelar una de B');
+select throws_ok(
+  $$ select token_hash from public.invitacion $$,
+  '42501', null, 'invitacion: el hash del token no se lee desde la API');
+select is_empty(
+  $$ select 1 from public.miembros_de_la_organizacion('20000000-0000-4000-8000-00000000000b') $$,
+  'miembros_de_la_organizacion: A no ve los correos del equipo de B');
+
 select throws_ok(
   $$ insert into public.unidad_persona (org_id, unidad_id, persona_id, relacion)
      values ('20000000-0000-4000-8000-00000000000a', '40000000-0000-4000-8000-00000000000a',
@@ -253,6 +286,12 @@ select throws_ok(
   'persona: el personal no puede registrar personas'
 );
 
+select is_empty($$ select 1 from public.invitacion $$, 'invitacion: el personal no ve las invitaciones');
+select throws_ok(
+  $$ insert into public.invitacion (org_id, correo, rol, token_hash)
+     values ('20000000-0000-4000-8000-00000000000a', 'otro@prueba.test', 'administrador', sha256('y'::bytea)) $$,
+  '42501', null, 'invitacion: el personal no puede invitar');
+
 -- Sin membresía: no ve nada ---------------------------------------------------
 
 reset role;
@@ -268,6 +307,7 @@ select is_empty($$ select 1 from public.unidad_persona $$, 'sin membresía no ve
 select is_empty($$ select 1 from public.cuenta_bancaria $$, 'sin membresía no ve cuentas bancarias');
 select is_empty($$ select 1 from public.participacion_por_edificio $$, 'sin membresía no ve participaciones');
 select is_empty($$ select 1 from public.pago $$, 'sin membresía no ve pagos');
+select is_empty($$ select 1 from public.invitacion $$, 'sin membresía no ve invitaciones');
 
 -- Anónimo: no llega a las tablas --------------------------------------------
 

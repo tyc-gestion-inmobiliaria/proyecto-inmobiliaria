@@ -36,13 +36,16 @@ export interface Seccion {
     | "/finanzas"
     | "/mantenimiento"
     | "/comunicados"
-    | "/reportes";
+    | "/reportes"
+    | "/usuarios";
   /** El tramo del menú; sin tramo va arriba, sin título. */
   grupo?: Tramo;
   /** El ícono del menú y de la barra del teléfono. Sin ícono, va la inicial. */
   icono?: IconName;
   /** Todavía sin función: solo se ve en la maqueta. */
   soloEnMaqueta?: boolean;
+  /** Solo la ven estos roles; sin esto, todos. */
+  soloRoles?: readonly string[];
 }
 
 export const TODAS_LAS_SECCIONES: readonly Seccion[] = [
@@ -60,6 +63,9 @@ export const TODAS_LAS_SECCIONES: readonly Seccion[] = [
   { key: "mantenimiento", label: "Mantenimiento", ruta: "/mantenimiento", grupo: "Gestión", icono: "gauge", soloEnMaqueta: true },
   { key: "comunicados", label: "Comunicados", ruta: "/comunicados", grupo: "Gestión", icono: "send", soloEnMaqueta: true },
   { key: "reportes", label: "Reportes", ruta: "/reportes", grupo: "Gestión", icono: "file-text", soloEnMaqueta: true },
+  // PB-23: invitar y ver quién tiene acceso. Fuera de los once tramos de los
+  // wireframes; va en Gestión porque es tarea de administración.
+  { key: "usuarios", label: "Usuarios", ruta: "/usuarios", grupo: "Gestión", icono: "user", soloRoles: ["administrador"] },
 ];
 
 /** Las secciones que existen en este modo. */
@@ -68,6 +74,11 @@ export function seccionesDelModo(enMaqueta: boolean, secciones: readonly Seccion
 }
 
 export const SECCIONES: readonly Seccion[] = seccionesDelModo(EN_MAQUETA);
+
+/** Las secciones que ve un rol. */
+export function seccionesDelRol(rol: string | undefined, secciones: readonly Seccion[] = SECCIONES): Seccion[] {
+  return secciones.filter((s) => !s.soloRoles || (rol !== undefined && s.soloRoles.includes(rol)));
+}
 
 const ORDEN_DE_TRAMOS: readonly (Tramo | undefined)[] = [undefined, "Operación", "Gestión"];
 

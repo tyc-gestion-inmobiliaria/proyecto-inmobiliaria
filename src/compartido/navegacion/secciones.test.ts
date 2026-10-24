@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { ordenarPorTramo, SECCIONES, seccionDeRuta, seccionesDelModo, type Seccion } from "./secciones";
+import { ordenarPorTramo, SECCIONES, seccionDeRuta, seccionesDelModo, seccionesDelRol, type Seccion } from "./secciones";
 
 const secciones = [
   { key: "inicio", label: "Inicio", ruta: "/" },
@@ -56,9 +56,20 @@ describe("ordenarPorTramo", () => {
 describe("seccionesDelModo", () => {
   it("con datos reales quedan solo las que tienen función", () => {
     const claves = seccionesDelModo(false).map((s) => s.key);
-    assert.deepEqual(claves, ["inicio", "edificios", "pagos"]);
+    assert.deepEqual(claves, ["inicio", "edificios", "pagos", "usuarios"]);
   });
-  it("la maqueta muestra las once del mapa más los pagos", () => {
-    assert.equal(seccionesDelModo(true).length, 12);
+  it("la maqueta muestra las once del mapa más pagos y usuarios", () => {
+    assert.equal(seccionesDelModo(true).length, 13);
+  });
+});
+
+describe("seccionesDelRol", () => {
+  it("Usuarios solo la ve el administrador", () => {
+    const claves = (rol?: string) => seccionesDelRol(rol).map((s) => s.key);
+    assert.ok(claves("administrador").includes("usuarios"));
+    assert.equal(claves("personal").includes("usuarios"), false);
+    assert.equal(claves("residente").includes("usuarios"), false);
+    assert.equal(claves(undefined).includes("usuarios"), false);
+    assert.ok(claves("personal").includes("edificios"));
   });
 });

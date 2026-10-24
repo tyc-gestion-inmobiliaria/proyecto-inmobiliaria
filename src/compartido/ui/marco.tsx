@@ -38,26 +38,29 @@ import {
   type Tema,
 } from "@/ui";
 
-import { ordenarPorTramo, SECCIONES, seccionDeRuta } from "../navegacion/secciones";
+import { ordenarPorTramo, SECCIONES, seccionDeRuta, seccionesDelRol } from "../navegacion/secciones";
 
 const ANCHO_ANGOSTO = 768;
 const ALTO_BARRA = 56;
 const ALTO_BARRA_ABAJO = 64;
 
-const ENTRADAS = ordenarPorTramo(SECCIONES).map((x) => ({ key: x.key, label: x.label, group: x.grupo, icon: x.icono }));
-
 /** Las que quedan a la vista en la barra del teléfono; el resto va en "Más". */
 const EN_LA_BARRA = ["inicio", "edificios", "cobranza", "unidades"];
 const MAS = "mas";
-const CON_MAS = ENTRADAS.length > 5;
-const ENTRADAS_DE_LA_BARRA = CON_MAS
-  ? [
-      // En la barra va el nombre corto: el largo no entra en el ancho de un teléfono.
-      ...EN_LA_BARRA.flatMap((k) => ENTRADAS.filter((e) => e.key === k)).map((e) => ({ ...e, label: e.key === "unidades" ? "Unidades" : e.label })),
-      { key: MAS, label: "Más", group: undefined, icon: "more-horizontal" as const },
-    ]
-  : ENTRADAS;
-const ENTRADAS_DE_MAS = ENTRADAS.filter((e) => !EN_LA_BARRA.includes(e.key));
+
+/** Las secciones que ve el rol, para el menú lateral, la barra del teléfono y su "Más". */
+function entradasDelRol(rol: string | undefined) {
+  const todas = ordenarPorTramo(seccionesDelRol(rol)).map((x) => ({ key: x.key, label: x.label, group: x.grupo, icon: x.icono }));
+  const conMas = todas.length > 5;
+  const barra = conMas
+    ? [
+        // En la barra va el nombre corto: el largo no entra en el ancho de un teléfono.
+        ...EN_LA_BARRA.flatMap((k) => todas.filter((e) => e.key === k)).map((e) => ({ ...e, label: e.key === "unidades" ? "Unidades" : e.label })),
+        { key: MAS, label: "Más", group: undefined, icon: "more-horizontal" as const },
+      ]
+    : todas;
+  return { todas, conMas, barra, mas: todas.filter((e) => !EN_LA_BARRA.includes(e.key)) };
+}
 
 function irA(key: string, activa: string | undefined) {
   const destino = SECCIONES.find((x) => x.key === key);
@@ -78,6 +81,7 @@ export function Marco({ children }: { children: ReactNode }) {
   const [menuMas, setMenuMas] = useState(false);
 
   const angosto = width < ANCHO_ANGOSTO;
+  const entradas = entradasDelRol(enCurso?.rol);
   const activa = seccionDeRuta(ruta)?.key;
   const correo = cuenta?.correo ?? "";
 
@@ -137,13 +141,13 @@ export function Marco({ children }: { children: ReactNode }) {
 
   const nota = enCurso ? `${correo}\n${nombreDelRol(enCurso.rol)} · ${enCurso.orgNombre}` : correo;
 
-  const activaEnLaBarra = CON_MAS && activa && !EN_LA_BARRA.includes(activa) ? MAS : activa;
+  const activaEnLaBarra = entradas.conMas && activa && !EN_LA_BARRA.includes(activa) ? MAS : activa;
 
   const mas = menuMas ? (
     <>
       <MenuBackdrop onClose={() => setMenuMas(false)} />
       <Menu style={[s.menuMas, { bottom: insets.bottom + ALTO_BARRA_ABAJO }]}>
-        {ENTRADAS_DE_MAS.map((e) => (
+        {entradas.mas.map((e) => (
           <MenuItem
             key={e.key}
             label={e.label}
@@ -184,7 +188,7 @@ export function Marco({ children }: { children: ReactNode }) {
         angosto ? undefined : (
           <SideMenu
             accessibilityLabel="Secciones"
-            items={ENTRADAS}
+            items={entradas.todas}
             activeKey={activa}
             onSelect={(key) => irA(key, activa)}
             collapsed={plegado}
@@ -196,7 +200,7 @@ export function Marco({ children }: { children: ReactNode }) {
         angosto ? (
           <BottomNav
             accessibilityLabel="Secciones"
-            items={ENTRADAS_DE_LA_BARRA}
+            items={entradas.barra}
             activeKey={activaEnLaBarra}
             onSelect={(key) => (key === MAS ? setMenuMas((v) => !v) : irA(key, activa))}
             style={{ paddingBottom: insets.bottom }}
