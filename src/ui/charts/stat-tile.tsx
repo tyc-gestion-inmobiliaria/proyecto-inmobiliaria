@@ -112,7 +112,7 @@ export function StatTile({
 
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
-    ficha: { flexGrow: 1, flexBasis: 170, minWidth: 0, gap: t.space.xs },
+    ficha: { flexGrow: 1, flexBasis: 150, minWidth: 0, gap: t.space.xs },
     cifra: { fontVariant: ["proportional-nums"] },
     cabeza: { flexDirection: "row", alignItems: "center", gap: t.space.sm },
     nombre: { flexShrink: 1 },

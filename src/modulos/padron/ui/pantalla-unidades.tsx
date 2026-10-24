@@ -22,8 +22,8 @@ import {
   Card,
   DataTable,
   EmptyState,
-  KeyValueRow,
-  ScreenTitle,
+  Icon,
+  PageHeader,
   SectionTitle,
   StatusDot,
   TableHead,
@@ -41,7 +41,7 @@ import type { PuertosDelPadron } from "../aplicacion/puertos";
 import { nombreDeMoneda, textoDeCci, type CuentaBancaria } from "../dominio/cuenta-bancaria";
 import { avisoDeParticipacion, textoDePorcentaje, type ResumenParticipacion } from "../dominio/participacion";
 import { ordenarUnidades, puedeEditarPadron, textoDeArea, type Unidad } from "../dominio/unidad";
-import { Aviso, Volver } from "@/compartido/ui/piezas";
+import { Aviso, FlechaDeFila, Volver } from "@/compartido/ui/piezas";
 import { useCarga } from "@/compartido/ui/usar-carga";
 
 const ANCHO_ANGOSTO = 640;
@@ -96,12 +96,13 @@ function Lista({
         <Volver label="Edificios" onPress={volver} />
         {carga.estado === "error" ? (
           <EmptyState
+            icon="refresh-cw"
             title="No se pudieron leer las unidades"
             description="Revisa tu conexión y vuelve a intentarlo."
             action={<Button label="Reintentar" onPress={reintentar} />}
           />
         ) : (
-          <EmptyState title="Este edificio no está en la cartera" />
+          <EmptyState icon="building" title="Este edificio no está en la cartera" />
         )}
       </ScrollView>
     );
@@ -112,32 +113,44 @@ function Lista({
 
   return (
     <ScrollView contentContainerStyle={s.pantalla}>
-      <Volver label="Edificios" onPress={volver} />
-      <View style={s.cabecera}>
-        <ScreenTitle>{edificio.nombre}</ScreenTitle>
-        {editable ? (
-          <View style={s.botones}>
-            <Button
-              variant="secondary"
-              label="Editar edificio"
-              onPress={() => router.push({ pathname: "/edificios/[id]", params: { id: edificioId } })}
-            />
-            {unidades.length > 0 ? <Button variant="secondary" label="Registrar unidad" onPress={registrar} testID="unidades-registrar" /> : null}
-            {unidades.length > 0 ? (
-              <Button label="Cierre del mes" onPress={() => router.push({ pathname: "/edificios/[id]/cierre", params: { id: edificioId } })} testID="unidades-cierre" />
-            ) : null}
-          </View>
-        ) : null}
-      </View>
+      <PageHeader
+        title={edificio.nombre}
+        back={{ label: "Edificios", onPress: volver }}
+        actions={
+          editable ? (
+            <>
+              <Button
+                variant="secondary"
+                icon="pencil"
+                label="Editar edificio"
+                onPress={() => router.push({ pathname: "/edificios/[id]", params: { id: edificioId } })}
+              />
+              {unidades.length > 0 ? (
+                <Button variant="secondary" icon="plus" label="Registrar unidad" onPress={registrar} testID="unidades-registrar" />
+              ) : null}
+              {unidades.length > 0 ? (
+                <Button
+                  icon="calendar-check"
+                  label="Cierre del mes"
+                  onPress={() => router.push({ pathname: "/edificios/[id]/cierre", params: { id: edificioId } })}
+                  testID="unidades-cierre"
+                />
+              ) : null}
+            </>
+          ) : null
+        }
+      />
 
       {unidades.length === 0 ? (
         editable ? (
           <EmptyState
+            icon="door"
             title="Todavía no hay unidades en este edificio"
-            action={<Button label="Registrar la primera unidad" onPress={registrar} testID="unidades-registrar" />}
+            action={<Button icon="plus" label="Registrar la primera unidad" onPress={registrar} testID="unidades-registrar" />}
           />
         ) : (
           <EmptyState
+            icon="door"
             title="Todavía no hay unidades en este edificio"
             description="Pide a un administrador de tu empresa que las registre."
           />
@@ -154,12 +167,22 @@ function Lista({
 }
 
 function Suma({ resumen }: { resumen: ResumenParticipacion }) {
+  const t = useTheme();
   const s = useStyles(makeStyles);
   const aviso = avisoDeParticipacion(resumen);
   return (
     <Card style={s.suma} padding="lg">
-      <KeyValueRow label="Suma de participaciones" value={textoDePorcentaje(resumen.total)} strong />
-      {aviso ? <Aviso testID="unidades-aviso-participacion">{aviso}</Aviso> : <StatusDot tone="success" label="Suma 100 %" />}
+      <View style={s.sumaFila}>
+        <View style={s.icono}>
+          <Icon name="percent" color={t.color.accent.text} />
+        </View>
+        <View style={s.sumaTexto}>
+          <Text style={textStyle(t, "bodySmall", t.color.text.secondary)}>Suma de participaciones</Text>
+          <Text style={[textStyle(t, "title"), s.cifra]}>{textoDePorcentaje(resumen.total)}</Text>
+        </View>
+        {aviso ? null : <StatusDot tone="success" label="Suma 100 %" />}
+      </View>
+      {aviso ? <Aviso testID="unidades-aviso-participacion">{aviso}</Aviso> : null}
     </Card>
   );
 }
@@ -174,9 +197,9 @@ function Tabla({ unidades, edificioId, editable }: { unidades: Unidad[]; edifici
   const etiqueta = (u: Unidad) => `${editable ? "Editar" : "Ver"} la unidad ${u.numero}`;
   // La flecha dice que la fila se abre sin tener que pasar el puntero.
   const flecha = (
-    <Text aria-hidden style={[textStyle(t, "label", t.color.accent.text), s.flecha]}>
-      {editable ? "Editar ›" : "Ver ›"}
-    </Text>
+    <View style={s.flecha}>
+      <FlechaDeFila />
+    </View>
   );
   const participacion = (u: Unidad) => (u.participacion === null ? "Sin participación" : textoDePorcentaje(u.participacion));
 
@@ -186,7 +209,7 @@ function Tabla({ unidades, edificioId, editable }: { unidades: Unidad[]; edifici
         {unidades.map((u) => (
           <TableRow key={u.id} onPress={abrir(u)} accessibilityLabel={etiqueta(u)}>
             <TdView flex={1}>
-              <Text style={[textStyle(t, "body"), s.numero]}>{u.numero}</Text>
+              <Text style={textStyle(t, "subtitle")}>{u.numero}</Text>
               <Text style={textStyle(t, "bodySmall", t.color.text.secondary)}>
                 {[u.tipo, u.areaM2 === null ? null : textoDeArea(u.areaM2)].filter(Boolean).join(" · ") || "—"}
               </Text>
@@ -246,7 +269,7 @@ function Cuentas({ cuentas, edificioId, editable }: { cuentas: CuentaBancaria[];
       <View style={s.cabecera}>
         <SectionTitle>Cuentas bancarias</SectionTitle>
         {editable && cuentas.length > 0 ? (
-          <Button variant="secondary" label="Registrar cuenta" onPress={registrar} testID="cuentas-registrar" />
+          <Button variant="secondary" icon="plus" label="Registrar cuenta" onPress={registrar} testID="cuentas-registrar" />
         ) : null}
       </View>
       {cuentas.length === 0 ? (
@@ -254,7 +277,7 @@ function Cuentas({ cuentas, edificioId, editable }: { cuentas: CuentaBancaria[];
           <Aviso testID="cuentas-aviso">Sin una cuenta bancaria, el cierre del mes no puede emitir los recibos.</Aviso>
           {editable ? (
             <View style={s.botones}>
-              <Button variant="secondary" label="Registrar la primera cuenta" onPress={registrar} testID="cuentas-registrar" />
+              <Button variant="secondary" icon="plus" label="Registrar la primera cuenta" onPress={registrar} testID="cuentas-registrar" />
             </View>
           ) : (
             <Text style={textStyle(t, "body", t.color.text.secondary)}>Pide a un administrador de tu empresa que la registre.</Text>
@@ -264,7 +287,11 @@ function Cuentas({ cuentas, edificioId, editable }: { cuentas: CuentaBancaria[];
         <DataTable minWidth={0}>
           {cuentas.map((c) => {
             const contenido = (
-              <TdView flex={1}>
+              <>
+              <View style={s.icono}>
+                <Icon name="landmark" color={t.color.accent.text} />
+              </View>
+              <TdView flex={1} style={s.cuenta}>
                 <Text style={[textStyle(t, "body"), s.numero]}>{c.nombre}</Text>
                 <Text style={textStyle(t, "bodySmall", t.color.text.secondary)}>
                   {`${c.banco} · ${nombreDeMoneda(c.moneda)}`}
@@ -272,13 +299,14 @@ function Cuentas({ cuentas, edificioId, editable }: { cuentas: CuentaBancaria[];
                 <Text style={textStyle(t, "data")}>{`Cuenta ${c.numero}`}</Text>
                 {c.cci ? <Text style={textStyle(t, "data", t.color.text.secondary)}>{`CCI ${textoDeCci(c.cci)}`}</Text> : null}
               </TdView>
+              </>
             );
             return editable ? (
               <TableRow key={c.id} onPress={editar(c)} accessibilityLabel={`Editar la cuenta ${c.nombre}`}>
                 {contenido}
-                <Text aria-hidden style={[textStyle(t, "label", t.color.accent.text), s.flecha]}>
-                  Editar ›
-                </Text>
+                <View style={s.flecha}>
+                  <FlechaDeFila />
+                </View>
               </TableRow>
             ) : (
               <TableRow key={c.id}>{contenido}</TableRow>
@@ -296,7 +324,19 @@ const makeStyles = (t: Tema) =>
     cabecera: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: t.space.md },
     botones: { flexDirection: "row", flexWrap: "wrap", gap: t.space.sm },
     suma: { gap: t.space.md },
+    sumaFila: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.md },
+    sumaTexto: { flexGrow: 1, flexShrink: 1 },
+    cifra: { fontVariant: ["tabular-nums"] },
+    icono: {
+      width: 40,
+      height: 40,
+      borderRadius: t.radius.sm,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: t.color.accent.subtle,
+    },
     cuentas: { gap: t.space.md, marginTop: t.space.lg },
+    cuenta: { gap: t.space.xxs },
     numero: { fontWeight: "600" },
-    flecha: { width: 64, textAlign: "right" },
+    flecha: { width: 32 },
   });

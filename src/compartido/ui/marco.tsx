@@ -23,6 +23,7 @@ import {
   AppShell,
   BottomNav,
   Button,
+  Icon,
   Menu,
   MenuBackdrop,
   MenuItem,
@@ -40,7 +41,7 @@ import { ordenarPorTramo, SECCIONES, seccionDeRuta } from "../navegacion/seccion
 const ANCHO_ANGOSTO = 768;
 const ALTO_BARRA = 56;
 
-const ENTRADAS = ordenarPorTramo(SECCIONES).map((x) => ({ key: x.key, label: x.label, group: x.grupo }));
+const ENTRADAS = ordenarPorTramo(SECCIONES).map((x) => ({ key: x.key, label: x.label, group: x.grupo, icon: x.icono }));
 
 function irA(key: string, activa: string | undefined) {
   const destino = SECCIONES.find((x) => x.key === key);
@@ -63,42 +64,54 @@ export function Marco({ children }: { children: ReactNode }) {
   const activa = seccionDeRuta(ruta)?.key;
   const correo = cuenta?.correo ?? "";
 
+  const selectorDeOrg =
+    membresias.length > 1 && enCurso ? (
+      <Select
+        size="sm"
+        value={enCurso.orgId}
+        onChange={elegir}
+        placeholder="Administradora"
+        accessibilityLabel="Administradora"
+        options={membresias.map((m) => ({ id: m.orgId, label: m.orgNombre, detail: nombreDelRol(m.rol) }))}
+      />
+    ) : null;
+
   const barra = (
     <>
       <View style={s.contexto}>
-        {membresias.length > 1 && enCurso ? (
-          <Select
-            size="sm"
-            value={enCurso.orgId}
-            onChange={elegir}
-            placeholder="Administradora"
-            accessibilityLabel="Administradora"
-            options={membresias.map((m) => ({ id: m.orgId, label: m.orgNombre, detail: nombreDelRol(m.rol) }))}
-          />
-        ) : enCurso ? (
-          <Text style={[textStyle(t, "body"), s.nombreOrg]} numberOfLines={1}>
-            {enCurso.orgNombre}
-          </Text>
-        ) : null}
+        <View style={s.logo} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          <Icon name="building" size="sm" color={t.color.text.onAccent} />
+        </View>
+        {selectorDeOrg ??
+          // En el teléfono el nombre de la administradora ya es el título de Inicio y va en el menú de la cuenta.
+          (enCurso && !angosto ? (
+            <Text style={[textStyle(t, "subtitle"), s.nombreOrg]} numberOfLines={1}>
+              {enCurso.orgNombre}
+            </Text>
+          ) : null)}
         {edificios.length > 0 ? (
-          <Select
-            size="sm"
-            value={edificio?.id ?? TODA_LA_CARTERA}
-            neutro={TODA_LA_CARTERA}
-            onChange={(id) => elegirEdificio(id === TODA_LA_CARTERA ? null : id)}
-            placeholder="Edificio"
-            accessibilityLabel="Edificio"
-            options={[
-              { id: TODA_LA_CARTERA, label: "Toda la cartera" },
-              ...edificios.map((e) => ({ id: e.id, label: e.nombre })),
-            ]}
-          />
+          <View style={angosto ? s.selectorAngosto : s.selector}>
+            <Select
+              size="sm"
+              value={edificio?.id ?? TODA_LA_CARTERA}
+              neutro={TODA_LA_CARTERA}
+              onChange={(id) => elegirEdificio(id === TODA_LA_CARTERA ? null : id)}
+              placeholder="Edificio"
+              accessibilityLabel="Edificio"
+              options={[
+                { id: TODA_LA_CARTERA, label: "Toda la cartera" },
+                ...edificios.map((e) => ({ id: e.id, label: e.nombre })),
+              ]}
+            />
+          </View>
         ) : null}
       </View>
       <Button
         variant="ghost"
         size="sm"
-        label={angosto || !correo ? "Cuenta ▾" : `${correo} ▾`}
+        icon="chevron-down"
+        iconPosition="end"
+        label={angosto || !correo ? "Cuenta" : correo}
         accessibilityLabel="Abrir el menú de la cuenta"
         onPress={() => setMenuCuenta((v) => !v)}
       />
@@ -160,7 +173,17 @@ export function Marco({ children }: { children: ReactNode }) {
 
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
-    contexto: { flex: 1, minWidth: 0, flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.sm },
-    nombreOrg: { fontWeight: "600", flexShrink: 1 },
-    menuCuenta: { right: t.space.xl },
+    contexto: { flex: 1, minWidth: 0, flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.md },
+    logo: {
+      width: 32,
+      height: 32,
+      borderRadius: t.radius.sm,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: t.color.accent.base,
+    },
+    nombreOrg: { flexShrink: 1 },
+    selector: { minWidth: 200, maxWidth: 320 },
+    selectorAngosto: { flex: 1, minWidth: 0 },
+    menuCuenta: { right: t.space.lg },
   });

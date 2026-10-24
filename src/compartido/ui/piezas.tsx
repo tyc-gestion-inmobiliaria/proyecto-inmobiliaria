@@ -6,6 +6,9 @@
  * - `Aviso`: un aviso de advertencia con su signo y su borde; el color no es
  *   la única señal.
  * - `Volver`: el enlace para subir un nivel, siempre arriba a la izquierda.
+ * - `FlechaDeFila`: lo que dice, sin pasar el puntero, que una fila se abre
+ *   (y adónde lleva, si hace falta decirlo). Es decorativa: la fila ya lleva
+ *   su etiqueta para quien no ve.
  */
 import type { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
@@ -69,6 +72,17 @@ export function Volver({ label, onPress }: { label: string; onPress: () => void 
   );
 }
 
+export function FlechaDeFila({ texto }: { texto?: string }) {
+  const t = useTheme();
+  const s = useStyles(makeStyles);
+  return (
+    <View style={s.flecha} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      {texto ? <Text style={[textStyle(t, "bodySmall", t.color.accent.text), s.flechaTexto]}>{texto}</Text> : null}
+      <Icon name="chevron-right" size="sm" color={t.color.accent.text} />
+    </View>
+  );
+}
+
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
     campo: { gap: t.space.xs + 2 },
@@ -86,4 +100,6 @@ const makeStyles = (t: Tema) =>
     },
     signoAviso: { marginTop: 1 },
     volver: { alignSelf: "flex-start", marginLeft: -t.space.sm },
+    flecha: { flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: t.space.xxs, minWidth: 32 },
+    flechaTexto: { fontWeight: "600" },
   });
