@@ -12,6 +12,7 @@
  *   consumo, y cuántas unidades tienen lectura, con sus casillas.
  * - "Sin lectura" deja las que faltaban al elegirlo: una fila no desaparece
  *   mientras se le escribe la lectura.
+ * - Si la tomó alguien en el edificio (PB-29), la fila dice quién y cuándo.
  * - En el teléfono la anterior va como dato bajo el número de la unidad, para
  *   que la actual tenga ancho. Se vuelve campo cuando falta o cuando hay que
  *   corregirla ("Corregir anterior").
@@ -56,6 +57,18 @@ interface Texto {
 }
 
 const aTexto = (n: number | null) => (n === null ? "" : String(n));
+
+/** "24/10, 10:32" en la hora de Lima. */
+function textoDeMomento(iso: string): string {
+  return new Intl.DateTimeFormat("es-PE", {
+    timeZone: "America/Lima",
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date(iso));
+}
 
 export const PasoLecturas = forwardRef<
   PasoAbierto,
@@ -314,6 +327,11 @@ export const PasoLecturas = forwardRef<
                   <View style={angosto ? s.colFotoAngosta : s.colFoto}>{botonDeFoto(l)}</View>
                 </View>
                 {anteriorEnLinea ? <View style={s.anteriorEnLinea}>{campoAnterior}</View> : null}
+                {l.tomadaEn ? (
+                  <Text style={textStyle(t, "caption", t.color.text.secondary)}>
+                    {`Tomada${l.tomadaPor ? ` por ${l.tomadaPor}` : ""} el ${textoDeMomento(l.tomadaEn)}`}
+                  </Text>
+                ) : null}
                 {error || aviso ? (
                   <View style={s.aviso}>
                     <Text

@@ -243,7 +243,7 @@ export const cobranzaSupabase: CobranzaPuerto = {
   async lecturas(orgId, cierreId) {
     const { data, error } = await cliente()
       .from("lectura")
-      .select("id, unidad_id, anterior, actual, foto, unidad(numero)")
+      .select("id, unidad_id, anterior, actual, foto, tomada_en, unidad(numero)")
       .eq("org_id", orgId)
       .eq("cierre_id", cierreId)
       .returns<
@@ -253,6 +253,7 @@ export const cobranzaSupabase: CobranzaPuerto = {
           anterior: number | string | null;
           actual: number | string | null;
           foto: string | null;
+          tomada_en: string | null;
           unidad: { numero: string } | null;
         }[]
       >();
@@ -266,6 +267,11 @@ export const cobranzaSupabase: CobranzaPuerto = {
           anterior: num(f.anterior),
           actual: num(f.actual),
           foto: f.foto,
+          // Falta el correo de quién la tomó: la base guarda `tomada_por`, pero
+          // el correo de otra cuenta solo lo da `miembros_de_la_organizacion`
+          // (organizaciones), que es solo para el administrador.
+          tomadaPor: null,
+          tomadaEn: f.tomada_en,
         }),
       )
       .sort(porNumero);

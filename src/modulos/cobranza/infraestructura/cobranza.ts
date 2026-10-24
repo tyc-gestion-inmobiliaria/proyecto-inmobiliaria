@@ -7,7 +7,7 @@
  * y que sin participación completa o sin cuenta no hay emisión. El dinero
  * sigue saliendo de "fuera" de la pantalla, como saldrá del servidor.
  */
-import { demora, EN_MAQUETA } from "@/compartido/maqueta/modo";
+import { correoEnLaMaqueta, demora, EN_MAQUETA } from "@/compartido/maqueta/modo";
 import { mundo, NOMBRE_ORG_DEMO, nuevoId, type ReciboM } from "@/compartido/maqueta/mundo";
 
 import type { CobranzaPuerto, Resultado } from "../aplicacion/puertos";
@@ -175,6 +175,7 @@ const cobranzaDeMaqueta: CobranzaPuerto = {
     const l = mundo.lecturas.find((x) => x.id === lecturaId);
     if (!l) return mal("no-existe");
     if (valores.anterior !== null && valores.actual !== null && valores.actual < valores.anterior) return mal("invalido");
+    if (valores.actual !== l.actual) Object.assign(l, { tomadaPor: correoEnLaMaqueta(), tomadaEn: new Date().toISOString() });
     Object.assign(l, valores);
     return bien(null);
   },
@@ -182,7 +183,7 @@ const cobranzaDeMaqueta: CobranzaPuerto = {
   subirFoto(_orgId, lectura, _cierreId, archivo) {
     const l = mundo.lecturas.find((x) => x.id === lectura.id);
     if (!l) return mal("no-existe");
-    l.foto = archivo.uri;
+    Object.assign(l, { foto: archivo.uri, tomadaPor: correoEnLaMaqueta(), tomadaEn: new Date().toISOString() });
     return bien(archivo.uri);
   },
 

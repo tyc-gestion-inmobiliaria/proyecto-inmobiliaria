@@ -9,7 +9,7 @@
  */
 import { Platform } from "react-native";
 
-import { demora, EN_MAQUETA } from "@/compartido/maqueta/modo";
+import { CLAVE_DE_SESION, demora, EN_MAQUETA } from "@/compartido/maqueta/modo";
 import { mundo, NOMBRE_ORG_DEMO, ORG_DEMO } from "@/compartido/maqueta/mundo";
 
 import type { Cuenta, MembresiasPuerto, SesionPuerto } from "../aplicacion/puertos";
@@ -17,12 +17,10 @@ import type { Rol } from "../dominio/membresia";
 import { membresiasSupabase } from "./membresias-supabase";
 import { sesionSupabase } from "./sesion-supabase";
 
-const CLAVE = "maqueta-sesion";
-
 function guardada(): Cuenta | null {
   if (Platform.OS !== "web" || typeof localStorage === "undefined") return null;
   try {
-    const texto = localStorage.getItem(CLAVE);
+    const texto = localStorage.getItem(CLAVE_DE_SESION);
     return texto ? (JSON.parse(texto) as Cuenta) : null;
   } catch {
     return null;
@@ -32,8 +30,8 @@ function guardada(): Cuenta | null {
 function guardar(cuenta: Cuenta | null) {
   if (Platform.OS !== "web" || typeof localStorage === "undefined") return;
   try {
-    if (cuenta) localStorage.setItem(CLAVE, JSON.stringify(cuenta));
-    else localStorage.removeItem(CLAVE);
+    if (cuenta) localStorage.setItem(CLAVE_DE_SESION, JSON.stringify(cuenta));
+    else localStorage.removeItem(CLAVE_DE_SESION);
   } catch {
     // Sin almacenamiento la sesión dura lo que la pestaña.
   }
