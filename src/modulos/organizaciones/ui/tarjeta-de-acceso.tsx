@@ -2,26 +2,25 @@
  * El molde de las pantallas sin sesión (entrar, recuperar, contraseña nueva,
  * invitación).
  *
- * - En pantalla ancha, dos mitades: a la izquierda el panel de la marca con
- *   lo que la app resuelve, a la derecha el formulario.
- * - En el teléfono, solo el formulario con la marca encima: el panel
+ * - En pantalla ancha, dos mitades: a la izquierda el panel de noche con la
+ *   fachada de una cuadra de edificios que se encienden (lo que administra quien entra)
+ *   y una frase; a la derecha el formulario.
+ * - En el teléfono, solo el formulario con una fachada chica encima: el panel
  *   empujaría los campos fuera de la vista.
+ * - El panel va siempre de noche, con los tokens del tema oscuro, venga la
+ *   app en claro u oscuro.
  * - Sube con el teclado y respeta las zonas seguras.
  */
 import type { ReactNode } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { temaOscuroDelProyecto as noche } from "@/tema";
 import { Icon, ScreenTitle, textStyle, useStyles, useTheme, type Tema } from "@/ui";
-import type { IconName } from "@/ui/components/icon-paths";
+
+import { Fachada } from "./fachada";
 
 const ANCHO_CON_PANEL = 960;
-
-const PUNTOS: readonly { icono: IconName; texto: string }[] = [
-  { icono: "calendar-check", texto: "El cierre del mes en cuatro pasos, con lo que falta a la vista" },
-  { icono: "receipt", texto: "Recibos con el prorrateo y el agua ya calculados" },
-  { icono: "wallet", texto: "Cada pago validado contra el recibo que paga" },
-];
 
 export function TarjetaDeAcceso({ titulo, children }: { titulo: string; children: ReactNode }) {
   const t = useTheme();
@@ -49,46 +48,27 @@ export function TarjetaDeAcceso({ titulo, children }: { titulo: string; children
   );
 }
 
-function Marca({ sobreAcento = false }: { sobreAcento?: boolean }) {
-  const t = useTheme();
-  const s = useStyles(makeStyles);
+/** En el teléfono: la fachada chica, de noche, en lugar del panel. */
+function Marca() {
   return (
-    <View
-      style={[s.marca, sobreAcento && s.marcaSobreAcento]}
-      aria-hidden
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
-    >
-      <Icon name="building" size="lg" color={sobreAcento ? t.color.accent.base : t.color.text.onAccent} />
+    <View style={panel.marca}>
+      <Fachada escala="chica" />
     </View>
   );
 }
 
 function PanelDeMarca() {
-  const t = useTheme();
-  const s = useStyles(makeStyles);
-  const texto = t.color.text.onAccent;
   return (
-    <View style={s.panel}>
-      {/* Dos aros de fondo: solo textura. */}
-      <View style={[s.aro, s.aroGrande]} aria-hidden />
-      <View style={[s.aro, s.aroChico]} aria-hidden />
-      <Marca sobreAcento />
-      <View style={s.mensaje}>
-        <Text accessibilityRole="header" style={textStyle(t, "display", texto)}>
-          Tus edificios, al día.
+    <View style={panel.fondo}>
+      <View style={panel.mensaje}>
+        <Text accessibilityRole="header" style={[textStyle(noche, "display", noche.color.text.primary), panel.titular]}>
+          Tus edificios, piso por piso.
         </Text>
-        <View style={s.puntos}>
-          {PUNTOS.map((p) => (
-            <View key={p.icono} style={s.punto}>
-              <View style={s.iconoPunto} aria-hidden>
-                <Icon name={p.icono} size="sm" color={texto} />
-              </View>
-              <Text style={[textStyle(t, "body", texto), s.textoPunto]}>{p.texto}</Text>
-            </View>
-          ))}
-        </View>
+        <Text style={[textStyle(noche, "subtitle", noche.color.text.secondary), panel.bajada]}>
+          Lecturas, recibos y pagos de cada unidad, en un solo lugar.
+        </Text>
       </View>
+      <Fachada />
     </View>
   );
 }
@@ -105,58 +85,12 @@ export function AvisoGeneral({ children }: { children: string }) {
   );
 }
 
-/** Una nota que cambia lo que la persona va a hacer, con su signo. */
-export function NotaDeAcceso({ children }: { children: string }) {
-  const t = useTheme();
-  const s = useStyles(makeStyles);
-  return (
-    <View style={s.nota}>
-      <Icon name="info" size="sm" color={t.color.info.fg} style={s.signo} />
-      <Text style={[textStyle(t, "bodySmall", t.color.info.fg), s.textoAviso]}>{children}</Text>
-    </View>
-  );
-}
-
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
     fondo: { flex: 1, flexDirection: "row", backgroundColor: t.color.bg.surface },
     lado: { flex: 1 },
     contenido: { flexGrow: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: t.space.xl },
     formulario: { width: "100%", maxWidth: 380, gap: t.space.lg },
-    marca: {
-      width: 48,
-      height: 48,
-      marginBottom: t.space.sm,
-      borderRadius: t.radius.md,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: t.color.accent.base,
-    },
-    marcaSobreAcento: { backgroundColor: t.color.text.onAccent },
-    panel: {
-      flex: 1,
-      maxWidth: 640,
-      overflow: "hidden",
-      justifyContent: "space-between",
-      padding: t.space.xxl,
-      backgroundColor: t.color.accent.base,
-    },
-    aro: { position: "absolute", borderRadius: t.radius.full, borderWidth: 1, borderColor: t.color.text.onAccent, opacity: 0.14 },
-    aroGrande: { width: 560, height: 560, right: -220, bottom: -200 },
-    aroChico: { width: 300, height: 300, right: -60, bottom: -60 },
-    mensaje: { gap: t.space.xl, maxWidth: 440 },
-    puntos: { gap: t.space.lg },
-    punto: { flexDirection: "row", alignItems: "center", gap: t.space.md },
-    iconoPunto: {
-      width: 36,
-      height: 36,
-      borderRadius: t.radius.sm,
-      alignItems: "center",
-      justifyContent: "center",
-      borderWidth: 1,
-      borderColor: t.color.text.onAccent,
-    },
-    textoPunto: { flex: 1 },
     aviso: {
       flexDirection: "row",
       gap: t.space.sm,
@@ -164,13 +98,36 @@ const makeStyles = (t: Tema) =>
       borderRadius: t.radius.sm,
       backgroundColor: t.color.danger.bg,
     },
-    nota: {
-      flexDirection: "row",
-      gap: t.space.sm,
-      padding: t.space.md,
-      borderRadius: t.radius.sm,
-      backgroundColor: t.color.info.bg,
-    },
     signo: { marginTop: 1 },
     textoAviso: { flex: 1 },
   });
+
+/** El panel de noche: con los tokens del tema oscuro, sin depender del tema de la app. */
+const panel = StyleSheet.create({
+  fondo: {
+    flex: 1,
+    maxWidth: 640,
+    justifyContent: "space-between",
+    paddingTop: noche.space.xxl * 2,
+    paddingHorizontal: noche.space.xxl,
+    backgroundColor: noche.color.bg.canvas,
+  },
+  mensaje: { gap: noche.space.lg, maxWidth: 400 },
+  // Grande y apretado: el titular es lo primero que se lee, y con la fachada basta de decorado.
+  // Su ancho hace que corte después de la coma: "Tus edificios, / piso por piso."
+  titular: {
+    maxWidth: 340,
+    fontSize: noche.typography.scale.display.fontSize * 1.5,
+    lineHeight: noche.typography.scale.display.lineHeight * 1.35,
+    letterSpacing: (noche.typography.scale.display.letterSpacing ?? 0) * 2,
+  },
+  bajada: { fontWeight: "400", maxWidth: 360 },
+  marca: {
+    alignSelf: "flex-start",
+    paddingTop: noche.space.md,
+    paddingHorizontal: noche.space.md,
+    borderRadius: noche.radius.md,
+    backgroundColor: noche.color.bg.canvas,
+    overflow: "hidden",
+  },
+});

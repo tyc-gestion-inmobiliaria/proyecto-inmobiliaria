@@ -7,20 +7,32 @@
  * - Enter en la contraseña envía el formulario.
  * - "¿Olvidaste tu contraseña?" lleva a pedir el correo de recuperación. Si
  *   la persona vuelve de un enlace vencido, el aviso aparece acá.
- * - En la maqueta se dice con qué se entra: sin eso nadie adivina la clave.
+ * - Los campos se declaran para el gestor de contraseñas (correo y clave
+ *   actual): entrar no depende de recordar ni teclear la clave.
+ * - En la maqueta, tres botones entran directo con una cuenta de cada rol:
+ *   probar la demo no pide inventar un correo.
  */
 import { router } from "expo-router";
 import { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { EN_MAQUETA } from "@/compartido/maqueta/modo";
-import { Button, TextField, useStyles, type Tema } from "@/ui";
+import { Button, TextField, textStyle, useStyles, useTheme, type IconName, type Tema } from "@/ui";
 
 import type { ErroresCredenciales } from "../dominio/credenciales";
 import { useSesion } from "./sesion";
-import { AvisoGeneral, NotaDeAcceso, TarjetaDeAcceso } from "./tarjeta-de-acceso";
+import { AvisoGeneral, TarjetaDeAcceso } from "./tarjeta-de-acceso";
+
+/** Las cuentas de la demo: el rol sale del correo (ver `infraestructura/sesion.ts`). */
+const CUENTAS_DE_DEMO: readonly { correo: string; rol: string; icono: IconName }[] = [
+  { correo: "admin@demo.test", rol: "administración", icono: "building" },
+  { correo: "personal@demo.test", rol: "personal del edificio", icono: "droplet" },
+  { correo: "residente@demo.test", rol: "residente", icono: "home" },
+];
+const CLAVE_DE_DEMO = "demo-1234";
 
 export function PantallaEntrar() {
+  const t = useTheme();
   const s = useStyles(makeStyles);
   const { entrar, avisoDeEnlace } = useSesion();
 
@@ -28,14 +40,14 @@ export function PantallaEntrar() {
   const [contrasena, setContrasena] = useState("");
   const [errores, setErrores] = useState<ErroresCredenciales>({});
   const [errorGeneral, setErrorGeneral] = useState<string | null>(null);
-  const [enviando, setEnviando] = useState(false);
+  const [enviando, setEnviando] = useState<string | null>(null);
 
-  async function enviar() {
+  async function enviar(credenciales = { correo, contrasena }, quien = "formulario") {
     if (enviando) return;
-    setEnviando(true);
+    setEnviando(quien);
     setErrorGeneral(null);
-    const r = await entrar({ correo, contrasena });
-    setEnviando(false);
+    const r = await entrar(credenciales);
+    setEnviando(null);
     // Con éxito el layout cambia de rama solo: no hace falta navegar desde acá.
     if (r.ok) return;
     setErrores(r.campos);
@@ -46,9 +58,6 @@ export function PantallaEntrar() {
 
   return (
     <TarjetaDeAcceso titulo="Inicia sesión">
-      {EN_MAQUETA ? (
-        <NotaDeAcceso>Maqueta sin servidor: entra con cualquier correo y una contraseña de 8 caracteres o más.</NotaDeAcceso>
-      ) : null}
       <View style={s.campos}>
         <TextField
           label="Correo"
@@ -59,6 +68,7 @@ export function PantallaEntrar() {
           }}
           placeholder="nombre@empresa.pe"
           keyboardType="email-address"
+          autoComplete="email"
           autoCapitalize="none"
           autoFocus
           required
@@ -74,15 +84,16 @@ export function PantallaEntrar() {
           }}
           secureTextEntry
           revelable
+          autoComplete="current-password"
           autoCapitalize="none"
           required
           error={errores.contrasena}
-          onSubmitEditing={enviar}
+          onSubmitEditing={() => enviar()}
           testID="entrar-contrasena"
         />
       </View>
       {aviso ? <AvisoGeneral>{aviso}</AvisoGeneral> : null}
-      <Button label="Entrar" onPress={enviar} loading={enviando} full size="lg" testID="entrar-enviar" />
+      <Button label="Entrar" onPress={() => enviar()} loading={enviando === "formulario"} full size="lg" testID="entrar-enviar" />
       <Button
         label="¿Olvidaste tu contraseña?"
         variant="ghost"
@@ -90,6 +101,29 @@ export function PantallaEntrar() {
         onPress={() => router.push("/recuperar")}
         testID="entrar-recuperar"
       />
+      {EN_MAQUETA ? (
+        <View style={s.demo}>
+          <View style={s.linea} />
+          <Text style={textStyle(t, "bodySmall", t.color.text.secondary)}>O entra a la demo con un rol, sin escribir nada:</Text>
+          {CUENTAS_DE_DEMO.map((c) => (
+            <Button
+              key={c.correo}
+              variant="secondary"
+              icon={c.icono}
+              label={`Entrar como ${c.rol}`}
+              full
+              loading={enviando === c.correo}
+              disabled={enviando !== null && enviando !== c.correo}
+              onPress={() => {
+                setCorreo(c.correo);
+                setContrasena(CLAVE_DE_DEMO);
+                void enviar({ correo: c.correo, contrasena: CLAVE_DE_DEMO }, c.correo);
+              }}
+              testID={`entrar-demo-${c.correo.split("@")[0]}`}
+            />
+          ))}
+        </View>
+      ) : null}
     </TarjetaDeAcceso>
   );
 }
@@ -97,4 +131,6 @@ export function PantallaEntrar() {
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
     campos: { gap: t.space.lg },
+    demo: { gap: t.space.sm },
+    linea: { height: 1, backgroundColor: t.color.border.default, marginBottom: t.space.sm },
   });
