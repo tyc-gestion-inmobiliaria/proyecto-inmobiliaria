@@ -6,7 +6,8 @@
  *   de emitir como bloqueado mientras una validación lo impida.
  * - "Guardar borrador" guarda lo cargado y el paso; al volver se retoma ahí.
  * - "Continuar" guarda y, si falta algo, dice qué al lado del botón en vez de
- *   quedar atenuado sin motivo.
+ *   quedar atenuado sin motivo. Los dos botones van en una barra fija abajo:
+ *   con 18 lecturas, ir a buscarlos al final de la lista es trabajo de más.
  * - El periodo es el mes en curso en Lima. Si ya está emitido, se abre ese
  *   cierre, que ya no cambia: no hay dos cierres del mismo periodo.
  */
@@ -16,7 +17,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { Cargando, ConOrganizacion } from "@/modulos/organizaciones/ui/con-organizacion";
 import { Volver } from "@/compartido/ui/piezas";
-import { Button, EmptyState, ScreenTitle, StepCards, textStyle, useStyles, useTheme, type Tema } from "@/ui";
+import { Badge, Button, EmptyState, PageHeader, StepCards, textStyle, useStyles, useTheme, type Tema } from "@/ui";
 
 import { abrirCierre, mensajeDeCobranza } from "../aplicacion/casos-de-uso";
 import type { CobranzaPuerto, EdificioDelCierre } from "../aplicacion/puertos";
@@ -338,76 +339,76 @@ function Asistente({
   }
 
   return (
-    <ScrollView contentContainerStyle={s.pantalla} keyboardShouldPersistTaps="handled">
-      <Volver label={edificio.nombre} onPress={() => irAlEdificio(cierre.edificioId)} />
-      <View style={s.cabecera}>
-        <ScreenTitle>{`Cierre de ${textoDePeriodo(cierre.periodo)}`}</ScreenTitle>
-        <Text style={textStyle(t, "body", cierre.estado === "emitido" ? t.color.success.fg : t.color.text.secondary)}>
-          {cierre.estado === "emitido" ? "✓ Emitido" : "Borrador"}
-        </Text>
-      </View>
+    <View style={s.marco}>
+      <ScrollView style={s.marco} contentContainerStyle={s.pantalla} keyboardShouldPersistTaps="handled">
+        <PageHeader
+          title={`Cierre de ${textoDePeriodo(cierre.periodo)}`}
+          back={{ label: edificio.nombre, onPress: () => irAlEdificio(cierre.edificioId) }}
+          status={cierre.estado === "emitido" ? <Badge tone="success" label="✓ Emitido" /> : <Badge label="Borrador" />}
+        />
 
-      <StepCards
-        accessibilityLabel="Pasos del cierre"
-        value={claveDePaso(visto)}
-        onChange={(clave) => void irA(clave)}
-        steps={PASOS.map((p) => ({
-          key: p.clave,
-          label: p.titulo,
-          detail: detalle[p.paso],
-          status: p.paso === visto && estados[p.paso] !== "done" ? "current" : estados[p.paso],
-          disabled: !pasoAlcanzable(cierre, p.paso),
-        }))}
-      />
+        <StepCards
+          accessibilityLabel="Pasos del cierre"
+          value={claveDePaso(visto)}
+          onChange={(clave) => void irA(clave)}
+          steps={PASOS.map((p) => ({
+            key: p.clave,
+            label: p.titulo,
+            detail: detalle[p.paso],
+            status: p.paso === visto && estados[p.paso] !== "done" ? "current" : estados[p.paso],
+            disabled: !pasoAlcanzable(cierre, p.paso),
+          }))}
+        />
 
-      {visto === 1 ? (
-        <PasoLecturas
-          key={`lecturas-${cierre.estado}`}
-          ref={pasoAbierto}
-          cobranza={cobranza}
-          orgId={orgId}
-          cierre={cierre}
-          lecturas={datos.lecturas}
-          editable={editable}
-          onErrores={setLecturasConError}
-          onGuardado={recargar}
-        />
-      ) : visto === 2 ? (
-        <PasoPresupuesto
-          ref={pasoAbierto}
-          cobranza={cobranza}
-          orgId={orgId}
-          cierre={cierre}
-          partidas={datos.partidas}
-          unidades={datos.previa}
-          participacion={validaciones[0]}
-          editable={editable}
-          onGuardado={recargar}
-        />
-      ) : visto === 3 ? (
-        <PasoRevision
-          key={soloAlerta ? "alerta" : "todas"}
-          cierre={cierre}
-          edificio={edificio.nombre}
-          filas={datos.previa}
-          validaciones={validaciones}
-          soloAlertaAlAbrir={soloAlerta}
-          onAccion={accion}
-        />
-      ) : (
-        <PasoEmision
-          cobranza={cobranza}
-          orgId={orgId}
-          cierre={cierre}
-          edificio={edificio.nombre}
-          filas={datos.previa}
-          recibos={datos.recibos}
-          motivo={motivoParaNoEmitir(validaciones)}
-          editable={puedeEditar}
-          onEmitido={recargar}
-        />
-      )}
+        {visto === 1 ? (
+          <PasoLecturas
+            key={`lecturas-${cierre.estado}`}
+            ref={pasoAbierto}
+            cobranza={cobranza}
+            orgId={orgId}
+            cierre={cierre}
+            lecturas={datos.lecturas}
+            editable={editable}
+            onErrores={setLecturasConError}
+            onGuardado={recargar}
+          />
+        ) : visto === 2 ? (
+          <PasoPresupuesto
+            ref={pasoAbierto}
+            cobranza={cobranza}
+            orgId={orgId}
+            cierre={cierre}
+            partidas={datos.partidas}
+            unidades={datos.previa}
+            participacion={validaciones[0]}
+            editable={editable}
+            onGuardado={recargar}
+          />
+        ) : visto === 3 ? (
+          <PasoRevision
+            key={soloAlerta ? "alerta" : "todas"}
+            cierre={cierre}
+            edificio={edificio.nombre}
+            filas={datos.previa}
+            validaciones={validaciones}
+            soloAlertaAlAbrir={soloAlerta}
+            onAccion={accion}
+          />
+        ) : (
+          <PasoEmision
+            cobranza={cobranza}
+            orgId={orgId}
+            cierre={cierre}
+            edificio={edificio.nombre}
+            filas={datos.previa}
+            recibos={datos.recibos}
+            motivo={motivoParaNoEmitir(validaciones)}
+            editable={puedeEditar}
+            onEmitido={recargar}
+          />
+        )}
 
+      </ScrollView>
       {editable && visto < 4 ? (
         <View style={s.pie}>
           {mensaje ? (
@@ -417,30 +418,33 @@ function Asistente({
             >
               {`${mensaje.tono === "ok" ? "✓" : "!"} ${mensaje.texto}`}
             </Text>
-          ) : (
-            <View style={s.mensaje} />
-          )}
-          <Button variant="secondary" label="Guardar borrador" loading={ocupado === "borrador"} disabled={ocupado !== null} onPress={guardarBorrador} />
-          <Button label="Continuar" loading={ocupado === "continuar"} disabled={ocupado !== null} onPress={continuar} testID="cierre-continuar" />
+          ) : null}
+          <View style={s.botones}>
+            <Button variant="secondary" label="Guardar borrador" loading={ocupado === "borrador"} disabled={ocupado !== null} onPress={guardarBorrador} />
+            <Button label="Continuar" loading={ocupado === "continuar"} disabled={ocupado !== null} onPress={continuar} testID="cierre-continuar" />
+          </View>
         </View>
       ) : null}
-    </ScrollView>
+    </View>
   );
 }
 
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
+    marco: { flex: 1 },
     pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: 1080, width: "100%" },
-    cabecera: { flexDirection: "row", flexWrap: "wrap", alignItems: "baseline", gap: t.space.md },
     pie: {
       flexDirection: "row",
       flexWrap: "wrap",
       alignItems: "center",
       justifyContent: "flex-end",
       gap: t.space.sm,
-      paddingTop: t.space.md,
+      paddingHorizontal: t.space.xl,
+      paddingVertical: t.space.md,
       borderTopWidth: 1,
-      borderTopColor: t.color.border.subtle,
+      borderTopColor: t.color.border.default,
+      backgroundColor: t.color.bg.surface,
     },
     mensaje: { flexGrow: 1, flexBasis: 240 },
+    botones: { flexDirection: "row", gap: t.space.sm, marginLeft: "auto" },
   });

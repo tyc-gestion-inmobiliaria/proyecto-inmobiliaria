@@ -87,6 +87,23 @@ function previa(cierreId: string): FilaPrevia[] {
   });
 }
 
+/**
+ * Los recibos que trae la semilla se rehacen con el mismo prorrateo que la
+ * vista previa, para que lo emitido cuadre con lo que se revisó: la semilla
+ * no sabe repartir el agua al céntimo, y no tiene por qué saber.
+ */
+function cuadrarLaSemilla() {
+  for (const cierre of mundo.cierres.filter((c) => c.estado === "emitido")) {
+    const filas = new Map(previa(cierre.id).map((f) => [f.unidadId, f]));
+    for (const r of mundo.recibos.filter((x) => x.cierreId === cierre.id)) {
+      const f = filas.get(r.unidadId);
+      if (f) Object.assign(r, { consumo: f.consumo, cuota: f.cuota, agua: f.agua, deudaPrevia: f.deudaPrevia, total: f.total });
+    }
+  }
+}
+
+if (EN_MAQUETA) cuadrarLaSemilla();
+
 const cobranzaDeMaqueta: CobranzaPuerto = {
   cierreDelPeriodo: (orgId, edificioId, periodo) =>
     demora(mundo.cierres.find((c) => c.orgId === orgId && c.edificioId === edificioId && c.periodo === periodo) ?? null),

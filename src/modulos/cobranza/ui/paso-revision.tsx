@@ -40,6 +40,8 @@ import type { DestinoDeAccion, Validacion } from "../dominio/validaciones";
 import { VistaDelRecibo } from "./vista-del-recibo";
 
 const ANCHO_ANGOSTO = 720;
+/** Desde este ancho, las validaciones y el total van lado a lado. */
+const ANCHO_DOS_COLUMNAS = 1100;
 
 const ESTADO: Record<Validacion["estado"], { texto: string; tono: StatusTone }> = {
   ok: { texto: "Bien", tono: "success" },
@@ -86,6 +88,7 @@ export function PasoRevision({
   const s = useStyles(makeStyles);
   const { width } = useWindowDimensions();
   const angosto = width < ANCHO_ANGOSTO;
+  const ancho = width >= ANCHO_DOS_COLUMNAS;
   const [filtro, setFiltro] = useState<"todas" | "alerta">(soloAlertaAlAbrir ? "alerta" : "todas");
   const [abierta, setAbierta] = useState<FilaPrevia | null>(null);
   const resumen = resumenDePrevia(filas);
@@ -98,16 +101,21 @@ export function PasoRevision({
 
   return (
     <View style={s.paso}>
-      <ListaDeValidaciones validaciones={validaciones} onAccion={onAccion} />
-
-      <Card padding="lg" style={s.tarjeta}>
-        <SectionTitle>Resumen</SectionTitle>
-        <KeyValueRow label="Recibos" value={String(resumen.unidades)} />
-        <KeyValueRow label="Cuotas" value={textoDeSoles(resumen.cuotas)} />
-        <KeyValueRow label="Agua" value={textoDeSoles(resumen.agua)} />
-        <KeyValueRow label="Deuda previa" value={textoDeSoles(resumen.deudaPrevia)} />
-        <KeyValueRow label="Total a cobrar" value={textoDeSoles(resumen.total)} strong />
-      </Card>
+      <View style={ancho ? s.columnas : s.paso}>
+        <View style={ancho ? s.principal : undefined}>
+          <ListaDeValidaciones validaciones={validaciones} onAccion={onAccion} />
+        </View>
+        {/* El total va primero y grande: es la cifra que se revisa antes de emitir. */}
+        <Card padding="lg" style={[s.tarjeta, ancho ? s.lateral : undefined]}>
+          <Text style={textStyle(t, "body", t.color.text.secondary)}>Total a cobrar</Text>
+          <Text style={textStyle(t, "display")}>{textoDeSoles(resumen.total)}</Text>
+          <Text style={textStyle(t, "bodySmall", t.color.text.secondary)}>{`${resumen.unidades} recibos`}</Text>
+          <View style={s.linea} />
+          <KeyValueRow label="Cuotas" value={textoDeSoles(resumen.cuotas)} />
+          <KeyValueRow label="Agua" value={textoDeSoles(resumen.agua)} />
+          <KeyValueRow label="Deuda previa" value={textoDeSoles(resumen.deudaPrevia)} />
+        </Card>
+      </View>
 
       <ChoiceChips
         accessibilityLabel="Qué unidades mostrar"
@@ -188,6 +196,10 @@ const makeStyles = (t: Tema) =>
   StyleSheet.create({
     paso: { gap: t.space.lg },
     tarjeta: { gap: t.space.md },
+    columnas: { flexDirection: "row", alignItems: "flex-start", gap: t.space.lg },
+    principal: { flex: 1, minWidth: 0 },
+    lateral: { flexBasis: 320, flexGrow: 0, flexShrink: 0, gap: t.space.sm },
+    linea: { height: 1, backgroundColor: t.color.border.subtle, marginVertical: t.space.xs },
     validacion: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.md },
     texto: { flex: 1, minWidth: 200, gap: t.space.xxs },
     flecha: { width: 48, textAlign: "right" },
