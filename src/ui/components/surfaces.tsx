@@ -7,8 +7,9 @@
  * es decorado que ocupa una línea.
  */
 import type { ReactNode } from "react";
-import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
+import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 
+import { resolveInteraction, type EstadoPresionable, type ForcedInteraction } from "../pressable-state";
 import { textStyle } from "../theme/text-style";
 import { useStyles, useTheme } from "../theme/theme-provider";
 import type { Tema } from "../tokens";
@@ -32,22 +33,63 @@ export function Surface({
   return <View style={[s.surface, s[variant], style]}>{children}</View>;
 }
 
+/**
+ * Con `onPress`, la tarjeta entera se abre: es un enlace (puede llevar
+ * insignias, no botones adentro), avisa encima con el borde de foco y el
+ * fondo, y confirma el toque con un fondo más oscuro. Su etiqueta tiene que
+ * decir lo que dice la tarjeta.
+ */
 export function Card({
   children,
   variant = "outlined",
   padding = "lg",
   style,
+  onPress,
+  accessibilityLabel,
+  forcedState,
+  testID,
 }: {
   children: ReactNode;
   variant?: SurfaceVariant;
   padding?: "md" | "lg" | "xl";
   style?: StyleProp<ViewStyle>;
+  onPress?: () => void;
+  accessibilityLabel?: string;
+  /** Solo para vitrina, Storybook y Figma. */
+  forcedState?: ForcedInteraction;
+  testID?: string;
 }) {
   const t = useTheme();
+  const s = useStyles(makeStyles);
+  const relleno = { padding: t.space[padding], gap: t.space.md - 2 };
+  if (!onPress) {
+    return (
+      <Surface variant={variant} style={[relleno, style]}>
+        {children}
+      </Surface>
+    );
+  }
   return (
-    <Surface variant={variant} style={[{ padding: t.space[padding], gap: t.space.md - 2 }, style]}>
+    <Pressable
+      accessibilityRole="link"
+      accessibilityLabel={accessibilityLabel}
+      onPress={onPress}
+      testID={testID}
+      style={(estado: EstadoPresionable) => {
+        const i = resolveInteraction(estado, { forced: forcedState });
+        return [
+          s.surface,
+          s[variant],
+          s.tocable,
+          relleno,
+          i === "hovered" && s.encima,
+          i === "pressed" && s.presionada,
+          style,
+        ];
+      }}
+    >
       {children}
-    </Surface>
+    </Pressable>
   );
 }
 
@@ -171,6 +213,9 @@ const makeStyles = (t: Tema) =>
     outlined: { borderWidth: 1, borderColor: t.color.border.default },
     elevated: { ...t.elevation.md },
     flat: { backgroundColor: t.color.bg.muted },
+    tocable: { cursor: "pointer" },
+    encima: { backgroundColor: t.color.bg.hover, borderColor: t.color.border.focus },
+    presionada: { backgroundColor: t.color.bg.pressed, borderColor: t.color.border.focus },
     row: { flexDirection: "row", justifyContent: "space-between", gap: t.space.md },
     strong: { fontWeight: "600" },
     statusRow: { flexDirection: "row", alignItems: "center", gap: t.space.xs + 2 },
