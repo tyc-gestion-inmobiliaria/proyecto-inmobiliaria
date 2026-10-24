@@ -11,15 +11,15 @@
  *   tabla quepa en 390 de ancho sin desplazarse de costado.
  */
 import { router } from "expo-router";
-import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Image, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
+import { fotoDeEdificio } from "@/compartido/ui/foto-de-edificio";
 import { FlechaDeFila } from "@/compartido/ui/piezas";
 import { Cargando, ConOrganizacion } from "@/modulos/organizaciones/ui/con-organizacion";
 import {
   Button,
   DataTable,
   EmptyState,
-  Icon,
   PageHeader,
   TableHead,
   TableRow,
@@ -110,10 +110,9 @@ function Tabla({ edificios }: { edificios: Edificio[] }) {
       <FlechaDeFila texto="Unidades" />
     </View>
   );
-  const marca = (
-    <View style={s.marca}>
-      <Icon name="building" size="sm" color={t.color.accent.text} />
-    </View>
+  // La foto de portada (genérica por ahora): la misma que en Inicio, para reconocer el edificio.
+  const marca = (e: Edificio) => (
+    <Image source={fotoDeEdificio(e.id)} style={s.marca} resizeMode="cover" accessibilityIgnoresInvertColors aria-hidden />
   );
 
   if (angosto) {
@@ -121,7 +120,7 @@ function Tabla({ edificios }: { edificios: Edificio[] }) {
       <DataTable minWidth={0}>
         {edificios.map((e) => (
           <TableRow key={e.id} onPress={abrir(e)} accessibilityLabel={`Ver las unidades de ${e.nombre}`}>
-            {marca}
+            {marca(e)}
             <TdView flex={1}>
               <Text style={[textStyle(t, "body"), s.nombre]}>{e.nombre}</Text>
               {e.direccion ? <Text style={textStyle(t, "bodySmall", t.color.text.secondary)}>{e.direccion}</Text> : null}
@@ -143,7 +142,7 @@ function Tabla({ edificios }: { edificios: Edificio[] }) {
       </TableHead>
       {edificios.map((e) => (
         <TableRow key={e.id} onPress={abrir(e)} accessibilityLabel={`Ver las unidades de ${e.nombre}`}>
-          {marca}
+          {marca(e)}
           <Td flex={2} style={s.nombre}>
             {e.nombre}
           </Td>
@@ -162,13 +161,6 @@ const makeStyles = (t: Tema) =>
     pantalla: { flexGrow: 1, gap: t.space.xl, padding: t.space.xl, maxWidth: 960, width: "100%" },
     flecha: { width: 96 },
     nombre: { fontWeight: "600" },
-    marca: {
-      width: 32,
-      height: 32,
-      borderRadius: t.radius.sm,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: t.color.accent.subtle,
-    },
-    marcaHueco: { width: 32 },
+    marca: { width: 56, height: 40, borderRadius: t.radius.sm, backgroundColor: t.color.bg.muted },
+    marcaHueco: { width: 56 },
   });

@@ -5,7 +5,7 @@
  *   la lista de lo que hay que hacer, con lo del padrón primero (sin eso no
  *   se cobra) y después el paso del cierre de cada edificio. Cada tarea lleva
  *   adonde se resuelve. Debajo, una tarjeta por edificio con su estado en
- *   palabras; tocarla elige ese edificio en el selector de contexto, que es
+ *   palabras y una foto de portada (genérica por ahora); tocarla elige ese edificio en el selector de contexto, que es
  *   "ir al edificio" (PB-10).
  * - **Un edificio elegido:** el botón del siguiente paso junto al título, el
  *   recorrido del cierre del mes, sus pendientes y su padrón.
@@ -18,8 +18,9 @@
  */
 import { router } from "expo-router";
 import type { ReactNode } from "react";
-import { ScrollView, StyleSheet, Text, View, useWindowDimensions, type StyleProp, type ViewStyle } from "react-native";
+import { Image, ScrollView, StyleSheet, Text, View, useWindowDimensions, type StyleProp, type ViewStyle } from "react-native";
 
+import { fotoDeEdificio } from "@/compartido/ui/foto-de-edificio";
 import { FlechaDeFila } from "@/compartido/ui/piezas";
 import { useContextoDeTrabajo } from "@/compartido/contexto/proveedor-contexto";
 import { textoCortoDePeriodo, textoDePeriodo } from "@/modulos/cobranza/dominio/periodo";
@@ -347,20 +348,24 @@ function TarjetaDeEdificio({ fila, onPress }: { fila: FilaCartera; onPress: () =
       accessibilityLabel={`${fila.nombre}, ${unidades(fila.unidades)}. ${TEXTO_DEL_ESTADO[estado]}. ${leido}`}
       testID={`inicio-edificio-${fila.id}`}
     >
-      <View style={s.cabezaEdificio}>
-        <View style={s.iconoEdificio}>
-          <Icon name="building" size="sm" color={t.color.accent.text} />
+      <View style={s.portada}>
+        <Image source={fotoDeEdificio(fila.id)} style={s.foto} resizeMode="cover" accessibilityIgnoresInvertColors aria-hidden />
+        <View style={s.insigniaSobreFoto}>
+          <InsigniaDeEstado estado={estado} />
         </View>
-        <View style={s.nombre}>
-          <Text style={textStyle(t, "subtitle")} numberOfLines={2}>
-            {fila.nombre}
-          </Text>
-          <Text style={textStyle(t, "bodySmall", t.color.text.secondary)}>{unidades(fila.unidades)}</Text>
-        </View>
-        <FlechaDeFila />
       </View>
-      <InsigniaDeEstado estado={estado} />
-      {detalle}
+      <View style={s.cuerpoEdificio}>
+        <View style={s.cabezaEdificio}>
+          <View style={s.nombre}>
+            <Text style={textStyle(t, "subtitle")} numberOfLines={2}>
+              {fila.nombre}
+            </Text>
+            <Text style={textStyle(t, "bodySmall", t.color.text.secondary)}>{unidades(fila.unidades)}</Text>
+          </View>
+          <FlechaDeFila />
+        </View>
+        {detalle}
+      </View>
     </Card>
   );
 }
@@ -465,7 +470,12 @@ const makeStyles = (t: Tema) =>
     fuerte: { fontWeight: "600" },
     iconoTarea: { width: 36, height: 36, borderRadius: t.radius.sm, alignItems: "center", justifyContent: "center" },
     rejilla: { flexDirection: "row", flexWrap: "wrap", gap: t.space.md },
-    edificio: { flexGrow: 1, flexShrink: 1, flexBasis: 280, gap: t.space.md },
+    // La foto llega al borde de la tarjeta: sin relleno ni separación arriba.
+    edificio: { flexGrow: 1, flexShrink: 1, flexBasis: 280, padding: 0, gap: 0, overflow: "hidden" },
+    portada: { height: 132 },
+    foto: { width: "100%", height: "100%" },
+    insigniaSobreFoto: { position: "absolute", top: t.space.md, left: t.space.md },
+    cuerpoEdificio: { padding: t.space.lg, gap: t.space.md },
     cabezaEdificio: { flexDirection: "row", alignItems: "flex-start", gap: t.space.md },
     iconoEdificio: {
       width: 40,
