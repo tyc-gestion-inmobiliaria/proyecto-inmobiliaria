@@ -9,7 +9,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(61);
+select plan(63);
 
 -- Datos (como postgres, sin RLS) ----------------------------------------------
 
@@ -246,6 +246,10 @@ select throws_ok(
 select results_eq($$ select distinct org_id from public.auditoria $$,
   $$ values ('20000000-0000-4000-8000-00000000000a'::uuid) $$, 'auditoria: A solo ve la de su administradora');
 
+-- envio: lo llenan los disparadores; A no ve lo de B (09_notificaciones.sql).
+select is_empty($$ select 1 from public.envio where org_id = '20000000-0000-4000-8000-00000000000b' $$,
+  'envio: A no ve la bandeja de B');
+
 -- pago: se lee por RLS; se escribe solo por las funciones de pagos (06_pagos.sql).
 select results_eq($$ select id from public.pago $$,
   $$ values ('80000000-0000-4000-8000-00000000000a'::uuid) $$, 'pago: A solo ve sus pagos');
@@ -291,6 +295,7 @@ select throws_ok(
 );
 
 select is_empty($$ select 1 from public.auditoria $$, 'sin membresía no ve la auditoría');
+select is_empty($$ select 1 from public.envio $$, 'sin membresía no ve la bandeja de correos');
 select is_empty($$ select 1 from public.invitacion $$, 'invitacion: el personal no ve las invitaciones');
 select throws_ok(
   $$ insert into public.invitacion (org_id, correo, rol, token_hash)

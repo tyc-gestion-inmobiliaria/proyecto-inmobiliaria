@@ -426,3 +426,9 @@ enabled = true
 enabled = true
 verify_jwt = false
 import_map = "./functions/invitar/deno.json"
+
+[functions.enviar-correos]
+enabled = true
+# La llama el programador de tareas con la clave de servicio, no una persona con sesión.
+verify_jwt = false
+import_map = "./functions/enviar-correos/deno.json"
