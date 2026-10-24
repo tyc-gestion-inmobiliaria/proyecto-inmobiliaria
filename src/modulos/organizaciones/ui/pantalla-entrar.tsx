@@ -7,16 +7,18 @@
  * - Enter en la contraseña envía el formulario.
  * - "¿Olvidaste tu contraseña?" lleva a pedir el correo de recuperación. Si
  *   la persona vuelve de un enlace vencido, el aviso aparece acá.
+ * - En la maqueta se dice con qué se entra: sin eso nadie adivina la clave.
  */
 import { router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 
+import { EN_MAQUETA } from "@/compartido/maqueta/modo";
 import { Button, TextField, useStyles, type Tema } from "@/ui";
 
 import type { ErroresCredenciales } from "../dominio/credenciales";
 import { useSesion } from "./sesion";
-import { AvisoGeneral, TarjetaDeAcceso } from "./tarjeta-de-acceso";
+import { AvisoGeneral, NotaDeAcceso, TarjetaDeAcceso } from "./tarjeta-de-acceso";
 
 export function PantallaEntrar() {
   const s = useStyles(makeStyles);
@@ -43,7 +45,10 @@ export function PantallaEntrar() {
   const aviso = errorGeneral ?? avisoDeEnlace;
 
   return (
-    <TarjetaDeAcceso titulo="Iniciar sesión">
+    <TarjetaDeAcceso titulo="Inicia sesión">
+      {EN_MAQUETA ? (
+        <NotaDeAcceso>Maqueta sin servidor: entra con cualquier correo y una contraseña de 8 caracteres o más.</NotaDeAcceso>
+      ) : null}
       <View style={s.campos}>
         <TextField
           label="Correo"
@@ -68,6 +73,7 @@ export function PantallaEntrar() {
             if (errores.contrasena) setErrores((e) => ({ ...e, contrasena: undefined }));
           }}
           secureTextEntry
+          revelable
           autoCapitalize="none"
           required
           error={errores.contrasena}

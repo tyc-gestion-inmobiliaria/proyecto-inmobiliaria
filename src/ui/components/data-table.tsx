@@ -56,7 +56,8 @@ export function TableRow({ children, onPress, selected = false, accessibilityLab
   if (!onPress) return <View style={[s.row, selected && s.rowSelected]}>{children}</View>;
   return (
     <Pressable
-      accessibilityRole="button"
+      // Una fila que abre algo es un enlace; como botón, en la web no podría llevar botones adentro.
+      accessibilityRole="link"
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ selected }}
       onPress={onPress}
