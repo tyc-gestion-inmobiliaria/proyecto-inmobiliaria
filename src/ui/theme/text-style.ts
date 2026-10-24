@@ -4,7 +4,7 @@
  * Las familias del tema son pilas de CSS ("system-ui, -apple-system, …"). En
  * web se pasan tal cual. En iOS y Android una pila no es un nombre de fuente:
  * se usa la del sistema, salvo que la pila empiece por un nombre entre
- * comillas (`"Plus Jakarta Sans", system-ui, …`), que es una fuente que el
+ * comillas (`"Heebo", system-ui, …`), que es una fuente que el
  * proyecto incrusta con el plugin de `expo-font` y se pide por su nombre.
  *
  * Las cifras van con números tabulares cuando el estilo lo pide (`numeric`):

@@ -14,10 +14,13 @@
  *   mide `tokens.test.ts`.
  *   Supuesto: la web es la referencia de marca mientras el cliente no entregue
  *   su manual (pregunta abierta en el backlog).
- * - **Letra:** Plus Jakarta Sans, una sola familia. 400 para el cuerpo, 600
- *   para botones y títulos de tarjeta, 700 para el título de la pantalla. Las
+ * - **Letra:** Heebo, la del texto de la web de T&C, como única familia (sus
+ *   títulos en Lato no se trajeron: una segunda familia pesa más de lo que
+ *   aporta en una herramienta de trabajo). 400 para el cuerpo, 600 para
+ *   botones y títulos de tarjeta, 700 para el título de la pantalla. Las
  *   cifras van en la misma familia con números tabulares, no en monoespaciada.
- *   La fuente vive en `assets/fonts/` (licencia OFL); en web la carga
+ *   La fuente vive en `assets/fonts/` (licencia OFL, subconjunto latino, con
+ *   tildes y eñe); en web la carga
  *   `src/compartido/ui/fuente.web.ts`, y en iOS y Android va incrustada con el
  *   plugin de `expo-font` (`app.json`).
  * - **Radios:** chicos. La web de T&C usa botones rectos; en una herramienta
@@ -29,7 +32,7 @@ import { crearTema } from "./ui/theme/create-theme";
 import { darkTheme, lightTheme, type TypographyTokens } from "./ui/tokens";
 
 /** El nombre con el que se registra la fuente, en web y en nativo. */
-export const FUENTE = "Plus Jakarta Sans";
+export const FUENTE = "Heebo";
 
 const tipografia: TypographyTokens = {
   family: {

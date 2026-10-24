@@ -17,10 +17,10 @@ import { FUENTE } from "@/tema";
 const ID = "proyecto-fuente";
 
 const PESOS: [peso: number, archivo: number][] = [
-  [400, require("../../../assets/fonts/PlusJakartaSans_400Regular.ttf")],
-  [500, require("../../../assets/fonts/PlusJakartaSans_500Medium.ttf")],
-  [600, require("../../../assets/fonts/PlusJakartaSans_600SemiBold.ttf")],
-  [700, require("../../../assets/fonts/PlusJakartaSans_700Bold.ttf")],
+  [400, require("../../../assets/fonts/Heebo_400.ttf")],
+  [500, require("../../../assets/fonts/Heebo_500.ttf")],
+  [600, require("../../../assets/fonts/Heebo_600.ttf")],
+  [700, require("../../../assets/fonts/Heebo_700.ttf")],
 ];
 
 export function cargarFuente(): void {
