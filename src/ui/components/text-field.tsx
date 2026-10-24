@@ -26,6 +26,7 @@ import {
   type NativeSyntheticEvent,
   type StyleProp,
   type TextInputKeyPressEventData,
+  type TextInputProps,
   type ViewStyle,
 } from "react-native";
 
@@ -67,6 +68,12 @@ export interface TextFieldProps {
   /** Con `secureTextEntry`, dibuja el ojo que muestra lo escrito. */
   revelable?: boolean;
   autoCapitalize?: "none" | "sentences" | "words" | "characters";
+  /**
+   * Qué es el campo para el gestor de contraseñas y el autocompletado
+   * ("email", "current-password", "new-password"…). En un acceso, sin esto el
+   * gestor no rellena y la persona tiene que recordar y teclear la clave.
+   */
+  autoComplete?: TextInputProps["autoComplete"];
   keyboardType?: KeyboardTypeOptions;
   autoFocus?: boolean;
   accessibilityLabel?: string;
@@ -95,6 +102,7 @@ export function TextField({
   secureTextEntry = false,
   revelable = false,
   autoCapitalize,
+  autoComplete,
   keyboardType,
   autoFocus = false,
   accessibilityLabel,
@@ -137,6 +145,7 @@ export function TextField({
             keyboardType={keyboardType}
             secureTextEntry={secureTextEntry && !visible}
             autoCapitalize={autoCapitalize}
+            autoComplete={autoComplete}
             autoFocus={autoFocus}
             multiline={multiline}
             onFocus={() => setFocused(true)}
