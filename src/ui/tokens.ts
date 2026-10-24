@@ -121,10 +121,19 @@ export interface TypeStyle {
   letterSpacing?: number;
   family: "sans" | "mono";
   textTransform?: "uppercase" | "none";
+  /**
+   * `tabular`: todas las cifras miden lo mismo, así una columna de montos
+   * alinea sin pasar a letra monoespaciada (que se lee como código).
+   */
+  numeric?: "tabular";
 }
 
 export interface TypographyTokens {
-  /** Pilas de fuentes para web. En nativo se usa la del sistema. */
+  /**
+   * Pilas de fuentes para web. En nativo se usa la del sistema, salvo que la
+   * pila empiece por un nombre entre comillas (una fuente que el proyecto
+   * incrusta con el plugin de `expo-font`): entonces se usa ese nombre.
+   */
   family: { sans: string; mono: string };
   scale: {
     display: TypeStyle;
@@ -180,7 +189,7 @@ const typography: TypographyTokens = {
     bodySmall: { fontSize: 13, lineHeight: 18, fontWeight: "400", family: "sans" },
     label: { fontSize: 11, lineHeight: 14, fontWeight: "500", letterSpacing: 0.8, family: "sans", textTransform: "uppercase" },
     caption: { fontSize: 12, lineHeight: 16, fontWeight: "400", family: "sans" },
-    data: { fontSize: 13, lineHeight: 18, fontWeight: "400", family: "mono" },
+    data: { fontSize: 13, lineHeight: 18, fontWeight: "400", family: "sans", numeric: "tabular" },
   },
 };
 

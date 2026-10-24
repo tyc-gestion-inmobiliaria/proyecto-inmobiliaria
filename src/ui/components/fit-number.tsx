@@ -6,7 +6,8 @@
  * ancho que tiene y elige el tamaño que le cabe, con el de siempre como techo
  * y un mínimo por debajo del cual se recorta con puntos.
  *
- * La cuenta supone letra monoespaciada, que es como el kit pinta las cifras.
+ * La cuenta supone cifras de ancho parejo, que es como el kit las pinta
+ * (números tabulares).
  */
 import { useState } from "react";
 import { Text, View, type StyleProp, type TextStyle } from "react-native";

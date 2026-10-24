@@ -145,7 +145,7 @@ export function Td({
 }: {
   children: ReactNode;
   flex?: number;
-  /** Para cifras: monoespaciada, así las columnas de números alinean. */
+  /** Para cifras: números tabulares, así las columnas de números alinean. */
   mono?: boolean;
   align?: "right";
   muted?: boolean;

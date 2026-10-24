@@ -8,12 +8,13 @@
  * barra (`Menu`, `MenuNote`, `MenuItem`) con su fondo que los cierra.
  */
 import type { ReactNode } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View, useWindowDimensions, type StyleProp, type ViewStyle } from "react-native";
 
 import { resolveInteraction, type EstadoPresionable, type ForcedInteraction } from "../pressable-state";
 import { textStyle } from "../theme/text-style";
 import { useStyles, useTheme } from "../theme/theme-provider";
 import type { Tema } from "../tokens";
+import { Icon } from "./icon";
 
 export interface AppShellProps {
   /** El menú lateral, normalmente un `SideMenu`. */
@@ -33,9 +34,11 @@ export interface AppShellProps {
 export function AppShell({ sidebar, topBar, bottomBar, loading, loadingLabel = "Cargando…", overlay, children, style }: AppShellProps) {
   const t = useTheme();
   const s = useStyles(makeStyles);
+  // En una ventana angosta la barra pierde margen: cada punto de ancho cuenta.
+  const angosto = useWindowDimensions().width < 768;
   return (
     <View style={[s.frame, style]}>
-      {topBar ? <View style={s.topBar}>{topBar}</View> : null}
+      {topBar ? <View style={[s.topBar, angosto && s.topBarNarrow]}>{topBar}</View> : null}
       <View style={s.body}>
         {sidebar}
         <View style={s.content}>
@@ -126,7 +129,7 @@ export function MenuItem({
       }}
     >
       <Text style={[textStyle(t, "bodySmall", color), current && s.itemTextCurrent]}>{label}</Text>
-      {current ? <Text style={[textStyle(t, "bodySmall", t.color.accent.text), s.itemTextCurrent]}>✓</Text> : null}
+      {current ? <Icon name="check" size="sm" color={t.color.accent.text} strokeWidth={2.5} /> : null}
     </Pressable>
   );
 }
@@ -144,6 +147,7 @@ const makeStyles = (t: Tema) =>
       borderBottomWidth: 1,
       borderBottomColor: t.color.border.default,
     },
+    topBarNarrow: { paddingHorizontal: t.space.lg, gap: t.space.sm },
     body: { flex: 1, flexDirection: "row" },
     content: { flex: 1 },
     loading: { flex: 1, alignItems: "center", justifyContent: "center", gap: t.space.sm },

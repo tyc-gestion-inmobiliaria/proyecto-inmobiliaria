@@ -1,14 +1,20 @@
 import { Stack } from "expo-router";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { ActivityIndicator, StyleSheet, View, useColorScheme } from "react-native";
 
+import { cargarFuente } from "@/compartido/ui/fuente";
 import { sesionSupabase } from "@/modulos/organizaciones/infraestructura/sesion-supabase";
 import { ProveedorSesion, useSesion } from "@/modulos/organizaciones/ui/sesion";
-import { temaDelProyecto } from "@/tema";
+import { temaDelProyecto, temaOscuroDelProyecto } from "@/tema";
 import { ThemeProvider, useStyles, useTheme, type Tema } from "@/ui";
 
+// En web, la fuente del tema se declara una vez, antes de pintar nada.
+cargarFuente();
+
 export default function RootLayout() {
+  // El tema sigue al del sistema: claro u oscuro.
+  const esquema = useColorScheme();
   return (
-    <ThemeProvider theme={temaDelProyecto}>
+    <ThemeProvider theme={esquema === "dark" ? temaOscuroDelProyecto : temaDelProyecto}>
       <ProveedorSesion puerto={sesionSupabase}>
         <Rutas />
       </ProveedorSesion>

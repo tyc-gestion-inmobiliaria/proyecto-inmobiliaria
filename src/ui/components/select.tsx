@@ -41,6 +41,7 @@ import {
 import { textStyle } from "../theme/text-style";
 import { useStyles, useTheme } from "../theme/theme-provider";
 import { TouchArea } from "./touch-area";
+import { Icon } from "./icon";
 import type { Tema } from "../tokens";
 import { filterOptions, isFiltering, moveActive, type SelectOption } from "./select-logic";
 import { FieldLabel } from "./text-field";
@@ -250,9 +251,12 @@ export function Select({
         >
           {selected?.label ?? placeholder}
         </Text>
-        <Text style={[s.caret, { color: disabled ? t.color.text.disabled : t.color.text.secondary }]}>
-          {open ? "▲" : "▼"}
-        </Text>
+        <Icon
+          name="chevron-down"
+          size="sm"
+          color={disabled ? t.color.text.disabled : t.color.text.secondary}
+          style={open ? s.caretOpen : undefined}
+        />
         <TouchArea height={height} />
       </Pressable>
 
@@ -336,7 +340,7 @@ export function Select({
                         </Text>
                       ) : null}
                     </View>
-                    {chosen ? <Text style={[s.check, { color: t.color.accent.text }]}>✓</Text> : null}
+                    {chosen ? <Icon name="check" size="sm" color={t.color.accent.text} strokeWidth={2.5} /> : null}
                   </Pressable>
                 );
               })
@@ -399,7 +403,7 @@ const makeStyles = (t: Tema) =>
     dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: t.color.accent.base },
     value: { flex: 1 },
     valueFiltering: { fontWeight: "600" },
-    caret: { fontSize: 9 },
+    caretOpen: { transform: [{ rotate: "180deg" }] },
     errorRow: { flexDirection: "row", gap: t.space.xs + 2, alignItems: "flex-start" },
     errorIcon: {
       fontWeight: "700",
@@ -450,7 +454,6 @@ const makeStyles = (t: Tema) =>
     optionChosen: { backgroundColor: t.color.accent.subtle },
     optionText: { flex: 1 },
     optionLabelChosen: { fontWeight: "600" },
-    check: { fontSize: 13, fontWeight: "700" },
     hint: {
       minHeight: FOOTER_HEIGHT,
       paddingHorizontal: t.space.md,

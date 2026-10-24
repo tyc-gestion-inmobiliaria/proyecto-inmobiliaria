@@ -15,6 +15,8 @@ import { StyleSheet, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 
 import { FitNumber } from "../components/fit-number";
+import { Icon } from "../components/icon";
+import type { IconName } from "../components/icon-paths";
 import { Card } from "../components/surfaces";
 import { textStyle } from "../theme/text-style";
 import { useStyles, useTheme } from "../theme/theme-provider";
@@ -58,6 +60,7 @@ export function StatTile({
   spark,
   sparkColor,
   emphasis = false,
+  icon,
 }: {
   label: string;
   value: string;
@@ -66,6 +69,8 @@ export function StatTile({
   sparkColor?: string;
   /** La cifra que encabeza el tablero: más grande. */
   emphasis?: boolean;
+  /** Un ícono decorativo junto al nombre del indicador. */
+  icon?: IconName;
 }) {
   const t = useTheme();
   const s = useStyles(makeStyles);
@@ -85,9 +90,16 @@ export function StatTile({
   }
   return (
     <Card style={s.ficha}>
-      <Text style={textStyle(t, "bodySmall", t.color.text.secondary)} numberOfLines={1}>
-        {label}
-      </Text>
+      <View style={s.cabeza}>
+        {icon ? (
+          <View style={s.icono}>
+            <Icon name={icon} size="sm" color={t.color.accent.text} />
+          </View>
+        ) : null}
+        <Text style={[textStyle(t, "bodySmall", t.color.text.secondary), s.nombre]} numberOfLines={1}>
+          {label}
+        </Text>
+      </View>
       {/* La cifra encoge hasta caber: `adjustsFontSizeToFit` no existe en la web y la cortaba en "US$ 29,…". */}
       <FitNumber size={t.typography.scale[emphasis ? "display" : "title"].fontSize} min={16} style={[textStyle(t, emphasis ? "display" : "title"), s.cifra]}>
         {value}
@@ -102,4 +114,14 @@ const makeStyles = (t: Tema) =>
   StyleSheet.create({
     ficha: { flexGrow: 1, flexBasis: 170, minWidth: 0, gap: t.space.xs },
     cifra: { fontVariant: ["proportional-nums"] },
+    cabeza: { flexDirection: "row", alignItems: "center", gap: t.space.sm },
+    nombre: { flexShrink: 1 },
+    icono: {
+      width: 28,
+      height: 28,
+      borderRadius: t.radius.sm,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: t.color.accent.subtle,
+    },
   });

@@ -10,7 +10,7 @@
 import type { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { Button, ChoiceChips, FieldLabel, textStyle, useStyles, useTheme, type Tema } from "@/ui";
+import { Button, ChoiceChips, FieldLabel, Icon, textStyle, useStyles, useTheme, type Tema } from "@/ui";
 
 export function CampoDeOpciones<T extends string>({
   label,
@@ -54,9 +54,7 @@ export function Aviso({ children, testID }: { children: ReactNode; testID?: stri
   const s = useStyles(makeStyles);
   return (
     <View style={s.aviso} accessibilityRole="alert" testID={testID}>
-      <Text style={[textStyle(t, "body", t.color.warning.fg), s.signoAviso]} aria-hidden>
-        ⚠
-      </Text>
+      <Icon name="alert-triangle" color={t.color.warning.fg} style={s.signoAviso} />
       <Text style={[textStyle(t, "body", t.color.warning.fg), s.texto]}>{children}</Text>
     </View>
   );
@@ -66,7 +64,7 @@ export function Volver({ label, onPress }: { label: string; onPress: () => void 
   const s = useStyles(makeStyles);
   return (
     <View style={s.volver}>
-      <Button variant="ghost" size="sm" label={`‹ ${label}`} accessibilityLabel={`Volver a ${label.toLowerCase()}`} onPress={onPress} />
+      <Button variant="ghost" size="sm" icon="chevron-left" label={label} accessibilityLabel={`Volver a ${label.toLowerCase()}`} onPress={onPress} />
     </View>
   );
 }
@@ -81,12 +79,11 @@ const makeStyles = (t: Tema) =>
       flexDirection: "row",
       gap: t.space.sm,
       padding: t.space.md,
-      borderRadius: t.radius.md,
-      borderWidth: 1,
+      borderRadius: t.radius.sm,
       borderLeftWidth: 4,
-      borderColor: t.color.warning.fg,
+      borderLeftColor: t.color.warning.fg,
       backgroundColor: t.color.warning.bg,
     },
-    signoAviso: { fontWeight: "700" },
+    signoAviso: { marginTop: 1 },
     volver: { alignSelf: "flex-start", marginLeft: -t.space.sm },
   });
