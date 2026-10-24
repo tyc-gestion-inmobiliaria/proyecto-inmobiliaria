@@ -43,7 +43,6 @@ function Rutas() {
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="invitacion" />
       {/* Desde el enlace del correo solo existe la contraseña nueva. */}
       <Stack.Protected guard={recuperando}>
         <Stack.Screen name="nueva-contrasena" />
@@ -55,6 +54,12 @@ function Rutas() {
         <Stack.Screen name="entrar" />
         <Stack.Screen name="recuperar" />
       </Stack.Protected>
+      {/*
+        Al final a propósito: al entrar o salir, el Stack muestra la primera
+        pantalla que quede disponible; si fuera esta, toda sesión nueva caería
+        en la invitación en vez de en Inicio.
+      */}
+      <Stack.Screen name="invitacion" />
     </Stack>
   );
 }
