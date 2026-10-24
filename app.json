@@ -20,7 +20,9 @@
               "./assets/fonts/Heebo_400.ttf",
               "./assets/fonts/Heebo_500.ttf",
               "./assets/fonts/Heebo_600.ttf",
-              "./assets/fonts/Heebo_700.ttf"
+              "./assets/fonts/Heebo_700.ttf",
+              "./assets/fonts/Lato_700.ttf",
+              "./assets/fonts/Lato_900.ttf"
             ]
           },
           "android": {
@@ -43,6 +45,19 @@
                   {
                     "path": "./assets/fonts/Heebo_700.ttf",
                     "weight": 700
+                  }
+                ]
+              },
+              {
+                "fontFamily": "Lato",
+                "fontDefinitions": [
+                  {
+                    "path": "./assets/fonts/Lato_700.ttf",
+                    "weight": 700
+                  },
+                  {
+                    "path": "./assets/fonts/Lato_900.ttf",
+                    "weight": 900
                   }
                 ]
               }

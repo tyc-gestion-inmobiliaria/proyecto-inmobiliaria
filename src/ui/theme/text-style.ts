@@ -29,7 +29,7 @@ export function textStyle(
 ): TextStyle {
   const s: TypeStyle = theme.typography.scale[variant];
   return {
-    fontFamily: fontFamily(theme.typography.family[s.family]),
+    fontFamily: fontFamily(theme.typography.family[s.family] ?? theme.typography.family.sans),
     fontSize: s.fontSize,
     lineHeight: s.lineHeight,
     fontWeight: s.fontWeight,

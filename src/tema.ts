@@ -5,6 +5,7 @@
  * marca, el radio, la fuente. Lo que no se escribe acá se hereda del tema
  * neutro de la plantilla (`src/ui/tokens.ts`).
  *
+ * - **Siempre en claro** (lo pidió el cliente): el oscuro queda definido abajo.
  * - **Color:** los de la web de T&C (tc-inmobiliaria.com): el bronce dorado
  *   de su acento (#AD9271) y el carbón de sus botones (#181818), sobre grises
  *   apenas cálidos. Su bronce sobre blanco no llega a 4.5:1, así que el acento
@@ -14,10 +15,9 @@
  *   mide `tokens.test.ts`.
  *   Supuesto: la web es la referencia de marca mientras el cliente no entregue
  *   su manual (pregunta abierta en el backlog).
- * - **Letra:** Heebo, la del texto de la web de T&C, como única familia (sus
- *   títulos en Lato no se trajeron: una segunda familia pesa más de lo que
- *   aporta en una herramienta de trabajo). 400 para el cuerpo, 600 para
- *   botones y títulos de tarjeta, 700 para el título de la pantalla. Las
+ * - **Letra:** las dos de la web de T&C: Lato para los títulos (pantalla,
+ *   cifra grande, diálogo) y Heebo para todo lo demás. 400 para el cuerpo,
+ *   600 para botones y títulos de tarjeta, 700 para el título. Las
  *   cifras van en la misma familia con números tabulares, no en monoespaciada.
  *   La fuente vive en `assets/fonts/` (licencia OFL, subconjunto latino, con
  *   tildes y eñe); en web la carga
@@ -37,16 +37,19 @@ import { darkTheme, lightTheme, type TypographyTokens } from "./ui/tokens";
 
 /** El nombre con el que se registra la fuente, en web y en nativo. */
 export const FUENTE = "Heebo";
+/** La de los títulos: Lato, como los titulares de la web de T&C. */
+export const FUENTE_DE_TITULOS = "Lato";
 
 const tipografia: TypographyTokens = {
   family: {
     sans: `"${FUENTE}", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`,
     mono: lightTheme.typography.family.mono,
+    display: `"${FUENTE_DE_TITULOS}", "${FUENTE}", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif`,
   },
   scale: {
-    display: { fontSize: 30, lineHeight: 38, fontWeight: "700", letterSpacing: -0.6, family: "sans" },
-    title: { fontSize: 24, lineHeight: 32, fontWeight: "700", letterSpacing: -0.4, family: "sans" },
-    dialogTitle: { fontSize: 18, lineHeight: 26, fontWeight: "700", letterSpacing: -0.2, family: "sans" },
+    display: { fontSize: 30, lineHeight: 38, fontWeight: "700", letterSpacing: -0.3, family: "display" },
+    title: { fontSize: 24, lineHeight: 32, fontWeight: "700", letterSpacing: -0.2, family: "display" },
+    dialogTitle: { fontSize: 18, lineHeight: 26, fontWeight: "700", family: "display" },
     subtitle: { fontSize: 16, lineHeight: 22, fontWeight: "600", letterSpacing: -0.1, family: "sans" },
     body: { fontSize: 14, lineHeight: 21, fontWeight: "400", family: "sans" },
     bodySmall: { fontSize: 13, lineHeight: 19, fontWeight: "400", family: "sans" },
