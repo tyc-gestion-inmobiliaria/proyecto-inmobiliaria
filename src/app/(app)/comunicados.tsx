@@ -1,5 +1,9 @@
-import { SeccionEnDiseno } from "@/compartido/ui/seccion";
+import { ConEdificio } from "@/compartido/ui/seccion";
+import { comunicadosAdaptador } from "@/modulos/comunicados/infraestructura/comunicados";
+import { PantallaComunicados } from "@/modulos/comunicados/ui/pantalla-comunicados";
 
 export default function Comunicados() {
-  return <SeccionEnDiseno titulo="Comunicados" icono="send" resuelve="Las publicaciones, los documentos y las cartas a quienes deben." />;
+  return (
+    <ConEdificio titulo="Comunicados">{(id) => <PantallaComunicados key={id} comunicados={comunicadosAdaptador} edificioId={id} />}</ConEdificio>
+  );
 }

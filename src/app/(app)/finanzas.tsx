@@ -1,5 +1,7 @@
-import { SeccionEnDiseno } from "@/compartido/ui/seccion";
+import { ConEdificio } from "@/compartido/ui/seccion";
+import { finanzasAdaptador } from "@/modulos/finanzas/infraestructura/finanzas";
+import { PantallaFinanzas } from "@/modulos/finanzas/ui/pantalla-finanzas";
 
 export default function Finanzas() {
-  return <SeccionEnDiseno titulo="Finanzas" icono="wallet" resuelve="El presupuesto, los ingresos, los egresos y los fondos del edificio." />;
+  return <ConEdificio titulo="Finanzas">{(id) => <PantallaFinanzas key={id} finanzas={finanzasAdaptador} edificioId={id} />}</ConEdificio>;
 }

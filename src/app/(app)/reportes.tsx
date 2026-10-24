@@ -1,5 +1,6 @@
-import { SeccionEnDiseno } from "@/compartido/ui/seccion";
+import { reportesAdaptador } from "@/modulos/reportes/infraestructura/reportes";
+import { PantallaReportes } from "@/modulos/reportes/ui/pantalla-reportes";
 
 export default function Reportes() {
-  return <SeccionEnDiseno titulo="Reportes" icono="file-text" resuelve="Los reportes de cobranza, ingresos y egresos para la junta." />;
+  return <PantallaReportes reportes={reportesAdaptador} />;
 }

@@ -1,5 +1,11 @@
-import { SeccionEnDiseno } from "@/compartido/ui/seccion";
+import { ConEdificio } from "@/compartido/ui/seccion";
+import { incidenciasAdaptador } from "@/modulos/incidencias/infraestructura/incidencias";
+import { PantallaIncidencias } from "@/modulos/incidencias/ui/pantalla-incidencias";
 
 export default function Incidencias() {
-  return <SeccionEnDiseno titulo="Incidencias" icono="alert-triangle" resuelve="Lo que reportan los residentes, con su estado hasta cerrarlo." />;
+  return (
+    <ConEdificio titulo="Incidencias">
+      {(id) => <PantallaIncidencias key={id} incidencias={incidenciasAdaptador} edificioId={id} />}
+    </ConEdificio>
+  );
 }

@@ -1,5 +1,7 @@
-import { SeccionEnDiseno } from "@/compartido/ui/seccion";
+import { ConEdificio } from "@/compartido/ui/seccion";
+import { reservasAdaptador } from "@/modulos/reservas/infraestructura/reservas";
+import { PantallaReservas } from "@/modulos/reservas/ui/pantalla-reservas";
 
 export default function Reservas() {
-  return <SeccionEnDiseno titulo="Reservas" icono="calendar-check" resuelve="Las áreas comunes y sus reservas, atadas a que la unidad esté al día." />;
+  return <ConEdificio titulo="Reservas">{(id) => <PantallaReservas key={id} reservas={reservasAdaptador} edificioId={id} />}</ConEdificio>;
 }

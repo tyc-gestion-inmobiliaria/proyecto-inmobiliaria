@@ -2,7 +2,8 @@
  * Los datos de la maqueta: una administradora ficticia con tres edificios en
  * estados distintos, para que cada pantalla tenga algo que mostrar.
  *
- * - Edificio Los Olivos: padrón completo, cuenta bancaria y el mes emitido.
+ * - Edificio Los Olivos: padrón completo, cuenta bancaria y el mes emitido,
+ *   con los recibos vencidos hace dos días (hay deuda vencida real).
  * - Residencial Las Acacias: padrón completo y el cierre en lecturas.
  * - Torre del Parque: unidades sin participación y sin cuenta bancaria.
  * - residente@demo.test: la persona de la 101 de Los Olivos, inquilina
@@ -190,6 +191,16 @@ function diaDelMes(dia: number): string {
   return `${periodo().slice(0, 7)}-${String(dia).padStart(2, "0")}`;
 }
 
+/**
+ * El vencimiento de los recibos ya emitidos de la semilla: hace dos días (no
+ * antes del 6), para que haya deuda vencida de verdad en la ficha, el portal
+ * del residente, las reservas y los reportes, y no una inventada aparte.
+ */
+function venceDeLaSemilla(): string {
+  const hoy = Number(new Date().toLocaleString("en-US", { timeZone: "America/Lima", day: "numeric" }));
+  return diaDelMes(Math.max(6, hoy - 2));
+}
+
 /** Partes iguales que suman exactamente 100, con el resto en la última. */
 function participaciones(n: number): number[] {
   const parte = Math.floor(10000 / n) / 100;
@@ -282,7 +293,7 @@ function crearMundo(): Mundo {
         paso: emitido ? 4 : 1,
         montoAgua: emitido ? 480 : 0,
         umbralAtipico: 50,
-        vence: emitido ? diaDelMes(28) : null,
+        vence: emitido ? venceDeLaSemilla() : null,
       });
       const partidas = [
         { concepto: "Limpieza y conserjería", monto: 2400 },
@@ -317,7 +328,7 @@ function crearMundo(): Mundo {
             agua,
             deudaPrevia,
             total: Math.round((cuota + agua + deudaPrevia) * 100) / 100,
-            vence: diaDelMes(28),
+            vence: venceDeLaSemilla(),
             emitidoEn: `${diaDelMes(5)}T10:00:00-05:00`,
           });
         }
