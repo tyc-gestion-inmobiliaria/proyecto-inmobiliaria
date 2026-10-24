@@ -1,6 +1,6 @@
-import { edificios } from "@/modulos/padron/infraestructura/padron";
+import { padron } from "@/modulos/padron/infraestructura/padron";
 import { PantallaEdificios } from "@/modulos/padron/ui/pantalla-edificios";
 
 export default function Edificios() {
-  return <PantallaEdificios edificios={edificios} />;
+  return <PantallaEdificios padron={padron} />;
 }
