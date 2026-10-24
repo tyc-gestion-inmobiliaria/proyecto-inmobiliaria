@@ -7,7 +7,7 @@
  * es decorado que ocupa una línea.
  */
 import type { ReactNode } from "react";
-import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 
 import { resolveInteraction, type EstadoPresionable, type ForcedInteraction } from "../pressable-state";
 import { textStyle } from "../theme/text-style";
@@ -209,8 +209,10 @@ export function Badge({ tone = "neutral", label }: { tone?: StatusTone; label: s
 
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
-    surface: { backgroundColor: t.color.bg.surface, borderRadius: t.radius.md },
-    outlined: { borderWidth: 1, borderColor: t.color.border.default },
+    // Esquinas continuas en iOS (squircle); en web y Android, el radio de siempre.
+    surface: { backgroundColor: t.color.bg.surface, borderRadius: t.radius.md, ...(Platform.OS === "ios" ? { borderCurve: "continuous" as const } : null) },
+    // Borde casi invisible y sombra suave: la tarjeta se separa del fondo sin dibujar una caja.
+    outlined: { borderWidth: 1, borderColor: t.color.border.subtle, ...t.elevation.sm },
     elevated: { ...t.elevation.md },
     flat: { backgroundColor: t.color.bg.muted },
     tocable: { cursor: "pointer" },
@@ -225,7 +227,7 @@ const makeStyles = (t: Tema) =>
       alignSelf: "flex-start",
       paddingHorizontal: t.space.sm,
       paddingVertical: t.space.xxs,
-      borderRadius: t.radius.sm,
+      borderRadius: t.radius.full,
     },
     badgeText: { fontWeight: "600" },
   });

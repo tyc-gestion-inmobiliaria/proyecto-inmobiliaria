@@ -23,8 +23,12 @@
  *   tildes y eñe); en web la carga
  *   `src/compartido/ui/fuente.web.ts`, y en iOS y Android va incrustada con el
  *   plugin de `expo-font` (`app.json`).
- * - **Radios:** chicos. La web de T&C usa botones rectos; en una herramienta
- *   de trabajo un radio leve ayuda a ver dónde termina cada cosa.
+ * - **Formas (una sola regla, no se mezcla):** campos y botones con radio 10
+ *   (`sm`); tarjetas, tablas y diálogos con 16 (`md`); fotos y paneles
+ *   grandes con 24 (`lg`); insignias y fichas en píldora (`full`). Las
+ *   tarjetas se separan del fondo con una sombra suave y un borde casi
+ *   invisible, no con una línea dura: con radios chicos y bordes marcados
+ *   la app se veía cuadrada, una caja dentro de otra.
  *
  * Este archivo es puro (no importa React Native): lo leen las pruebas.
  */
@@ -54,7 +58,7 @@ const tipografia: TypographyTokens = {
 
 const comun = {
   typography: tipografia,
-  radius: { none: 0, sm: 4, md: 6, lg: 8, full: 999 },
+  radius: { none: 0, sm: 10, md: 16, lg: 24, full: 999 },
 };
 
 export const temaDelProyecto = crearTema({
@@ -87,9 +91,10 @@ export const temaDelProyecto = crearTema({
   },
   elevation: {
     none: { boxShadow: "none", elevation: 0 },
-    sm: { boxShadow: "0 1px 2px rgba(15, 23, 42, 0.06)", elevation: 1 },
-    md: { boxShadow: "0 8px 24px rgba(15, 23, 42, 0.10)", elevation: 6 },
-    modal: { boxShadow: "0 24px 48px rgba(15, 23, 42, 0.24)", elevation: 24 },
+    // Sombras cálidas (del carbón de la marca), bajas y difusas: separan sin dibujar una caja.
+    sm: { boxShadow: "0 1px 2px rgba(24, 24, 24, 0.04), 0 6px 20px rgba(24, 24, 24, 0.05)", elevation: 1 },
+    md: { boxShadow: "0 10px 30px rgba(24, 24, 24, 0.10)", elevation: 6 },
+    modal: { boxShadow: "0 24px 48px rgba(24, 24, 24, 0.22)", elevation: 24 },
   },
 });
 

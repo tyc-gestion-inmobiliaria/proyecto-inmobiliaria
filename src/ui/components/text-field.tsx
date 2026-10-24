@@ -146,6 +146,9 @@ export function TextField({
             secureTextEntry={secureTextEntry && !visible}
             autoCapitalize={autoCapitalize}
             autoComplete={autoComplete}
+            // Un correo o una clave no se corrigen: el corrector los "arregla" y los rompe.
+            spellCheck={keyboardType === "email-address" || secureTextEntry ? false : undefined}
+            autoCorrect={keyboardType === "email-address" || secureTextEntry ? false : undefined}
             autoFocus={autoFocus}
             multiline={multiline}
             onFocus={() => setFocused(true)}

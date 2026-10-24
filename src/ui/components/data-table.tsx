@@ -238,7 +238,8 @@ const makeStyles = (t: Tema) =>
     table: {
       backgroundColor: t.color.bg.surface,
       borderWidth: 1,
-      borderColor: t.color.border.default,
+      borderColor: t.color.border.subtle,
+      ...t.elevation.sm,
       borderRadius: t.radius.md,
       overflow: "hidden",
     },
