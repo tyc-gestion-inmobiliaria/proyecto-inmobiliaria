@@ -17,7 +17,7 @@ export interface Seccion {
   key: string;
   label: string;
   /** La ruta de expo-router a la que lleva. */
-  ruta: "/" | "/edificios";
+  ruta: "/" | "/edificios" | "/pagos";
   /** El tramo del menú; sin tramo va arriba, sin título. */
   grupo?: Tramo;
 }
@@ -25,6 +25,9 @@ export interface Seccion {
 export const SECCIONES: readonly Seccion[] = [
   { key: "inicio", label: "Inicio", ruta: "/" },
   { key: "edificios", label: "Edificios", ruta: "/edificios" },
+  // La cola de pagos por validar (PB-27). En los wireframes los pagos eran el
+  // último tramo de Cobranza; mientras no haya sección Cobranza van aparte.
+  { key: "pagos", label: "Pagos", ruta: "/pagos", grupo: "Operación" },
 ];
 
 const ORDEN_DE_TRAMOS: readonly (Tramo | undefined)[] = [undefined, "Operación", "Gestión"];
