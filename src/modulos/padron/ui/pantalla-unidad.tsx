@@ -19,18 +19,20 @@
  */
 import { router } from "expo-router";
 import { useCallback, useRef, useState, type ComponentType, type ReactNode } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View, type TextInput } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View, useWindowDimensions, type TextInput } from "react-native";
 
 import { Cargando, ConOrganizacion } from "@/modulos/organizaciones/ui/con-organizacion";
 import {
+  Avatar,
   Badge,
   Button,
   Card,
   EmptyState,
   ErrorSummary,
   FormFooter,
+  Icon,
   KeyValueRow,
-  ScreenTitle,
+  PageHeader,
   SectionTitle,
   TableRow,
   Tabs,
@@ -60,7 +62,7 @@ import {
   type Unidad,
 } from "../dominio/unidad";
 import { nombreDeLaRelacion, type Vinculo } from "../dominio/vinculo";
-import { Aviso, Volver } from "@/compartido/ui/piezas";
+import { Aviso, FlechaDeFila, Volver } from "@/compartido/ui/piezas";
 import { irALasUnidades } from "./pantalla-unidades";
 import { useCarga } from "@/compartido/ui/usar-carga";
 
@@ -125,15 +127,18 @@ function Contenido({ orgId, editable, padron, edificioId, unidadId, modo = "fich
   if (carga.estado === "error") {
     problema = (
       <EmptyState
+        icon="refresh-cw"
         title="No se pudo leer la unidad"
         description="Revisa tu conexión y vuelve a intentarlo."
         action={<Button label="Reintentar" onPress={reintentar} />}
       />
     );
   } else if (!carga.valor.edificio || (unidadId && !unidad)) {
-    problema = <EmptyState title="Esta unidad no está en el edificio" />;
+    problema = <EmptyState icon="door" title="Esta unidad no está en el edificio" />;
   } else if (!editable && !unidadId) {
-    problema = <EmptyState title="Tu rol no permite registrar unidades" description="Pídeselo a un administrador de tu empresa." />;
+    problema = (
+      <EmptyState icon="lock" title="Tu rol no permite registrar unidades" description="Pídeselo a un administrador de tu empresa." />
+    );
   }
   if (problema || carga.estado !== "listo") {
     return (
@@ -153,12 +158,12 @@ function Contenido({ orgId, editable, padron, edificioId, unidadId, modo = "fich
         edificioId={edificioId}
         editable={editable}
         cuenta={cuenta}
+        volver={volver}
         personas={<Personas edificioId={edificioId} unidad={unidad} vinculos={vinculos} personas={personas} editable={editable} />}
       />
     );
     return (
-      <ScrollView contentContainerStyle={s.pantalla}>
-        <Volver label="Unidades" onPress={volver} />
+      <ScrollView contentContainerStyle={[s.pantalla, s.pantallaFicha]}>
         {Cuenta ? (
           <Cuenta orgId={orgId} unidadId={unidad.id}>
             {ficha}
@@ -173,12 +178,18 @@ function Contenido({ orgId, editable, padron, edificioId, unidadId, modo = "fich
   return (
     <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={s.pantalla} keyboardShouldPersistTaps="handled">
-        <Volver label={unidad ? `Unidad ${unidad.numero}` : "Unidades"} onPress={unidad ? () => irALaFicha(edificioId, unidad.id) : volver} />
+        <PageHeader
+          title={unidad ? `Editar unidad ${unidad.numero}` : "Registrar unidad"}
+          back={unidad ? { label: `Unidad ${unidad.numero}`, onPress: () => irALaFicha(edificioId, unidad.id) } : { label: "Unidades", onPress: volver }}
+        />
         <Formulario padron={padron} orgId={orgId} edificioId={edificioId} unidad={unidad} unidades={unidades} />
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
+
+/** Desde este ancho de ventana, la ficha va en dos columnas. */
+const ANCHO_DOS_COLUMNAS = 1100;
 
 const irALaFicha = (edificioId: string, unidadId: string) =>
   router.navigate({ pathname: "/edificios/[id]/unidades/[unidadId]", params: { id: edificioId, unidadId } });
@@ -189,41 +200,51 @@ function FichaConPestanas({
   editable,
   cuenta,
   personas,
+  volver,
 }: {
   unidad: Unidad;
   edificioId: string;
   editable: boolean;
   cuenta: CuentaDeLaUnidad;
   personas: ReactNode;
+  volver: () => void;
 }) {
   const s = useStyles(makeStyles);
+  // En una ventana ancha la ficha va en dos columnas: los datos y la cuenta a un lado, las personas al otro.
+  const anchoDeColumnas = useWindowDimensions().width >= ANCHO_DOS_COLUMNAS;
   const [pestana, setPestana] = useState("resumen");
   const pestanas = [{ key: "resumen", label: "Resumen" }, ...cuenta.pestanas.map(({ key, label }) => ({ key, label }))];
   const actual = cuenta.pestanas.find((p) => p.key === pestana);
   return (
     <>
-      <View style={s.cabecera}>
-        <View style={s.titulo}>
-          <ScreenTitle>{`Unidad ${unidad.numero}`}</ScreenTitle>
-          {cuenta.estado ? <Badge tone={cuenta.estado.tono} label={cuenta.estado.texto} /> : null}
-        </View>
-        {editable ? (
-          <Button
-            variant="secondary"
-            label="Editar unidad"
-            onPress={() => router.push({ pathname: "/edificios/[id]/unidades/[unidadId]/editar", params: { id: edificioId, unidadId: unidad.id } })}
-          />
-        ) : null}
-      </View>
+      <PageHeader
+        title={`Unidad ${unidad.numero}`}
+        back={{ label: "Unidades", onPress: volver }}
+        status={cuenta.estado ? <Badge tone={cuenta.estado.tono} label={cuenta.estado.texto} /> : null}
+        actions={
+          editable ? (
+            <Button
+              variant="secondary"
+              icon="pencil"
+              label="Editar unidad"
+              onPress={() =>
+                router.push({ pathname: "/edificios/[id]/unidades/[unidadId]/editar", params: { id: edificioId, unidadId: unidad.id } })
+              }
+            />
+          ) : null
+        }
+      />
       {pestanas.length > 1 ? <Tabs accessibilityLabel="Secciones de la ficha" items={pestanas} value={pestana} onChange={setPestana} /> : null}
       {actual ? (
         actual.contenido
       ) : (
-        <>
-          <Ficha unidad={unidad} />
-          {cuenta.resumen}
-          {personas}
-        </>
+        <View style={anchoDeColumnas ? s.columnas : s.apilado}>
+          <View style={anchoDeColumnas ? s.columnaAncha : s.apilado}>
+            <Ficha unidad={unidad} />
+            {cuenta.resumen}
+          </View>
+          <View style={anchoDeColumnas ? s.columnaAncha : s.apilado}>{personas}</View>
+        </View>
       )}
     </>
   );
@@ -293,7 +314,6 @@ function Formulario({
 
   return (
     <Card style={s.tarjeta} padding="xl">
-      <ScreenTitle>{unidad ? `Unidad ${unidad.numero}` : "Registrar unidad"}</ScreenTitle>
       <ErrorSummary
         title={lista.length === 1 ? "Corrige 1 campo para guardar" : `Corrige ${lista.length} campos para guardar`}
         focusKey={intentosFallidos}
@@ -368,7 +388,7 @@ function Formulario({
 function Ficha({ unidad }: { unidad: Unidad }) {
   const s = useStyles(makeStyles);
   return (
-    <Card style={s.tarjeta} padding="lg">
+    <Card style={s.bloque} padding="lg">
       <SectionTitle>Datos de la unidad</SectionTitle>
       <KeyValueRow label="Tipo" value={unidad.tipo ?? "—"} />
       <KeyValueRow label="Área" value={textoDeArea(unidad.areaM2)} />
@@ -401,13 +421,18 @@ function Personas({
   const agregar = () => router.push({ pathname: "/edificios/[id]/unidades/[unidadId]/personas/nueva", params });
 
   return (
-    <Card style={s.tarjeta} padding="xl">
+    <Card style={s.bloque} padding="lg">
       <View style={s.cabecera}>
         <SectionTitle>Personas</SectionTitle>
-        {editable ? <Button variant="secondary" label="Agregar persona" onPress={agregar} testID="unidad-agregar-persona" /> : null}
+        {editable ? (
+          <Button variant="secondary" size="sm" icon="plus" label="Agregar persona" onPress={agregar} testID="unidad-agregar-persona" />
+        ) : null}
       </View>
       {vinculos.length === 0 ? (
-        <Text style={textStyle(t, "body", t.color.text.secondary)}>Todavía no hay personas en esta unidad.</Text>
+        <View style={s.sinPersonas}>
+          <Icon name="users" color={t.color.text.tertiary} />
+          <Text style={textStyle(t, "body", t.color.text.secondary)}>Todavía no hay personas en esta unidad.</Text>
+        </View>
       ) : (
         <>
           {hayResponsable ? null : <Aviso>Nadie está marcado como responsable de pago.</Aviso>}
@@ -428,18 +453,15 @@ function Personas({
                   }
                   accessibilityLabel={`${editable ? "Editar a " : ""}${quien}, ${nombreDeLaRelacion(v.relacion)}${v.responsablePago ? ", responsable de pago" : ""}`}
                 >
+                  <Avatar name={quien} size="sm" accessibilityLabel="" />
                   <TdView flex={1} style={s.persona}>
-                    <Text style={textStyle(t, "body")}>{quien}</Text>
+                    <Text style={[textStyle(t, "body"), s.fuerte]}>{quien}</Text>
                     <View style={s.insignias}>
                       <Badge label={nombreDeLaRelacion(v.relacion)} />
                       {v.responsablePago ? <Badge tone="info" label="✓ Responsable de pago" /> : null}
                     </View>
                   </TdView>
-                  {editable ? (
-                    <Text aria-hidden style={[textStyle(t, "label", t.color.accent.text), s.flecha]}>
-                      Editar ›
-                    </Text>
-                  ) : null}
+                  {editable ? <FlechaDeFila /> : null}
                 </TableRow>
               );
             })}
@@ -455,11 +477,18 @@ const makeStyles = (t: Tema) =>
     flex: { flex: 1 },
     pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: 960, width: "100%" },
     tarjeta: { width: "100%", maxWidth: 640, gap: t.space.lg },
+    pantallaFicha: { maxWidth: 1200 },
+    bloque: { width: "100%", gap: t.space.md },
+    columnas: { flexDirection: "row", alignItems: "flex-start", gap: t.space.lg },
+    columnaAncha: { flex: 1, minWidth: 0, gap: t.space.lg },
+    apilado: { gap: t.space.lg },
+    sinPersonas: { flexDirection: "row", alignItems: "center", gap: t.space.sm },
+    fuerte: { fontWeight: "600" },
     fila: { flexDirection: "row", flexWrap: "wrap", gap: t.space.md },
     celda: { flexGrow: 1, flexBasis: 200 },
     cabecera: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: t.space.md },
     titulo: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.sm },
     persona: { gap: t.space.xs },
     insignias: { flexDirection: "row", flexWrap: "wrap", gap: t.space.xs },
-    flecha: { width: 64, textAlign: "right" },
+
   });

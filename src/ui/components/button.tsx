@@ -21,6 +21,8 @@ import {
 } from "../pressable-state";
 import { textStyle } from "../theme/text-style";
 import { useStyles, useTheme } from "../theme/theme-provider";
+import { Icon } from "./icon";
+import type { IconName } from "./icon-paths";
 import { TouchArea } from "./touch-area";
 import type { Tema } from "../tokens";
 
@@ -36,6 +38,10 @@ export interface ButtonProps {
   loading?: boolean;
   /** Ocupa todo el ancho de su contenedor. */
   full?: boolean;
+  /** Un ícono junto al texto. Es decorativo: el texto sigue diciendo qué hace. */
+  icon?: IconName;
+  /** Dónde va el ícono: antes del texto (acciones) o después (avanzar, abrir). */
+  iconPosition?: "start" | "end";
   accessibilityLabel?: string;
   /** Solo para vitrina, Storybook y Figma: pinta un estado sin el puntero. */
   forcedState?: ForcedInteraction;
@@ -51,6 +57,8 @@ export function Button({
   disabled = false,
   loading = false,
   full = false,
+  icon,
+  iconPosition = "start",
   accessibilityLabel,
   forcedState,
   style,
@@ -89,6 +97,9 @@ export function Button({
             accessibilityElementsHidden
           />
         ) : null}
+        {icon && iconPosition === "start" && !loading ? (
+          <Icon name={icon} size={size === "lg" ? "md" : "sm"} color={disabled ? t.color.text.disabled : labelColor(t, variant)} />
+        ) : null}
         <Text
           numberOfLines={1}
           style={[
@@ -100,6 +111,9 @@ export function Button({
         >
           {label}
         </Text>
+        {icon && iconPosition === "end" ? (
+          <Icon name={icon} size={size === "lg" ? "md" : "sm"} color={disabled ? t.color.text.disabled : labelColor(t, variant)} />
+        ) : null}
       </View>
       <TouchArea height={height} />
     </Pressable>
@@ -161,7 +175,7 @@ const makeStyles = (t: Tema) =>
       cursor: "pointer",
     },
     full: { width: "100%" },
-    content: { flexDirection: "row", alignItems: "center", gap: t.space.sm },
+    content: { flexDirection: "row", alignItems: "center", gap: t.space.xs + 2 },
     label: { fontWeight: "600", textAlign: "center" },
     labelSm: { fontSize: 13, fontWeight: "500" },
   });

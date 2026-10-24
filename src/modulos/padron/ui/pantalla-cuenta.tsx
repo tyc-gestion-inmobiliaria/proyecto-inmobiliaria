@@ -14,7 +14,7 @@ import { useCallback, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, type TextInput } from "react-native";
 
 import { Cargando, ConOrganizacion } from "@/modulos/organizaciones/ui/con-organizacion";
-import { Button, Card, EmptyState, ErrorSummary, FormFooter, ScreenTitle, TextField, useStyles, type Tema } from "@/ui";
+import { Button, Card, EmptyState, ErrorSummary, FormFooter, PageHeader, TextField, useStyles, type Tema } from "@/ui";
 
 import { guardarCuenta } from "../aplicacion/guardar-cuenta";
 import type { CuentasBancariasPuerto } from "../aplicacion/puertos";
@@ -54,7 +54,7 @@ export function PantallaCuenta({ cuentas, edificioId, id }: { cuentas: CuentasBa
         ) : (
           <ScrollView contentContainerStyle={s.pantalla}>
             <EmptyState
-              title="Tu rol no permite registrar ni editar cuentas"
+              icon="lock" title="Tu rol no permite registrar ni editar cuentas"
               description="Pídeselo a un administrador de tu empresa."
               action={<Button variant="secondary" label="Volver al edificio" onPress={volver} />}
             />
@@ -86,7 +86,7 @@ function Formulario({
     return (
       <ScrollView contentContainerStyle={s.pantalla}>
         <EmptyState
-          title="No se pudieron leer las cuentas del edificio"
+          icon="refresh-cw" title="No se pudieron leer las cuentas del edificio"
           description="Revisa tu conexión y vuelve a intentarlo."
           action={<Button label="Reintentar" onPress={reintentar} />}
         />
@@ -99,7 +99,7 @@ function Formulario({
     return (
       <ScrollView contentContainerStyle={s.pantalla}>
         <EmptyState
-          title="Esta cuenta no está en el edificio"
+          icon="landmark" title="Esta cuenta no está en el edificio"
           action={<Button variant="secondary" label="Volver al edificio" onPress={volver} />}
         />
       </ScrollView>
@@ -170,8 +170,11 @@ function Campos({
   return (
     <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={s.pantalla} keyboardShouldPersistTaps="handled">
+        <PageHeader
+          title={cuenta ? "Editar cuenta bancaria" : "Registrar cuenta bancaria"}
+          back={{ label: "Unidades", onPress: () => irALasUnidades(edificioId) }}
+        />
         <Card style={s.tarjeta} padding="xl">
-          <ScreenTitle>{cuenta ? "Editar cuenta bancaria" : "Registrar cuenta bancaria"}</ScreenTitle>
           <ErrorSummary
             title={lista.length === 1 ? "Corrige 1 campo para guardar" : `Corrige ${lista.length} campos para guardar`}
             focusKey={intentosFallidos}

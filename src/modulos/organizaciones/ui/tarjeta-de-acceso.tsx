@@ -1,12 +1,13 @@
 /**
  * El molde de las pantallas sin sesión (entrar, recuperar, contraseña nueva):
- * una tarjeta centrada que sube con el teclado y respeta las zonas seguras.
+ * una tarjeta centrada que sube con el teclado y respeta las zonas seguras,
+ * con la marca encima.
  */
 import type { ReactNode } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { Card, ScreenTitle, textStyle, useStyles, useTheme, type Tema } from "@/ui";
+import { Card, Icon, ScreenTitle, textStyle, useStyles, useTheme, type Tema } from "@/ui";
 
 export function TarjetaDeAcceso({ titulo, children }: { titulo: string; children: ReactNode }) {
   const t = useTheme();
@@ -18,6 +19,9 @@ export function TarjetaDeAcceso({ titulo, children }: { titulo: string; children
         contentContainerStyle={[s.contenido, { paddingTop: insets.top + t.space.xl, paddingBottom: insets.bottom + t.space.xl }]}
         keyboardShouldPersistTaps="handled"
       >
+        <View style={s.marca} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          <Icon name="building" size="lg" color={t.color.text.onAccent} />
+        </View>
         <Card style={s.tarjeta} padding="xl">
           <ScreenTitle>{titulo}</ScreenTitle>
           {children}
@@ -30,10 +34,12 @@ export function TarjetaDeAcceso({ titulo, children }: { titulo: string; children
 /** Un error que no es de ningún campo: va arriba del botón, con signo y texto. */
 export function AvisoGeneral({ children }: { children: string }) {
   const t = useTheme();
+  const s = useStyles(makeStyles);
   return (
-    <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={textStyle(t, "bodySmall", t.color.danger.fg)}>
-      ⚠ {children}
-    </Text>
+    <View accessibilityRole="alert" accessibilityLiveRegion="polite" style={s.aviso}>
+      <Icon name="alert-circle" size="sm" color={t.color.danger.fg} style={s.signo} />
+      <Text style={[textStyle(t, "bodySmall", t.color.danger.fg), s.textoAviso]}>{children}</Text>
+    </View>
   );
 }
 
@@ -41,5 +47,23 @@ const makeStyles = (t: Tema) =>
   StyleSheet.create({
     fondo: { flex: 1, backgroundColor: t.color.bg.canvas },
     contenido: { flexGrow: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: t.space.lg },
-    tarjeta: { width: "100%", maxWidth: 400 },
+    tarjeta: { width: "100%", maxWidth: 400, gap: t.space.lg, ...t.elevation.sm },
+    marca: {
+      width: 48,
+      height: 48,
+      marginBottom: t.space.lg,
+      borderRadius: t.radius.md,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: t.color.accent.base,
+    },
+    aviso: {
+      flexDirection: "row",
+      gap: t.space.sm,
+      padding: t.space.md,
+      borderRadius: t.radius.sm,
+      backgroundColor: t.color.danger.bg,
+    },
+    signo: { marginTop: 1 },
+    textoAviso: { flex: 1 },
   });

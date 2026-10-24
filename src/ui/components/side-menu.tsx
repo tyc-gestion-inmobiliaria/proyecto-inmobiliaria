@@ -1,9 +1,9 @@
 /**
  * El menú lateral: una cabecera (el logo del proyecto), las entradas con su
- * inicial, y el botón de plegar.
+ * ícono (o su inicial, si no traen ícono), y el botón de plegar.
  *
  * - **Lo elegido lleva borde, fondo y peso de letra**, no solo color.
- * - **Se pliega de verdad:** plegado quedan solo las iniciales y la pantalla
+ * - **Se pliega de verdad:** plegado quedan solo los íconos y la pantalla
  *   gana el ancho. El nombre de cada entrada sigue yendo en su
  *   `accessibilityLabel` para quien no ve.
  * - **Agrupa por tramos** (`group`): las entradas seguidas con el mismo
@@ -23,11 +23,15 @@ import { resolveInteraction, type EstadoPresionable, type ForcedInteraction } fr
 import { textStyle } from "../theme/text-style";
 import { useStyles, useTheme } from "../theme/theme-provider";
 import type { Tema } from "../tokens";
+import { Icon } from "./icon";
+import type { IconName } from "./icon-paths";
 
 export interface SideMenuItem<K extends string = string> {
   key: K;
   label: string;
-  /** La letra del cuadrito. Si falta, la primera del nombre. */
+  /** El ícono de la entrada. Sin ícono, va la inicial en un cuadrito. */
+  icon?: IconName;
+  /** La letra del cuadrito, si no hay ícono. Si falta, la primera del nombre. */
   initial?: string;
   disabled?: boolean;
   /** El tramo al que pertenece: "Operación", "Gestión". */
@@ -82,33 +86,35 @@ export function SideMenu<K extends string>({
     onToggleCollapsed?.(next);
   }
 
+  const toggleButton = (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={collapsed ? texts.expand : texts.collapse}
+      accessibilityState={{ expanded: !collapsed }}
+      onPress={toggle}
+      style={(state: EstadoPresionable) => {
+        const i = resolveInteraction(state);
+        return [s.toggle, i === "hovered" && s.toggleHovered, i === "pressed" && s.togglePressed];
+      }}
+    >
+      <Icon name={collapsed ? "panel-left-open" : "panel-left-close"} />
+    </Pressable>
+  );
+
   return (
     <View
       style={[s.menu, { width: collapsed ? collapsedWidth : width }, style]}
       accessibilityRole="menu"
       accessibilityLabel={accessibilityLabel}
     >
-      {header || collapsible ? (
+      {header ? (
         <View style={[s.header, collapsed && s.headerCollapsed]}>
           {collapsed ? null : <View style={s.headerContent}>{header}</View>}
-          {collapsible ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={collapsed ? texts.expand : texts.collapse}
-              accessibilityState={{ expanded: !collapsed }}
-              onPress={toggle}
-              style={(state: EstadoPresionable) => {
-                const i = resolveInteraction(state);
-                return [s.toggle, i === "hovered" && s.toggleHovered, i === "pressed" && s.togglePressed];
-              }}
-            >
-              <Text style={textStyle(t, "subtitle", t.color.text.secondary)}>{collapsed ? "»" : "«"}</Text>
-            </Pressable>
-          ) : null}
+          {collapsible ? toggleButton : null}
         </View>
       ) : null}
 
-      <ScrollView contentContainerStyle={s.items}>
+      <ScrollView style={s.scroll} contentContainerStyle={s.items}>
         {items.map((item, index) => {
           const active = item.key === activeKey;
           const abreTramo = item.group !== undefined && item.group !== items[index - 1]?.group;
@@ -144,17 +150,25 @@ export function SideMenu<K extends string>({
                   ];
                 }}
               >
-                <View style={[s.initial, active ? s.initialActive : s.initialRest]}>
-                  <Text
-                    style={[
-                      textStyle(t, "caption", active ? t.color.text.onAccent : t.color.text.secondary),
-                      s.initialText,
-                      item.disabled && { color: t.color.text.disabled },
-                    ]}
-                  >
-                    {(item.initial ?? item.label.charAt(0)).toUpperCase()}
-                  </Text>
-                </View>
+                {item.icon ? (
+                  <Icon
+                    name={item.icon}
+                    color={item.disabled ? t.color.text.disabled : active ? t.color.accent.text : t.color.text.secondary}
+                    strokeWidth={active ? 2.25 : 2}
+                  />
+                ) : (
+                  <View style={[s.initial, active ? s.initialActive : s.initialRest]}>
+                    <Text
+                      style={[
+                        textStyle(t, "caption", active ? t.color.text.onAccent : t.color.text.secondary),
+                        s.initialText,
+                        item.disabled && { color: t.color.text.disabled },
+                      ]}
+                    >
+                      {(item.initial ?? item.label.charAt(0)).toUpperCase()}
+                    </Text>
+                  </View>
+                )}
                 {collapsed ? null : (
                   <Text
                     numberOfLines={1}
@@ -174,6 +188,8 @@ export function SideMenu<K extends string>({
       </ScrollView>
 
       {footer && !collapsed ? <View style={s.footer}>{footer}</View> : null}
+      {/* Sin cabecera, el botón de plegar va abajo: arriba dejaría un hueco con solo la flecha. */}
+      {!header && collapsible ? <View style={[s.toggleBottom, collapsed && s.headerCollapsed]}>{toggleButton}</View> : null}
     </View>
   );
 }
@@ -191,12 +207,14 @@ const makeStyles = (t: Tema) =>
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      paddingLeft: t.space.lg + 4,
+      paddingLeft: t.space.lg,
       paddingRight: t.space.sm,
       marginBottom: t.space.sm,
     },
     headerCollapsed: { justifyContent: "center", paddingLeft: t.space.sm },
     headerContent: { flex: 1 },
+    scroll: { flex: 1 },
+    toggleBottom: { flexDirection: "row", paddingHorizontal: t.space.sm, paddingTop: t.space.sm },
     toggle: {
       width: 44,
       height: 44,
@@ -207,14 +225,15 @@ const makeStyles = (t: Tema) =>
     },
     toggleHovered: { backgroundColor: t.color.bg.hover },
     togglePressed: { backgroundColor: t.color.bg.pressed },
-    items: { gap: t.space.xxs },
+    items: { gap: t.space.xxs, paddingHorizontal: t.space.sm },
     item: {
       minHeight: t.control.md,
       flexDirection: "row",
       alignItems: "center",
       gap: t.space.md,
-      paddingLeft: t.space.lg + 1,
-      paddingRight: t.space.lg,
+      paddingLeft: t.space.md - 3,
+      paddingRight: t.space.md,
+      borderRadius: t.radius.sm,
       borderLeftWidth: 3,
       borderLeftColor: "transparent",
       cursor: "pointer",

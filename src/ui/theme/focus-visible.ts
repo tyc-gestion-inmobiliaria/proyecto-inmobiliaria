@@ -12,6 +12,10 @@
  *   hacer clic, que ya tiene su estado de presionado.
  * - **Los campos de texto quedan fuera:** `TextField` marca el suyo con el
  *   borde.
+ *
+ * Va también la transición de lo que se toca: el paso de reposo a encima o
+ * presionado dura 150 ms en vez de saltar, y desaparece para quien pidió
+ * menos movimiento en su sistema (`prefers-reduced-motion`).
  */
 import type { Tema } from "../tokens";
 
@@ -23,6 +27,12 @@ export function focusVisibleRule(theme: Tema): string {
   outline: 2px solid ${theme.color.border.focus} !important;
   outline-offset: 2px !important;
   box-shadow: 0 0 0 2px ${theme.color.bg.surface} !important;
+}
+[role="button"], [role="menuitem"], [role="tab"], [role="link"], [role="checkbox"], [role="radio"], [role="option"] {
+  transition: background-color 150ms ease-out, border-color 150ms ease-out, color 150ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; }
 }
 `;
 }

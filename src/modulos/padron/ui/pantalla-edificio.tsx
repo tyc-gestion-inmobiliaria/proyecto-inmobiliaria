@@ -15,7 +15,7 @@ import { useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, type TextInput } from "react-native";
 
 import { Cargando, ConOrganizacion } from "@/modulos/organizaciones/ui/con-organizacion";
-import { Button, Card, EmptyState, ErrorSummary, FormFooter, ScreenTitle, TextField, useStyles, type Tema } from "@/ui";
+import { Button, Card, EmptyState, ErrorSummary, FormFooter, PageHeader, TextField, useStyles, type Tema } from "@/ui";
 
 import { guardarEdificio } from "../aplicacion/guardar-edificio";
 import type { EdificiosPuerto } from "../aplicacion/puertos";
@@ -44,6 +44,7 @@ export function PantallaEdificio({ edificios, id }: { edificios: EdificiosPuerto
         ) : (
           <ScrollView contentContainerStyle={s.pantalla}>
             <EmptyState
+              icon="lock"
               title="Tu rol no permite registrar ni editar edificios"
               description="Pídeselo a un administrador de tu empresa."
               action={<Button variant="secondary" label="Volver a edificios" onPress={volverALaLista} />}
@@ -65,6 +66,7 @@ function Formulario({ orgId, id, puerto }: { orgId: string; id?: string; puerto:
     return (
       <ScrollView contentContainerStyle={s.pantalla}>
         <EmptyState
+          icon="refresh-cw"
           title="No se pudieron leer los edificios"
           description="Revisa tu conexión y vuelve a intentarlo."
           action={<Button label="Reintentar" onPress={reintentar} />}
@@ -78,6 +80,7 @@ function Formulario({ orgId, id, puerto }: { orgId: string; id?: string; puerto:
     return (
       <ScrollView contentContainerStyle={s.pantalla}>
         <EmptyState
+          icon="building"
           title="Este edificio no está en la cartera"
           action={<Button variant="secondary" label="Volver a edificios" onPress={volverALaLista} />}
         />
@@ -138,8 +141,8 @@ function Campos({
   return (
     <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={s.pantalla} keyboardShouldPersistTaps="handled">
+        <PageHeader title={titulo} back={{ label: "Edificios", onPress: volverALaLista }} />
         <Card style={s.tarjeta} padding="xl">
-          <ScreenTitle>{titulo}</ScreenTitle>
           <ErrorSummary
             title={lista.length === 1 ? "Corrige 1 campo para guardar" : `Corrige ${lista.length} campos para guardar`}
             focusKey={intentosFallidos}
@@ -191,6 +194,6 @@ function Campos({
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
     flex: { flex: 1 },
-    pantalla: { flexGrow: 1, gap: t.space.xl, padding: t.space.xl, maxWidth: 960, width: "100%" },
+    pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: 960, width: "100%" },
     tarjeta: { width: "100%", maxWidth: 640, gap: t.space.lg },
   });

@@ -97,19 +97,20 @@ function Contenido({ padron, edificioId, unidadId, vinculoId, orgId, editable }:
   const vinculo = carga.estado === "listo" && vinculoId ? carga.valor.vinculos.find((v) => v.id === vinculoId) : undefined;
   let problema: ReactNode = null;
   if (!editable) {
-    problema = <EmptyState title="Tu rol no permite cambiar las personas de una unidad" description="Pídeselo a un administrador de tu empresa." />;
+    problema = <EmptyState icon="lock" title="Tu rol no permite cambiar las personas de una unidad" description="Pídeselo a un administrador de tu empresa." />;
   } else if (carga.estado === "error") {
     problema = (
       <EmptyState
+        icon="refresh-cw"
         title="No se pudo leer la unidad"
         description="Revisa tu conexión y vuelve a intentarlo."
         action={<Button label="Reintentar" onPress={reintentar} />}
       />
     );
   } else if (!carga.valor.unidad) {
-    problema = <EmptyState title="Esta unidad no está en el edificio" />;
+    problema = <EmptyState icon="door" title="Esta unidad no está en el edificio" />;
   } else if (vinculoId && !vinculo) {
-    problema = <EmptyState title="Esta persona ya no está en la unidad" />;
+    problema = <EmptyState icon="user" title="Esta persona ya no está en la unidad" />;
   }
   if (problema || carga.estado !== "listo" || !carga.valor.unidad) {
     return (

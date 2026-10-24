@@ -6,11 +6,14 @@
  * - `Aviso`: un aviso de advertencia con su signo y su borde; el color no es
  *   la única señal.
  * - `Volver`: el enlace para subir un nivel, siempre arriba a la izquierda.
+ * - `FlechaDeFila`: lo que dice, sin pasar el puntero, que una fila se abre
+ *   (y adónde lleva, si hace falta decirlo). Es decorativa: la fila ya lleva
+ *   su etiqueta para quien no ve.
  */
 import type { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { Button, ChoiceChips, FieldLabel, textStyle, useStyles, useTheme, type Tema } from "@/ui";
+import { Button, ChoiceChips, FieldLabel, Icon, textStyle, useStyles, useTheme, type Tema } from "@/ui";
 
 export function CampoDeOpciones<T extends string>({
   label,
@@ -54,9 +57,7 @@ export function Aviso({ children, testID }: { children: ReactNode; testID?: stri
   const s = useStyles(makeStyles);
   return (
     <View style={s.aviso} accessibilityRole="alert" testID={testID}>
-      <Text style={[textStyle(t, "body", t.color.warning.fg), s.signoAviso]} aria-hidden>
-        ⚠
-      </Text>
+      <Icon name="alert-triangle" color={t.color.warning.fg} style={s.signoAviso} />
       <Text style={[textStyle(t, "body", t.color.warning.fg), s.texto]}>{children}</Text>
     </View>
   );
@@ -66,7 +67,18 @@ export function Volver({ label, onPress }: { label: string; onPress: () => void 
   const s = useStyles(makeStyles);
   return (
     <View style={s.volver}>
-      <Button variant="ghost" size="sm" label={`‹ ${label}`} accessibilityLabel={`Volver a ${label.toLowerCase()}`} onPress={onPress} />
+      <Button variant="ghost" size="sm" icon="chevron-left" label={label} accessibilityLabel={`Volver a ${label.toLowerCase()}`} onPress={onPress} />
+    </View>
+  );
+}
+
+export function FlechaDeFila({ texto }: { texto?: string }) {
+  const t = useTheme();
+  const s = useStyles(makeStyles);
+  return (
+    <View style={s.flecha} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      {texto ? <Text style={[textStyle(t, "bodySmall", t.color.accent.text), s.flechaTexto]}>{texto}</Text> : null}
+      <Icon name="chevron-right" size="sm" color={t.color.accent.text} />
     </View>
   );
 }
@@ -81,12 +93,13 @@ const makeStyles = (t: Tema) =>
       flexDirection: "row",
       gap: t.space.sm,
       padding: t.space.md,
-      borderRadius: t.radius.md,
-      borderWidth: 1,
+      borderRadius: t.radius.sm,
       borderLeftWidth: 4,
-      borderColor: t.color.warning.fg,
+      borderLeftColor: t.color.warning.fg,
       backgroundColor: t.color.warning.bg,
     },
-    signoAviso: { fontWeight: "700" },
+    signoAviso: { marginTop: 1 },
     volver: { alignSelf: "flex-start", marginLeft: -t.space.sm },
+    flecha: { flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: t.space.xxs, minWidth: 32 },
+    flechaTexto: { fontWeight: "600" },
   });

@@ -30,8 +30,8 @@ import {
   Card,
   DataTable,
   EmptyState,
-  KeyValueRow,
-  ScreenTitle,
+  Icon,
+  PageHeader,
   SectionTitle,
   StatTile,
   StatusDot,
@@ -43,6 +43,7 @@ import {
   textStyle,
   useStyles,
   useTheme,
+  type IconName,
   type Tema,
 } from "@/ui";
 
@@ -61,6 +62,8 @@ import { useCartera } from "./usar-cartera";
 const ANCHO_ANGOSTO = 720;
 
 const LISTO = "Listo para cobrar";
+
+const ICONO_DEL_INDICADOR: Record<string, IconName> = { unidades: "door", "por-completar": "alert-circle" };
 
 /** Adónde lleva cada pendiente, si ya hay una pantalla donde resolverlo. */
 function irAlPaso(tipo: TipoPendiente, edificioId: string): (() => void) | null {
@@ -126,6 +129,7 @@ function Cartera({
   } else if (carga.estado === "error") {
     contenido = (
       <EmptyState
+        icon="refresh-cw"
         title="No se pudo leer la cartera"
         description="Revisa tu conexión y vuelve a intentarlo."
         action={<Button label="Reintentar" onPress={reintentar} />}
@@ -137,6 +141,7 @@ function Cartera({
       <DelEdificio fila={fila} editable={editable} />
     ) : (
       <EmptyState
+        icon="building"
         title="No se encontró el edificio"
         action={<Button variant="secondary" label="Ver toda la cartera" onPress={() => elegirEdificio(null)} />}
       />
@@ -144,11 +149,16 @@ function Cartera({
   } else if (carga.filas.length === 0) {
     contenido = editable ? (
       <EmptyState
+        icon="building"
         title="Todavía no hay edificios registrados"
-        action={<Button label="Registrar edificio" onPress={() => router.push("/edificios/nuevo")} testID="inicio-registrar" />}
+        action={<Button icon="plus" label="Registrar edificio" onPress={() => router.push("/edificios/nuevo")} testID="inicio-registrar" />}
       />
     ) : (
-      <EmptyState title="Todavía no hay edificios registrados" description="Pide a un administrador de tu empresa que los registre." />
+      <EmptyState
+        icon="building"
+        title="Todavía no hay edificios registrados"
+        description="Pide a un administrador de tu empresa que los registre."
+      />
     );
   } else {
     contenido = <DeLaCartera filas={carga.filas} abrir={elegirEdificio} />;
@@ -156,7 +166,7 @@ function Cartera({
 
   return (
     <ScrollView contentContainerStyle={s.pantalla}>
-      <ScreenTitle>{edificio ? edificio.nombre : orgNombre}</ScreenTitle>
+      <PageHeader title={edificio ? edificio.nombre : orgNombre} />
       {contenido}
     </ScrollView>
   );
@@ -167,13 +177,12 @@ function DeLaCartera({ filas, abrir }: { filas: FilaCartera[]; abrir: (id: strin
   const indicadores = indicadoresDeLaCartera(filas);
   return (
     <>
-      {indicadores.length > 0 ? (
-        <View style={s.indicadores}>
-          {indicadores.map((i) => (
-            <StatTile key={i.clave} label={i.etiqueta} value={String(i.valor)} />
-          ))}
-        </View>
-      ) : null}
+      <View style={s.indicadores}>
+        <StatTile icon="building" label={filas.length === 1 ? "Edificio" : "Edificios"} value={String(filas.length)} />
+        {indicadores.map((i) => (
+          <StatTile key={i.clave} icon={ICONO_DEL_INDICADOR[i.clave]} label={i.etiqueta} value={String(i.valor)} />
+        ))}
+      </View>
       <Tabla filas={filas} abrir={abrir} />
     </>
   );
@@ -190,9 +199,9 @@ function Tabla({ filas, abrir }: { filas: FilaCartera[]; abrir: (id: string) => 
   const { width } = useWindowDimensions();
   // La flecha dice que la fila se abre sin tener que pasar el puntero.
   const flecha = (
-    <Text aria-hidden style={[textStyle(t, "label", t.color.accent.text), s.flecha]}>
-      ›
-    </Text>
+    <View style={s.flecha}>
+      <Icon name="chevron-right" color={t.color.accent.text} />
+    </View>
   );
 
   if (width < ANCHO_ANGOSTO) {
@@ -201,7 +210,7 @@ function Tabla({ filas, abrir }: { filas: FilaCartera[]; abrir: (id: string) => 
         {filas.map((f) => (
           <TableRow key={f.id} onPress={() => abrir(f.id)} accessibilityLabel={etiquetaDeFila(f)}>
             <TdView flex={1} style={s.apilada}>
-              <Text style={[textStyle(t, "body"), s.fuerte]}>{f.nombre}</Text>
+              <Text style={textStyle(t, "subtitle")}>{f.nombre}</Text>
               <Text style={textStyle(t, "bodySmall", t.color.text.secondary)}>
                 {unidades(f.unidades)}
                 {f.participacion ? ` · participación ${formatoPorcentaje(f.participacion.total)}` : ""}
@@ -229,7 +238,9 @@ function Tabla({ filas, abrir }: { filas: FilaCartera[]; abrir: (id: string) => 
       </TableHead>
       {filas.map((f) => (
         <TableRow key={f.id} onPress={() => abrir(f.id)} accessibilityLabel={etiquetaDeFila(f)}>
-          <Td flex={2}>{f.nombre}</Td>
+          <Td flex={2} style={s.fuerte}>
+            {f.nombre}
+          </Td>
           <Td flex={1} mono align="right">
             {f.unidades}
           </Td>
@@ -270,7 +281,9 @@ function SiguientePaso({ fila }: { fila: Pick<FilaCartera, "id" | "pendientes" |
         <Button
           variant="secondary"
           size="sm"
-          label={`${fila.cierre.texto} ›`}
+          label={fila.cierre.texto}
+          icon="arrow-right"
+          iconPosition="end"
           accessibilityLabel={`${fila.cierre.texto} en el cierre del mes`}
           onPress={() => irAlCierre(fila.id, paso)}
           testID={`inicio-cierre-${fila.id}`}
@@ -296,11 +309,13 @@ function DelEdificio({ fila, editable }: { fila: FilaCartera; editable: boolean 
   const s = useStyles(makeStyles);
   return (
     <>
-      <Card style={s.ficha}>
-        <KeyValueRow label="Unidades" value={String(fila.unidades)} />
-        {fila.participacion ? <KeyValueRow label="Participación" value={formatoPorcentaje(fila.participacion.total)} /> : null}
-        <KeyValueRow label="Cuenta bancaria" value={fila.tieneCuenta ? "Registrada" : "Falta"} />
-      </Card>
+      <View style={s.indicadores}>
+        <StatTile icon="door" label="Unidades" value={String(fila.unidades)} />
+        {fila.participacion ? (
+          <StatTile icon="percent" label="Participación" value={formatoPorcentaje(fila.participacion.total)} />
+        ) : null}
+        <StatTile icon="landmark" label="Cuenta bancaria" value={fila.tieneCuenta ? "Registrada" : "Falta"} />
+      </View>
       {fila.pendientes.length === 0 ? (
         <SiguientePaso fila={fila} />
       ) : (
@@ -310,14 +325,22 @@ function DelEdificio({ fila, editable }: { fila: FilaCartera; editable: boolean 
             const ir = editable ? irAlPaso(p.tipo, fila.id) : null;
             return (
               <Card key={p.tipo} style={s.pendiente}>
-                {ir ? (
-                  <View style={s.enlace}>
-                    <Button variant="secondary" label={`${p.paso} ›`} onPress={ir} testID={`inicio-paso-${p.tipo}`} />
-                  </View>
-                ) : (
+                <View style={s.pendienteTexto}>
                   <Text style={[textStyle(t, "body"), s.fuerte]}>{p.paso}</Text>
-                )}
-                <StatusDot tone="warning" label={p.causa} />
+                  <StatusDot tone="warning" label={p.causa} />
+                </View>
+                {ir ? (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    label="Resolver"
+                    icon="arrow-right"
+                    iconPosition="end"
+                    accessibilityLabel={p.paso}
+                    onPress={ir}
+                    testID={`inicio-paso-${p.tipo}`}
+                  />
+                ) : null}
               </Card>
             );
           })}
@@ -334,9 +357,9 @@ const makeStyles = (t: Tema) =>
     apilada: { gap: t.space.xs },
     paso: { gap: t.space.xxs },
     fuerte: { fontWeight: "600" },
-    flecha: { width: 32, textAlign: "right" },
-    ficha: { maxWidth: 420, gap: t.space.sm },
-    pendientes: { gap: t.space.md, maxWidth: 560 },
-    pendiente: { gap: t.space.xs },
+    flecha: { width: 32, alignItems: "flex-end", justifyContent: "center" },
+    pendientes: { gap: t.space.md, maxWidth: 720 },
+    pendiente: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: t.space.md },
+    pendienteTexto: { flexGrow: 1, flexShrink: 1, minWidth: 200, gap: t.space.xs },
     enlace: { alignSelf: "flex-start" },
   });

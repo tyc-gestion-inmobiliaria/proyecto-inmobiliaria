@@ -84,7 +84,9 @@ export function ActionMenu({
   return (
     <View ref={disparador} collapsable={false}>
       <Button
-        label={`${label} ▾`}
+        label={label}
+        icon="chevron-down"
+        iconPosition="end"
         variant={variant}
         size={size}
         accessibilityLabel={accessibilityLabel}

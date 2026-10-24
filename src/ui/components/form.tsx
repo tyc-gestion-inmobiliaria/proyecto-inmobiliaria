@@ -17,6 +17,7 @@ import { textStyle } from "../theme/text-style";
 import { useStyles, useTheme } from "../theme/theme-provider";
 import type { Tema } from "../tokens";
 import { Chip } from "./chip";
+import { Icon } from "./icon";
 
 export function Form({ title, children }: { title: string; children: ReactNode }) {
   const t = useTheme();
@@ -172,9 +173,12 @@ export function ErrorSummary({
   if (items.length === 0) return null;
   return (
     <View ref={caja} tabIndex={-1} accessibilityRole="alert" accessibilityLiveRegion="assertive" style={s.summary}>
-      <Text accessibilityRole="header" style={textStyle(t, "subtitle", t.color.danger.fg)}>
-        ⚠ {title}
-      </Text>
+      <View style={s.summaryTitle}>
+        <Icon name="alert-circle" color={t.color.danger.fg} />
+        <Text accessibilityRole="header" style={[textStyle(t, "subtitle", t.color.danger.fg), s.summaryTitleText]}>
+          {title}
+        </Text>
+      </View>
       <View>
         {items.map((item) =>
           item.onPress ? (
@@ -221,6 +225,8 @@ const makeStyles = (t: Tema) =>
     footerRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "flex-end", gap: t.space.md },
     missing: { flex: 1, minWidth: 160 },
     buttons: { flexDirection: "row", gap: t.space.sm + 2 },
+    summaryTitle: { flexDirection: "row", alignItems: "center", gap: t.space.sm },
+    summaryTitleText: { flex: 1 },
     summary: {
       gap: t.space.xs,
       padding: t.space.lg,

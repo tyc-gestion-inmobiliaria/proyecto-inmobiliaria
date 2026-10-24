@@ -57,7 +57,7 @@ export interface TextFieldProps {
   error?: string | null;
   tone?: TextFieldTone;
   required?: boolean;
-  /** Para cifras y códigos: letra monoespaciada. */
+  /** Para cifras y códigos: el estilo de dato, con números tabulares. */
   mono?: boolean;
   multiline?: boolean;
   secureTextEntry?: boolean;

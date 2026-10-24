@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { contrastRatio, MIN_TEXT_CONTRAST } from "./theme/contrast";
-import { temaDelProyecto } from "../tema";
+import { temaDelProyecto, temaOscuroDelProyecto } from "../tema";
 import { darkTheme, lightTheme, type Tema } from "./tokens";
 
 /**
@@ -38,7 +38,7 @@ function pares(t: Tema): [string, string, string][] {
 }
 
 // El del proyecto entra también: un tema hecho con crearTema tiene que cumplir lo mismo.
-for (const tema of [lightTheme, darkTheme, temaDelProyecto]) {
+for (const tema of [lightTheme, darkTheme, temaDelProyecto, temaOscuroDelProyecto]) {
   describe(`contraste del tema ${tema.name}`, () => {
     for (const [nombre, texto, fondo] of pares(tema)) {
       it(`${nombre} llega a ${MIN_TEXT_CONTRAST}:1`, () => {

@@ -11,6 +11,8 @@
  * - Operación: Cobranza, Reservas, Incidencias, Accesos y paquetes
  * - Gestión: Finanzas, Mantenimiento, Comunicados, Reportes
  */
+import type { IconName } from "@/ui/components/icon-paths";
+
 export type Tramo = "Operación" | "Gestión";
 
 export interface Seccion {
@@ -20,11 +22,13 @@ export interface Seccion {
   ruta: "/" | "/edificios";
   /** El tramo del menú; sin tramo va arriba, sin título. */
   grupo?: Tramo;
+  /** El ícono del menú y de la barra del teléfono. Sin ícono, va la inicial. */
+  icono?: IconName;
 }
 
 export const SECCIONES: readonly Seccion[] = [
-  { key: "inicio", label: "Inicio", ruta: "/" },
-  { key: "edificios", label: "Edificios", ruta: "/edificios" },
+  { key: "inicio", label: "Inicio", ruta: "/", icono: "home" },
+  { key: "edificios", label: "Edificios", ruta: "/edificios", icono: "building" },
 ];
 
 const ORDEN_DE_TRAMOS: readonly (Tramo | undefined)[] = [undefined, "Operación", "Gestión"];

@@ -105,6 +105,12 @@ export type { StepCardStatus, StepCardTexts } from "./components/step-cards-logi
 export { Timeline } from "./components/timeline";
 export type { TimelineEvent, TimelineTone } from "./components/timeline";
 export { EmptyState } from "./components/empty-state";
+export { Icon } from "./components/icon";
+export type { IconProps } from "./components/icon";
+export { ICON_SIZE, ICONS } from "./components/icon-paths";
+export type { IconName, IconShape, IconSize } from "./components/icon-paths";
+export { PageHeader } from "./components/page-header";
+export type { PageHeaderProps } from "./components/page-header";
 export { nextSort, sortBy, stageProgress, stageStatuses } from "./components/stage-logic";
 export type { SortDirection, StageStatus } from "./components/stage-logic";
 export type { BoardCardProps, BoardColumnProps } from "./components/board";
