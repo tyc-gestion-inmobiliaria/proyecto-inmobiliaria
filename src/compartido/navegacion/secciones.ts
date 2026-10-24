@@ -17,15 +17,25 @@ export interface Seccion {
   key: string;
   label: string;
   /** La ruta de expo-router a la que lleva. */
-  ruta: "/" | "/edificios";
+  ruta: "/" | "/edificios" | "/usuarios";
   /** El tramo del menú; sin tramo va arriba, sin título. */
   grupo?: Tramo;
+  /** Solo la ven estos roles; sin esto, todos. */
+  soloRoles?: readonly string[];
 }
 
 export const SECCIONES: readonly Seccion[] = [
   { key: "inicio", label: "Inicio", ruta: "/" },
   { key: "edificios", label: "Edificios", ruta: "/edificios" },
+  // PB-23: invitar y ver quién tiene acceso. Fuera de los once tramos de los
+  // wireframes; va en Gestión porque es tarea de administración.
+  { key: "usuarios", label: "Usuarios", ruta: "/usuarios", grupo: "Gestión", soloRoles: ["administrador"] },
 ];
+
+/** Las secciones que ve un rol. */
+export function seccionesDelRol(rol: string | undefined, secciones: readonly Seccion[] = SECCIONES): Seccion[] {
+  return secciones.filter((s) => !s.soloRoles || (rol !== undefined && s.soloRoles.includes(rol)));
+}
 
 const ORDEN_DE_TRAMOS: readonly (Tramo | undefined)[] = [undefined, "Operación", "Gestión"];
 

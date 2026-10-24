@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { ordenarPorTramo, SECCIONES, seccionDeRuta, type Seccion } from "./secciones";
+import { ordenarPorTramo, SECCIONES, seccionDeRuta, seccionesDelRol, type Seccion } from "./secciones";
 
 const secciones = [
   { key: "inicio", label: "Inicio", ruta: "/" },
@@ -42,5 +42,16 @@ describe("ordenarPorTramo", () => {
       ordenarPorTramo(desordenadas).map((s) => s.key),
       ["inicio", "cobranza", "reservas", "reportes"],
     );
+  });
+});
+
+describe("seccionesDelRol", () => {
+  it("Usuarios solo la ve el administrador", () => {
+    const claves = (rol?: string) => seccionesDelRol(rol).map((s) => s.key);
+    assert.ok(claves("administrador").includes("usuarios"));
+    assert.equal(claves("personal").includes("usuarios"), false);
+    assert.equal(claves("residente").includes("usuarios"), false);
+    assert.equal(claves(undefined).includes("usuarios"), false);
+    assert.ok(claves("personal").includes("edificios"));
   });
 });

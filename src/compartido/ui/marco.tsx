@@ -35,12 +35,14 @@ import {
   type Tema,
 } from "@/ui";
 
-import { ordenarPorTramo, SECCIONES, seccionDeRuta } from "../navegacion/secciones";
+import { ordenarPorTramo, SECCIONES, seccionDeRuta, seccionesDelRol } from "../navegacion/secciones";
 
 const ANCHO_ANGOSTO = 768;
 const ALTO_BARRA = 56;
 
-const ENTRADAS = ordenarPorTramo(SECCIONES).map((x) => ({ key: x.key, label: x.label, group: x.grupo }));
+function entradasDelRol(rol: string | undefined) {
+  return ordenarPorTramo(seccionesDelRol(rol)).map((x) => ({ key: x.key, label: x.label, group: x.grupo }));
+}
 
 function irA(key: string, activa: string | undefined) {
   const destino = SECCIONES.find((x) => x.key === key);
@@ -60,6 +62,7 @@ export function Marco({ children }: { children: ReactNode }) {
   const [menuCuenta, setMenuCuenta] = useState(false);
 
   const angosto = width < ANCHO_ANGOSTO;
+  const entradas = entradasDelRol(enCurso?.rol);
   const activa = seccionDeRuta(ruta)?.key;
   const correo = cuenta?.correo ?? "";
 
@@ -133,7 +136,7 @@ export function Marco({ children }: { children: ReactNode }) {
         angosto ? undefined : (
           <SideMenu
             accessibilityLabel="Secciones"
-            items={ENTRADAS}
+            items={entradas}
             activeKey={activa}
             onSelect={(key) => irA(key, activa)}
             collapsed={plegado}
@@ -145,7 +148,7 @@ export function Marco({ children }: { children: ReactNode }) {
         angosto ? (
           <BottomNav
             accessibilityLabel="Secciones"
-            items={ENTRADAS}
+            items={entradas}
             activeKey={activa}
             onSelect={(key) => irA(key, activa)}
             style={{ paddingBottom: insets.bottom }}
