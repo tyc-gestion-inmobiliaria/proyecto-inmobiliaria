@@ -2,8 +2,10 @@
  * El recibo: la vista previa del paso 3, el emitido, y lo que dice el estado
  * de cuenta de la unidad (PB-16, PB-18, PB-19, PB-20).
  *
- * Supuesto: hasta que existan los pagos (Sprint 3) ningún cargo está pagado;
- * el estado de cada uno es "por vencer" o "vencido" según su vencimiento.
+ * Lo pagado de cada recibo y el saldo de la unidad los calcula la base con
+ * los pagos aplicados (vistas `recibo_con_saldo` y `saldo_de_la_unidad`, de
+ * la migración de pagos); acá solo se leen. Un recibo cubierto entero está
+ * "Pagado"; si le falta algo, "Por vencer" o "Vencido" según su vencimiento.
  */
 import { sumar, textoDeSoles } from "./dinero";
 import { textoDeMetros } from "./lectura";
@@ -41,6 +43,10 @@ export interface Recibo {
   total: number;
   vence: string;
   emitidoEn: string;
+  /** Lo aplicado de pagos aceptados a este recibo, según la base. */
+  pagado: number;
+  /** Lo que le falta a su cargo propio (cuota + agua), según la base. */
+  pendiente: number;
 }
 
 export interface AlertaDeFila {
@@ -77,8 +83,9 @@ export type EstadoDelCargo = "por-vencer" | "vencido" | "pagado";
 
 export const TEXTO_DEL_ESTADO: Record<EstadoDelCargo, string> = { "por-vencer": "Por vencer", vencido: "Vencido", pagado: "Pagado" };
 
-export function estadoDelCargo(vence: string, hoy: string): EstadoDelCargo {
-  return hoy > vence ? "vencido" : "por-vencer";
+export function estadoDelCargo(recibo: Pick<Recibo, "vence" | "pendiente">, hoy: string): EstadoDelCargo {
+  if (recibo.pendiente <= 0) return "pagado";
+  return hoy > recibo.vence ? "vencido" : "por-vencer";
 }
 
 export interface Cargo {
@@ -95,24 +102,23 @@ export function cargosDeLaUnidad(recibos: readonly Recibo[], hoy: string): Cargo
   return [...recibos]
     .sort((a, b) => b.periodo.localeCompare(a.periodo) || b.numero - a.numero)
     .flatMap((r) => {
-      const estado = estadoDelCargo(r.vence, hoy);
+      const estado = estadoDelCargo(r, hoy);
       const cargos: Cargo[] = [{ reciboId: r.id, concepto: "Mantenimiento", periodo: r.periodo, monto: r.cuota, vence: r.vence, estado }];
       if (r.agua > 0) cargos.push({ reciboId: r.id, concepto: "Agua", periodo: r.periodo, monto: r.agua, vence: r.vence, estado });
       return cargos;
     });
 }
 
-export function saldoDeLaUnidad(recibos: readonly Recibo[]): number {
-  return sumar(recibos.flatMap((r) => [r.cuota, r.agua]));
-}
-
 export type TonoDeEstado = "success" | "warning" | "danger" | "neutral";
 
-/** El estado de la unidad en palabras, para el título de la ficha (PB-19). */
-export function estadoDeLaUnidad(recibos: readonly Recibo[], hoy: string): { texto: string; tono: TonoDeEstado } {
+/**
+ * El estado de la unidad en palabras, para el título de la ficha (PB-19).
+ * `saldo` es el de la base: lo cargado menos lo pagado (negativo si queda a favor).
+ */
+export function estadoDeLaUnidad(recibos: readonly Recibo[], saldo: number, hoy: string): { texto: string; tono: TonoDeEstado } {
   if (recibos.length === 0) return { texto: "Sin recibos", tono: "neutral" };
-  const cargos = cargosDeLaUnidad(recibos, hoy).filter((c) => c.monto > 0);
-  if (cargos.length === 0) return { texto: "Al día", tono: "success" };
+  const cargos = cargosDeLaUnidad(recibos, hoy).filter((c) => c.monto > 0 && c.estado !== "pagado");
+  if (saldo <= 0 || cargos.length === 0) return { texto: "Al día", tono: "success" };
   if (cargos.some((c) => c.estado === "vencido")) return { texto: "Con deuda vencida", tono: "danger" };
   return { texto: "Con deuda por vencer", tono: "warning" };
 }

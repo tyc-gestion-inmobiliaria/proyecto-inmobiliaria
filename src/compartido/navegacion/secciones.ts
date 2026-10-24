@@ -29,6 +29,7 @@ export interface Seccion {
     | "/edificios"
     | "/unidades"
     | "/cobranza"
+    | "/pagos"
     | "/reservas"
     | "/incidencias"
     | "/accesos"
@@ -49,6 +50,9 @@ export const TODAS_LAS_SECCIONES: readonly Seccion[] = [
   { key: "edificios", label: "Edificios", ruta: "/edificios", icono: "building" },
   { key: "unidades", label: "Unidades y personas", ruta: "/unidades", icono: "users", soloEnMaqueta: true },
   { key: "cobranza", label: "Cobranza", ruta: "/cobranza", grupo: "Operación", icono: "receipt", soloEnMaqueta: true },
+  // La cola de pagos por validar (PB-27). En los wireframes los pagos eran el
+  // último tramo de Cobranza; mientras Cobranza no los muestre, van aparte.
+  { key: "pagos", label: "Pagos", ruta: "/pagos", grupo: "Operación", icono: "inbox" },
   { key: "reservas", label: "Reservas", ruta: "/reservas", grupo: "Operación", icono: "calendar-check", soloEnMaqueta: true },
   { key: "incidencias", label: "Incidencias", ruta: "/incidencias", grupo: "Operación", icono: "alert-triangle", soloEnMaqueta: true },
   { key: "accesos", label: "Accesos y paquetes", ruta: "/accesos", grupo: "Operación", icono: "door", soloEnMaqueta: true },

@@ -65,9 +65,11 @@ import { Aviso, FlechaDeFila, Volver } from "@/compartido/ui/piezas";
 import { irALasUnidades } from "./pantalla-unidades";
 import { useCarga } from "@/compartido/ui/usar-carga";
 
-/** Lo que otro módulo (la cobranza) pone en la ficha. El padrón no sabe de recibos. */
+/** Lo que otros módulos (cobranza, pagos) ponen en la ficha. El padrón no sabe de recibos ni de pagos. */
 export interface CuentaDeLaUnidad {
   estado?: { texto: string; tono: StatusTone };
+  /** La acción primaria de la ficha, junto a "Editar unidad" (por ejemplo, "Registrar pago"). */
+  accion?: ReactNode;
   /** Va en la pestaña Resumen, entre los datos y las personas. */
   resumen?: ReactNode;
   pestanas: { key: string; label: string; contenido: ReactNode }[];
@@ -221,16 +223,19 @@ function FichaConPestanas({
         back={{ label: "Unidades", onPress: volver }}
         status={cuenta.estado ? <Badge tone={cuenta.estado.tono} label={cuenta.estado.texto} /> : null}
         actions={
-          editable ? (
-            <Button
-              variant="secondary"
-              icon="pencil"
-              label="Editar unidad"
-              onPress={() =>
-                router.push({ pathname: "/edificios/[id]/unidades/[unidadId]/editar", params: { id: edificioId, unidadId: unidad.id } })
-              }
-            />
-          ) : null
+          <>
+            {editable ? (
+              <Button
+                variant="secondary"
+                icon="pencil"
+                label="Editar unidad"
+                onPress={() =>
+                  router.push({ pathname: "/edificios/[id]/unidades/[unidadId]/editar", params: { id: edificioId, unidadId: unidad.id } })
+                }
+              />
+            ) : null}
+            {cuenta.accion}
+          </>
         }
       />
       {pestanas.length > 1 ? <Tabs accessibilityLabel="Secciones de la ficha" items={pestanas} value={pestana} onChange={setPestana} /> : null}
@@ -500,6 +505,7 @@ const makeStyles = (t: Tema) =>
     celda: { flexGrow: 1, flexBasis: 200 },
     cabecera: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: t.space.md },
     titulo: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.sm },
+    acciones: { flexDirection: "row", flexWrap: "wrap", alignItems: "flex-start", gap: t.space.sm },
     persona: { gap: t.space.xs },
     insignias: { flexDirection: "row", flexWrap: "wrap", gap: t.space.xs },
     datos: { flexDirection: "row", flexWrap: "wrap", gap: t.space.lg },

@@ -5,6 +5,8 @@
  * - Edificio Los Olivos: padrón completo, cuenta bancaria y el mes emitido.
  * - Residencial Las Acacias: padrón completo y el cierre en lecturas.
  * - Torre del Parque: unidades sin participación y sin cuenta bancaria.
+ * - Pagos en Los Olivos: dos por validar, uno aceptado entero, uno a cuenta
+ *   y uno rechazado, para que la cola y la ficha tengan de todo.
  *
  * Todo es inventado y genérico: ni nombres ni documentos de personas reales.
  * Vive en memoria y lo comparten los adaptadores de maqueta de cada módulo,
@@ -112,6 +114,45 @@ export interface ReciboM {
   emitidoEn: string;
 }
 
+export interface PagoM {
+  id: string;
+  orgId: string;
+  edificioId: string;
+  unidadId: string;
+  /** En soles, como `numeric(12,2)` en la base. */
+  monto: number;
+  fecha: string;
+  operacion: string | null;
+  cuentaId: string | null;
+  origen: "reportado" | "registrado";
+  estado: "por_validar" | "aceptado" | "rechazado";
+  motivoRechazo: string | null;
+  comprobante: string | null;
+  clave: string;
+  reportadoEn: string;
+  validadoEn: string | null;
+}
+
+export interface InvitacionM {
+  id: string;
+  orgId: string;
+  correo: string;
+  rol: "administrador" | "personal" | "residente";
+  unidadId: string | null;
+  estado: "pendiente" | "aceptada" | "revocada";
+  token: string;
+  creadaEn: string;
+  venceEn: string;
+}
+
+export interface MiembroM {
+  usuarioId: string;
+  orgId: string;
+  correo: string;
+  rol: "administrador" | "personal" | "residente";
+  desde: string;
+}
+
 export interface Mundo {
   edificios: EdificioM[];
   unidades: UnidadM[];
@@ -122,6 +163,9 @@ export interface Mundo {
   lecturas: LecturaM[];
   partidas: PartidaM[];
   recibos: ReciboM[];
+  pagos: PagoM[];
+  invitaciones: InvitacionM[];
+  miembros: MiembroM[];
 }
 
 const NOMBRES = ["Ana", "Luis", "Carmen", "Jorge", "Rosa", "Miguel", "Elena", "Raúl", "Patricia", "Diego", "Lucía", "Andrés"];
@@ -153,7 +197,20 @@ function numeros(pisos: number, porPiso: number): string[] {
 }
 
 function crearMundo(): Mundo {
-  const m: Mundo = { edificios: [], unidades: [], personas: [], vinculos: [], cuentas: [], cierres: [], lecturas: [], partidas: [], recibos: [] };
+  const m: Mundo = {
+    edificios: [],
+    unidades: [],
+    personas: [],
+    vinculos: [],
+    cuentas: [],
+    cierres: [],
+    lecturas: [],
+    partidas: [],
+    recibos: [],
+    pagos: [],
+    invitaciones: [],
+    miembros: [],
+  };
   let persona = 0;
   let recibo = 1;
 
@@ -260,6 +317,65 @@ function crearMundo(): Mundo {
       });
     }
   }
+  // Un pago no puede tener fecha futura: a comienzos de mes, se corre a hoy.
+  const hoy = Number(new Date().toLocaleString("en-US", { timeZone: "America/Lima", day: "numeric" }));
+  const pago = (unidad: string, monto: number, diaPedido: number, estado: PagoM["estado"], origen: PagoM["origen"], motivo: string | null = null) => {
+    const dia = Math.min(diaPedido, hoy);
+    const hecho = `${diaDelMes(dia)}T09:30:00-05:00`;
+    m.pagos.push({
+      id: `pago-${m.pagos.length + 1}`,
+      orgId: ORG_DEMO,
+      edificioId: "ed-olivos",
+      unidadId: `ed-olivos-u${unidad}`,
+      monto,
+      fecha: diaDelMes(dia),
+      operacion: origen === "reportado" ? String(4100230 + m.pagos.length * 977) : null,
+      cuentaId: "ed-olivos-cta",
+      origen,
+      estado,
+      motivoRechazo: motivo,
+      comprobante: null,
+      clave: `semilla-${m.pagos.length + 1}`,
+      reportadoEn: hecho,
+      validadoEn: estado === "por_validar" ? null : hecho,
+    });
+  };
+  pago("101", 339.8, 8, "por_validar", "reportado");
+  pago("202", 350.71, 9, "por_validar", "reportado");
+  pago("102", 350.71, 6, "aceptado", "registrado");
+  pago("103", 200, 7, "aceptado", "reportado");
+  pago("201", 100, 7, "rechazado", "reportado", "El número de operación no aparece en el banco.");
+
+  const hace = (dias: number) => new Date(Date.now() - dias * 86_400_000).toISOString();
+  m.miembros.push(
+    { usuarioId: "cuenta-admin", orgId: ORG_DEMO, correo: "admin@demo.test", rol: "administrador", desde: hace(120) },
+    { usuarioId: "cuenta-personal", orgId: ORG_DEMO, correo: "personal@demo.test", rol: "personal", desde: hace(60) },
+    { usuarioId: "cuenta-residente", orgId: ORG_DEMO, correo: "residente@demo.test", rol: "residente", desde: hace(20) },
+  );
+  m.invitaciones.push(
+    {
+      id: "inv-1",
+      orgId: ORG_DEMO,
+      correo: "conserje@ejemplo.test",
+      rol: "personal",
+      unidadId: null,
+      estado: "pendiente",
+      token: "demo-invitacion",
+      creadaEn: hace(2),
+      venceEn: new Date(Date.now() + 5 * 86_400_000).toISOString(),
+    },
+    {
+      id: "inv-2",
+      orgId: ORG_DEMO,
+      correo: "persona3@ejemplo.test",
+      rol: "residente",
+      unidadId: "ed-olivos-u103",
+      estado: "pendiente",
+      token: "demo-residente",
+      creadaEn: hace(1),
+      venceEn: new Date(Date.now() + 6 * 86_400_000).toISOString(),
+    },
+  );
   return m;
 }
 

@@ -41,15 +41,20 @@ export function CuentaDeLaUnidad({
   cobranza,
   orgId,
   unidadId,
+  version = 0,
   children,
 }: {
   cobranza: CobranzaPuerto;
   orgId: string;
   unidadId: string;
+  /** Al cambiar (se registró un pago), la cuenta se vuelve a leer. */
+  version?: number;
   children: (cuenta: CuentaParaLaFicha) => ReactNode;
 }) {
   const hoy = hoyEnLima();
-  const leer = useCallback(() => estadoDeCuenta(cobranza, orgId, unidadId, hoy), [cobranza, orgId, unidadId, hoy]);
+  // `version` no se usa adentro: está para que la lectura se repita al cambiar.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const leer = useCallback(() => estadoDeCuenta(cobranza, orgId, unidadId, hoy), [cobranza, orgId, unidadId, hoy, version]);
   const { carga } = useCarga(leer);
 
   // Si no se pudo leer, la ficha sigue: el padrón se muestra igual y la cuenta avisa.
@@ -97,10 +102,13 @@ function Resumen({ cobranza, orgId, cuenta }: { cobranza: CobranzaPuerto; orgId:
   const ultimo = cuenta.recibos[0];
   return (
     <Card style={s.tarjeta} padding="lg">
-      <Text style={textStyle(t, "body", t.color.text.secondary)}>Saldo</Text>
+      <Text style={textStyle(t, "body", t.color.text.secondary)}>{cuenta.saldo < 0 ? "Saldo a favor" : "Saldo"}</Text>
       <Text style={textStyle(t, "display", cuenta.estado.tono === "danger" ? t.color.danger.fg : t.color.text.primary)} testID="ficha-saldo">
-        {textoDeSoles(cuenta.saldo)}
+        {textoDeSoles(Math.abs(cuenta.saldo))}
       </Text>
+      {cuenta.porValidar > 0 ? (
+        <Text style={textStyle(t, "bodySmall", t.color.text.secondary)}>{`${textoDeSoles(cuenta.porValidar)} en pagos por validar`}</Text>
+      ) : null}
       {ultimo ? (
         <>
           <Text style={textStyle(t, "bodySmall", t.color.text.secondary)}>
@@ -125,7 +133,7 @@ function Resumen({ cobranza, orgId, cuenta }: { cobranza: CobranzaPuerto; orgId:
   );
 }
 
-/** El estado de cuenta, un recibo por tarjeta: su periodo, su total, su estado, sus cargos y su PDF. */
+/** El saldo lo calcula la base con los pagos aplicados; si es negativo, queda a favor de la unidad. */
 function Tabla({ cobranza, orgId, cuenta, hoy }: { cobranza: CobranzaPuerto; orgId: string; cuenta: EstadoDeCuenta; hoy: string }) {
   const t = useTheme();
   const s = useStyles(makeStyles);
@@ -141,12 +149,12 @@ function Tabla({ cobranza, orgId, cuenta, hoy }: { cobranza: CobranzaPuerto; org
   return (
     <View style={s.columna}>
       <View style={s.saldo}>
-        <Text style={textStyle(t, "body", t.color.text.secondary)}>Saldo</Text>
-        <Text style={textStyle(t, "title")}>{textoDeSoles(cuenta.saldo)}</Text>
+        <Text style={textStyle(t, "body", t.color.text.secondary)}>{cuenta.saldo < 0 ? "Saldo a favor" : "Saldo"}</Text>
+        <Text style={textStyle(t, "title")}>{textoDeSoles(Math.abs(cuenta.saldo))}</Text>
       </View>
       {fallo ? <Aviso texto={fallo} /> : null}
       {recibos.map((r) => {
-        const estado = estadoDelCargo(r.vence, hoy);
+        const estado = estadoDelCargo(r, hoy);
         return (
           <Card key={r.id} padding="lg" style={s.recibo}>
             <View style={s.cabecera}>

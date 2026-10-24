@@ -8,14 +8,14 @@
  * sigue saliendo de "fuera" de la pantalla, como saldrá del servidor.
  */
 import { demora, EN_MAQUETA } from "@/compartido/maqueta/modo";
-import { mundo, NOMBRE_ORG_DEMO, nuevoId } from "@/compartido/maqueta/mundo";
+import { mundo, NOMBRE_ORG_DEMO, nuevoId, type ReciboM } from "@/compartido/maqueta/mundo";
 
 import type { CobranzaPuerto, Resultado } from "../aplicacion/puertos";
 import type { Cierre } from "../dominio/cierre";
 import { sumar } from "../dominio/dinero";
 import { sumarMeses } from "../dominio/periodo";
 import { repartir } from "../dominio/prorrateo";
-import type { FilaPrevia } from "../dominio/recibo";
+import type { FilaPrevia, Recibo } from "../dominio/recibo";
 import { cobranzaSupabase } from "./cobranza-supabase";
 
 const bien = <T>(valor: T): Promise<Resultado<T>> => demora({ ok: true, valor });
@@ -103,6 +103,26 @@ function cuadrarLaSemilla() {
 }
 
 if (EN_MAQUETA) cuadrarLaSemilla();
+
+/**
+ * Lo pagado de cada recibo, como la vista `recibo_con_saldo`: los pagos
+ * aceptados de la unidad cubren sus recibos del más viejo al más nuevo, y lo
+ * que sobra queda a favor. Se calcula al leer, así aceptar o revertir un
+ * pago en la cola cambia la ficha sin más.
+ */
+function conLoPagado(recibo: ReciboM): Recibo {
+  let disponible = sumar(mundo.pagos.filter((p) => p.unidadId === recibo.unidadId && p.estado === "aceptado").map((p) => p.monto));
+  const anteriores = mundo.recibos
+    .filter((r) => r.unidadId === recibo.unidadId)
+    .sort((a, b) => a.periodo.localeCompare(b.periodo) || a.numero - b.numero);
+  for (const r of anteriores) {
+    const cargo = sumar([r.cuota, r.agua]);
+    const pagado = Math.min(cargo, Math.max(0, disponible));
+    disponible = Math.round((disponible - pagado) * 100) / 100;
+    if (r.id === recibo.id) return { ...r, pagado, pendiente: Math.round((cargo - pagado) * 100) / 100 };
+  }
+  return { ...recibo, pagado: 0, pendiente: sumar([recibo.cuota, recibo.agua]) };
+}
 
 const cobranzaDeMaqueta: CobranzaPuerto = {
   cierreDelPeriodo: (orgId, edificioId, periodo) =>
@@ -216,10 +236,25 @@ const cobranzaDeMaqueta: CobranzaPuerto = {
     return bien(mundo.recibos.filter((r) => r.cierreId === cierreId).length);
   },
 
-  recibosDelCierre: (_orgId, cierreId) => demora(mundo.recibos.filter((r) => r.cierreId === cierreId)),
+  recibosDelCierre: (_orgId, cierreId) => demora(mundo.recibos.filter((r) => r.cierreId === cierreId).map(conLoPagado)),
   recibosDeLaUnidad: (_orgId, unidadId) =>
-    demora(mundo.recibos.filter((r) => r.unidadId === unidadId).sort((a, b) => b.periodo.localeCompare(a.periodo))),
-  recibo: (_orgId, reciboId) => demora(mundo.recibos.find((r) => r.id === reciboId) ?? null),
+    demora(
+      mundo.recibos
+        .filter((r) => r.unidadId === unidadId)
+        .sort((a, b) => b.periodo.localeCompare(a.periodo))
+        .map(conLoPagado),
+    ),
+  saldoDeLaUnidad(_orgId, unidadId) {
+    const cargado = sumar(mundo.recibos.filter((r) => r.unidadId === unidadId).flatMap((r) => [r.cuota, r.agua]));
+    const pagos = mundo.pagos.filter((p) => p.unidadId === unidadId);
+    const pagado = sumar(pagos.filter((p) => p.estado === "aceptado").map((p) => p.monto));
+    const porValidar = sumar(pagos.filter((p) => p.estado === "por_validar").map((p) => p.monto));
+    return demora({ saldo: Math.round((cargado - pagado) * 100) / 100, porValidar });
+  },
+  recibo: (_orgId, reciboId) => {
+    const r = mundo.recibos.find((x) => x.id === reciboId);
+    return demora(r ? conLoPagado(r) : null);
+  },
   nombreDeLaAdministradora: () => demora(NOMBRE_ORG_DEMO),
 
   cierresDelPeriodo(orgId, periodo) {

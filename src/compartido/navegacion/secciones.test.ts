@@ -30,6 +30,14 @@ describe("SECCIONES", () => {
   });
 });
 
+describe("Pagos", () => {
+  it("la cola de pagos tiene su sección en Operación", () => {
+    const pagos = seccionDeRuta("/pagos", SECCIONES);
+    assert.equal(pagos?.key, "pagos");
+    assert.equal(pagos?.grupo, "Operación");
+  });
+});
+
 describe("ordenarPorTramo", () => {
   it("pone primero las sin tramo y después Operación y Gestión, sin mezclar", () => {
     const desordenadas = [
@@ -48,9 +56,9 @@ describe("ordenarPorTramo", () => {
 describe("seccionesDelModo", () => {
   it("con datos reales quedan solo las que tienen función", () => {
     const claves = seccionesDelModo(false).map((s) => s.key);
-    assert.deepEqual(claves, ["inicio", "edificios"]);
+    assert.deepEqual(claves, ["inicio", "edificios", "pagos"]);
   });
-  it("la maqueta muestra las once del mapa", () => {
-    assert.equal(seccionesDelModo(true).length, 11);
+  it("la maqueta muestra las once del mapa más los pagos", () => {
+    assert.equal(seccionesDelModo(true).length, 12);
   });
 });
