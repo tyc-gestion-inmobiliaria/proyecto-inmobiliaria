@@ -47,7 +47,14 @@ import {
 } from "@/ui";
 
 import type { EstadoDeLaCarteraPuerto } from "../aplicacion/puertos";
-import { formatoPorcentaje, indicadoresDeLaCartera, type FilaCartera, type Pendiente, type TipoPendiente } from "../dominio/cartera";
+import {
+  formatoPorcentaje,
+  indicadoresDeLaCartera,
+  type FilaCartera,
+  type PasoDelCierre,
+  type Pendiente,
+  type TipoPendiente,
+} from "../dominio/cartera";
 import { useCartera } from "./usar-cartera";
 
 /** Por debajo de este ancho de ventana, la fila apila sus datos. */
@@ -67,6 +74,11 @@ function irAlPaso(tipo: TipoPendiente, edificioId: string): (() => void) | null 
     default:
       return null;
   }
+}
+
+/** Al paso del cierre del mes de ese edificio (PB-21). */
+function irAlCierre(edificioId: string, paso: PasoDelCierre["paso"]) {
+  router.push({ pathname: "/edificios/[id]/cierre", params: paso ? { id: edificioId, paso: String(paso) } : { id: edificioId } });
 }
 
 function unidades(n: number): string {
@@ -168,7 +180,7 @@ function DeLaCartera({ filas, abrir }: { filas: FilaCartera[]; abrir: (id: strin
 }
 
 function etiquetaDeFila(f: FilaCartera): string {
-  const estado = f.pendientes.length === 0 ? LISTO : f.pendientes.map((p) => `${p.causa}: ${p.paso}`).join(". ");
+  const estado = f.pendientes.length === 0 ? (f.cierre?.texto ?? LISTO) : f.pendientes.map((p) => `${p.causa}: ${p.paso}`).join(". ");
   return `${f.nombre}, ${unidades(f.unidades)}. ${estado}`;
 }
 
@@ -194,7 +206,7 @@ function Tabla({ filas, abrir }: { filas: FilaCartera[]; abrir: (id: string) => 
                 {unidades(f.unidades)}
                 {f.participacion ? ` · participación ${formatoPorcentaje(f.participacion.total)}` : ""}
               </Text>
-              <SiguientePaso pendientes={f.pendientes} />
+              <SiguientePaso fila={f} />
             </TdView>
             {flecha}
           </TableRow>
@@ -232,7 +244,7 @@ function Tabla({ filas, abrir }: { filas: FilaCartera[]; abrir: (id: string) => 
             <StatusDot tone={f.tieneCuenta ? "success" : "warning"} label={f.tieneCuenta ? "Registrada" : "Falta"} />
           </TdView>
           <TdView flex={2.4}>
-            <SiguientePaso pendientes={f.pendientes} />
+            <SiguientePaso fila={f} />
           </TdView>
           {flecha}
         </TableRow>
@@ -241,12 +253,31 @@ function Tabla({ filas, abrir }: { filas: FilaCartera[]; abrir: (id: string) => 
   );
 }
 
-/** El primer pendiente con su paso y su causa; si hay más, cuántos. */
-function SiguientePaso({ pendientes }: { pendientes: Pendiente[] }) {
+/**
+ * El primer pendiente con su paso y su causa; si hay más, cuántos. Con el
+ * padrón completo, el paso del cierre del mes, que lleva a ese paso.
+ */
+function SiguientePaso({ fila }: { fila: Pick<FilaCartera, "id" | "pendientes" | "cierre"> }) {
   const t = useTheme();
   const s = useStyles(makeStyles);
-  const [primero, ...resto] = pendientes;
-  if (!primero) return <StatusDot tone="success" label={LISTO} />;
+  const [primero, ...resto] = fila.pendientes as Pendiente[];
+  if (!primero) {
+    if (!fila.cierre) return <StatusDot tone="success" label={LISTO} />;
+    if (fila.cierre.paso === null) return <StatusDot tone="success" label={fila.cierre.texto} />;
+    const paso = fila.cierre.paso;
+    return (
+      <View style={s.enlace}>
+        <Button
+          variant="secondary"
+          size="sm"
+          label={`${fila.cierre.texto} ›`}
+          accessibilityLabel={`${fila.cierre.texto} en el cierre del mes`}
+          onPress={() => irAlCierre(fila.id, paso)}
+          testID={`inicio-cierre-${fila.id}`}
+        />
+      </View>
+    );
+  }
   return (
     <View style={s.paso}>
       <Text style={[textStyle(t, "bodySmall"), s.fuerte]}>{primero.paso}</Text>
@@ -271,7 +302,7 @@ function DelEdificio({ fila, editable }: { fila: FilaCartera; editable: boolean 
         <KeyValueRow label="Cuenta bancaria" value={fila.tieneCuenta ? "Registrada" : "Falta"} />
       </Card>
       {fila.pendientes.length === 0 ? (
-        <StatusDot tone="success" label={LISTO} />
+        <SiguientePaso fila={fila} />
       ) : (
         <View style={s.pendientes}>
           <SectionTitle>Pendientes</SectionTitle>

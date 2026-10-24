@@ -10,9 +10,15 @@
  * - Registrada la unidad, se queda en ella para agregarle personas.
  * - Debajo, las personas de la unidad con su vínculo y quién es responsable
  *   de pago. El personal ve lo mismo, sin formularios.
+ *
+ * Una unidad ya registrada se abre como ficha (PB-19): el título dice el
+ * número y, si la ruta enchufa la cuenta (`Cuenta`), su estado en palabras;
+ * la pestaña Resumen junta datos, saldo y personas, y las demás pestañas las
+ * pone la cuenta. Solo aparecen las pestañas que tienen contenido. Editar los
+ * datos es otra ruta (`…/editar`).
  */
 import { router } from "expo-router";
-import { useCallback, useRef, useState, type ReactNode } from "react";
+import { useCallback, useRef, useState, type ComponentType, type ReactNode } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View, type TextInput } from "react-native";
 
 import { Cargando, ConOrganizacion } from "@/modulos/organizaciones/ui/con-organizacion";
@@ -27,12 +33,14 @@ import {
   ScreenTitle,
   SectionTitle,
   TableRow,
+  Tabs,
   TdView,
   TextField,
   DataTable,
   textStyle,
   useStyles,
   useTheme,
+  type StatusTone,
   type Tema,
 } from "@/ui";
 
@@ -52,18 +60,32 @@ import {
   type Unidad,
 } from "../dominio/unidad";
 import { nombreDeLaRelacion, type Vinculo } from "../dominio/vinculo";
-import { Aviso, Volver } from "./piezas";
+import { Aviso, Volver } from "@/compartido/ui/piezas";
 import { irALasUnidades } from "./pantalla-unidades";
-import { useCarga } from "./usar-carga";
+import { useCarga } from "@/compartido/ui/usar-carga";
+
+/** Lo que otro módulo (la cobranza) pone en la ficha. El padrón no sabe de recibos. */
+export interface CuentaDeLaUnidad {
+  estado?: { texto: string; tono: StatusTone };
+  /** Va en la pestaña Resumen, entre los datos y las personas. */
+  resumen?: ReactNode;
+  pestanas: { key: string; label: string; contenido: ReactNode }[];
+}
+
+export type PropsDeCuenta = { orgId: string; unidadId: string; children: (cuenta: CuentaDeLaUnidad) => ReactNode };
 
 interface Props {
   padron: PuertosDelPadron;
   edificioId: string;
   /** Sin `unidadId`, el alta; con él, esa unidad. */
   unidadId?: string;
+  /** Con `unidadId`: su ficha, o el formulario para editarla. */
+  modo?: "ficha" | "editar";
+  /** Lo que la ruta enchufa de la cobranza. */
+  Cuenta?: ComponentType<PropsDeCuenta>;
 }
 
-export function PantallaUnidad({ padron, edificioId, unidadId }: Props) {
+export function PantallaUnidad({ padron, edificioId, unidadId, modo, Cuenta }: Props) {
   return (
     <ConOrganizacion>
       {(enCurso) => (
@@ -74,13 +96,15 @@ export function PantallaUnidad({ padron, edificioId, unidadId }: Props) {
           padron={padron}
           edificioId={edificioId}
           unidadId={unidadId}
+          modo={modo}
+          Cuenta={Cuenta}
         />
       )}
     </ConOrganizacion>
   );
 }
 
-function Contenido({ orgId, editable, padron, edificioId, unidadId }: Props & { orgId: string; editable: boolean }) {
+function Contenido({ orgId, editable, padron, edificioId, unidadId, modo = "ficha", Cuenta }: Props & { orgId: string; editable: boolean }) {
   const s = useStyles(makeStyles);
   const leer = useCallback(async () => {
     const [edificios, unidades, vinculos, personas] = await Promise.all([
@@ -121,20 +145,87 @@ function Contenido({ orgId, editable, padron, edificioId, unidadId }: Props & { 
   }
 
   const { unidades, vinculos, personas } = carga.valor;
+
+  if (unidad && (modo === "ficha" || !editable)) {
+    const ficha = (cuenta: CuentaDeLaUnidad) => (
+      <FichaConPestanas
+        unidad={unidad}
+        edificioId={edificioId}
+        editable={editable}
+        cuenta={cuenta}
+        personas={<Personas edificioId={edificioId} unidad={unidad} vinculos={vinculos} personas={personas} editable={editable} />}
+      />
+    );
+    return (
+      <ScrollView contentContainerStyle={s.pantalla}>
+        <Volver label="Unidades" onPress={volver} />
+        {Cuenta ? (
+          <Cuenta orgId={orgId} unidadId={unidad.id}>
+            {ficha}
+          </Cuenta>
+        ) : (
+          ficha({ pestanas: [] })
+        )}
+      </ScrollView>
+    );
+  }
+
   return (
     <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={s.pantalla} keyboardShouldPersistTaps="handled">
-        <Volver label="Unidades" onPress={volver} />
-        {editable ? (
-          <Formulario padron={padron} orgId={orgId} edificioId={edificioId} unidad={unidad} unidades={unidades} />
-        ) : unidad ? (
-          <Ficha unidad={unidad} />
-        ) : null}
-        {unidad ? (
-          <Personas edificioId={edificioId} unidad={unidad} vinculos={vinculos} personas={personas} editable={editable} />
-        ) : null}
+        <Volver label={unidad ? `Unidad ${unidad.numero}` : "Unidades"} onPress={unidad ? () => irALaFicha(edificioId, unidad.id) : volver} />
+        <Formulario padron={padron} orgId={orgId} edificioId={edificioId} unidad={unidad} unidades={unidades} />
       </ScrollView>
     </KeyboardAvoidingView>
+  );
+}
+
+const irALaFicha = (edificioId: string, unidadId: string) =>
+  router.navigate({ pathname: "/edificios/[id]/unidades/[unidadId]", params: { id: edificioId, unidadId } });
+
+function FichaConPestanas({
+  unidad,
+  edificioId,
+  editable,
+  cuenta,
+  personas,
+}: {
+  unidad: Unidad;
+  edificioId: string;
+  editable: boolean;
+  cuenta: CuentaDeLaUnidad;
+  personas: ReactNode;
+}) {
+  const s = useStyles(makeStyles);
+  const [pestana, setPestana] = useState("resumen");
+  const pestanas = [{ key: "resumen", label: "Resumen" }, ...cuenta.pestanas.map(({ key, label }) => ({ key, label }))];
+  const actual = cuenta.pestanas.find((p) => p.key === pestana);
+  return (
+    <>
+      <View style={s.cabecera}>
+        <View style={s.titulo}>
+          <ScreenTitle>{`Unidad ${unidad.numero}`}</ScreenTitle>
+          {cuenta.estado ? <Badge tone={cuenta.estado.tono} label={cuenta.estado.texto} /> : null}
+        </View>
+        {editable ? (
+          <Button
+            variant="secondary"
+            label="Editar unidad"
+            onPress={() => router.push({ pathname: "/edificios/[id]/unidades/[unidadId]/editar", params: { id: edificioId, unidadId: unidad.id } })}
+          />
+        ) : null}
+      </View>
+      {pestanas.length > 1 ? <Tabs accessibilityLabel="Secciones de la ficha" items={pestanas} value={pestana} onChange={setPestana} /> : null}
+      {actual ? (
+        actual.contenido
+      ) : (
+        <>
+          <Ficha unidad={unidad} />
+          {cuenta.resumen}
+          {personas}
+        </>
+      )}
+    </>
   );
 }
 
@@ -179,7 +270,7 @@ function Formulario({
     const r = await guardarUnidad(padron.unidades, { orgId, edificioId, datos, otras: unidades, id: unidad?.id });
     setEnviando(false);
     if (r.ok) {
-      if (unidad) irALasUnidades(edificioId);
+      if (unidad) irALaFicha(edificioId, unidad.id);
       // Recién registrada, se queda en ella para agregarle personas.
       else router.replace({ pathname: "/edificios/[id]/unidades/[unidadId]", params: { id: edificioId, unidadId: r.unidad.id } });
       return;
@@ -277,8 +368,8 @@ function Formulario({
 function Ficha({ unidad }: { unidad: Unidad }) {
   const s = useStyles(makeStyles);
   return (
-    <Card style={s.tarjeta} padding="xl">
-      <ScreenTitle>{`Unidad ${unidad.numero}`}</ScreenTitle>
+    <Card style={s.tarjeta} padding="lg">
+      <SectionTitle>Datos de la unidad</SectionTitle>
       <KeyValueRow label="Tipo" value={unidad.tipo ?? "—"} />
       <KeyValueRow label="Área" value={textoDeArea(unidad.areaM2)} />
       <KeyValueRow
@@ -367,6 +458,7 @@ const makeStyles = (t: Tema) =>
     fila: { flexDirection: "row", flexWrap: "wrap", gap: t.space.md },
     celda: { flexGrow: 1, flexBasis: 200 },
     cabecera: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: t.space.md },
+    titulo: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.sm },
     persona: { gap: t.space.xs },
     insignias: { flexDirection: "row", flexWrap: "wrap", gap: t.space.xs },
     flecha: { width: 64, textAlign: "right" },

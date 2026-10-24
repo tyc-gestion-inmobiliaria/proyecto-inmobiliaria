@@ -118,6 +118,11 @@ describe("avisoDeParticipacion", () => {
     assert.equal(avisoDeParticipacion(resumirParticipacion([60, 50])), `Se pasa de 100 % por ${textoDePorcentaje(10)}.`);
   });
 
+  it("si ninguna tiene participación, lo dice sin contar lo que falta", () => {
+    assert.equal(avisoDeParticipacion(resumirParticipacion([null, null, null])), "Ninguna unidad tiene participación.");
+    assert.equal(avisoDeParticipacion(resumirParticipacion([null])), "La unidad no tiene participación.");
+  });
+
   it("con 100 pero una unidad sin participación, avisa solo de esa", () => {
     assert.equal(avisoDeParticipacion(resumirParticipacion([60, 40, null])), "1 unidad no tiene participación.");
   });

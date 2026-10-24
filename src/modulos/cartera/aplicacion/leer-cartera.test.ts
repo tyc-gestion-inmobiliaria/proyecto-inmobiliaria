@@ -16,10 +16,18 @@ function estado(padron: Map<string, EstadoDelPadron>, conCuenta: Set<string>, fa
       return padron;
     },
     edificiosConCuenta: async () => conCuenta,
+    cierresDelPeriodo: async () => new Map([["e1", { estado: "borrador", paso: 3 }]]),
   };
 }
 
 describe("leerCartera", () => {
+  it("con el padrón completo, dice el paso del cierre del mes", async () => {
+    const filas = await leerCartera(edificios, estado(new Map([["e1", completo], ["e2", completo]]), new Set(["e1", "e2"])), "a");
+    const porId = new Map(filas.map((f) => [f.id, f.cierre]));
+    assert.deepEqual(porId.get("e1"), { texto: "Emitir recibos", paso: 3 });
+    assert.deepEqual(porId.get("e2"), { texto: "Cargar lecturas", paso: 1 });
+  });
+
   const edificios = new EdificiosFalso([
     { id: "e1", orgId: "a", nombre: "Torre 10", direccion: null },
     { id: "e2", orgId: "a", nombre: "Torre 2", direccion: null },

@@ -9,6 +9,8 @@
  * - Registrar y editar solo se ofrecen al administrador; el personal abre la
  *   unidad para ver quién está en ella.
  * - En una ventana angosta la fila apila sus datos, para caber en 390.
+ * - Abajo, las cuentas bancarias del edificio: sin ninguna, el cierre no
+ *   puede emitir, y el aviso lo dice.
  */
 import { router } from "expo-router";
 import { useCallback } from "react";
@@ -22,6 +24,7 @@ import {
   EmptyState,
   KeyValueRow,
   ScreenTitle,
+  SectionTitle,
   StatusDot,
   TableHead,
   TableRow,
@@ -35,10 +38,11 @@ import {
 } from "@/ui";
 
 import type { PuertosDelPadron } from "../aplicacion/puertos";
+import { nombreDeMoneda, textoDeCci, type CuentaBancaria } from "../dominio/cuenta-bancaria";
 import { avisoDeParticipacion, textoDePorcentaje, type ResumenParticipacion } from "../dominio/participacion";
 import { ordenarUnidades, puedeEditarPadron, textoDeArea, type Unidad } from "../dominio/unidad";
-import { Aviso, Volver } from "./piezas";
-import { useCarga } from "./usar-carga";
+import { Aviso, Volver } from "@/compartido/ui/piezas";
+import { useCarga } from "@/compartido/ui/usar-carga";
 
 const ANCHO_ANGOSTO = 640;
 
@@ -74,12 +78,13 @@ function Lista({
 }) {
   const s = useStyles(makeStyles);
   const leer = useCallback(async () => {
-    const [edificios, unidades, participacion] = await Promise.all([
+    const [edificios, unidades, participacion, cuentas] = await Promise.all([
       padron.edificios.listar(orgId),
       padron.unidades.delEdificio(orgId, edificioId),
       padron.unidades.participacion(orgId, edificioId),
+      padron.cuentas.delEdificio(orgId, edificioId),
     ]);
-    return { edificio: edificios.find((e) => e.id === edificioId), unidades: ordenarUnidades(unidades), participacion };
+    return { edificio: edificios.find((e) => e.id === edificioId), unidades: ordenarUnidades(unidades), participacion, cuentas };
   }, [padron, orgId, edificioId]);
   const { carga, reintentar } = useCarga(leer);
   const volver = () => router.navigate("/edificios");
@@ -102,7 +107,7 @@ function Lista({
     );
   }
 
-  const { edificio, unidades, participacion } = carga.valor;
+  const { edificio, unidades, participacion, cuentas } = carga.valor;
   const registrar = () => router.push({ pathname: "/edificios/[id]/unidades/nueva", params: { id: edificioId } });
 
   return (
@@ -117,7 +122,10 @@ function Lista({
               label="Editar edificio"
               onPress={() => router.push({ pathname: "/edificios/[id]", params: { id: edificioId } })}
             />
-            {unidades.length > 0 ? <Button label="Registrar unidad" onPress={registrar} testID="unidades-registrar" /> : null}
+            {unidades.length > 0 ? <Button variant="secondary" label="Registrar unidad" onPress={registrar} testID="unidades-registrar" /> : null}
+            {unidades.length > 0 ? (
+              <Button label="Cierre del mes" onPress={() => router.push({ pathname: "/edificios/[id]/cierre", params: { id: edificioId } })} testID="unidades-cierre" />
+            ) : null}
           </View>
         ) : null}
       </View>
@@ -140,6 +148,7 @@ function Lista({
           <Tabla unidades={unidades} edificioId={edificioId} editable={editable} />
         </>
       )}
+      <Cuentas cuentas={cuentas} edificioId={edificioId} editable={editable} />
     </ScrollView>
   );
 }
@@ -226,12 +235,68 @@ function Tabla({ unidades, edificioId, editable }: { unidades: Unidad[]; edifici
   );
 }
 
+function Cuentas({ cuentas, edificioId, editable }: { cuentas: CuentaBancaria[]; edificioId: string; editable: boolean }) {
+  const t = useTheme();
+  const s = useStyles(makeStyles);
+  const registrar = () => router.push({ pathname: "/edificios/[id]/cuentas/nueva", params: { id: edificioId } });
+  const editar = (c: CuentaBancaria) => () =>
+    router.push({ pathname: "/edificios/[id]/cuentas/[cuentaId]", params: { id: edificioId, cuentaId: c.id } });
+  return (
+    <View style={s.cuentas}>
+      <View style={s.cabecera}>
+        <SectionTitle>Cuentas bancarias</SectionTitle>
+        {editable && cuentas.length > 0 ? (
+          <Button variant="secondary" label="Registrar cuenta" onPress={registrar} testID="cuentas-registrar" />
+        ) : null}
+      </View>
+      {cuentas.length === 0 ? (
+        <Card style={s.suma} padding="lg">
+          <Aviso testID="cuentas-aviso">Sin una cuenta bancaria, el cierre del mes no puede emitir los recibos.</Aviso>
+          {editable ? (
+            <View style={s.botones}>
+              <Button variant="secondary" label="Registrar la primera cuenta" onPress={registrar} testID="cuentas-registrar" />
+            </View>
+          ) : (
+            <Text style={textStyle(t, "body", t.color.text.secondary)}>Pide a un administrador de tu empresa que la registre.</Text>
+          )}
+        </Card>
+      ) : (
+        <DataTable minWidth={0}>
+          {cuentas.map((c) => {
+            const contenido = (
+              <TdView flex={1}>
+                <Text style={[textStyle(t, "body"), s.numero]}>{c.nombre}</Text>
+                <Text style={textStyle(t, "bodySmall", t.color.text.secondary)}>
+                  {`${c.banco} · ${nombreDeMoneda(c.moneda)}`}
+                </Text>
+                <Text style={textStyle(t, "data")}>{`Cuenta ${c.numero}`}</Text>
+                {c.cci ? <Text style={textStyle(t, "data", t.color.text.secondary)}>{`CCI ${textoDeCci(c.cci)}`}</Text> : null}
+              </TdView>
+            );
+            return editable ? (
+              <TableRow key={c.id} onPress={editar(c)} accessibilityLabel={`Editar la cuenta ${c.nombre}`}>
+                {contenido}
+                <Text aria-hidden style={[textStyle(t, "label", t.color.accent.text), s.flecha]}>
+                  Editar ›
+                </Text>
+              </TableRow>
+            ) : (
+              <TableRow key={c.id}>{contenido}</TableRow>
+            );
+          })}
+        </DataTable>
+      )}
+    </View>
+  );
+}
+
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
     pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: 960, width: "100%" },
     cabecera: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: t.space.md },
     botones: { flexDirection: "row", flexWrap: "wrap", gap: t.space.sm },
     suma: { gap: t.space.md },
+    cuentas: { gap: t.space.md, marginTop: t.space.lg },
     numero: { fontWeight: "600" },
     flecha: { width: 64, textAlign: "right" },
   });

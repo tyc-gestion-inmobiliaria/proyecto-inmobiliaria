@@ -5,7 +5,9 @@ import {
   armarCartera,
   formatoPorcentaje,
   indicadoresDeLaCartera,
+  pasoDelCierre,
   pendientesDelEdificio,
+  periodoEnCurso,
   type EstadoDelPadron,
 } from "./cartera";
 
@@ -77,6 +79,25 @@ describe("pendientesDelEdificio", () => {
       assert.ok(p.causa.length > 0);
       assert.ok(p.paso.length > 0);
     }
+  });
+});
+
+describe("pasoDelCierre", () => {
+  it("dice qué toca en el cierre del mes y a qué paso lleva", () => {
+    assert.deepEqual(pasoDelCierre(undefined), { texto: "Cargar lecturas", paso: 1 });
+    assert.deepEqual(pasoDelCierre({ estado: "borrador", paso: 1 }), { texto: "Cargar lecturas", paso: 1 });
+    assert.deepEqual(pasoDelCierre({ estado: "borrador", paso: 2 }), { texto: "Emitir recibos", paso: 2 });
+    assert.deepEqual(pasoDelCierre({ estado: "emitido", paso: 4 }), { texto: "Al día", paso: null });
+  });
+
+  it("toma el mes en curso con la hora de Lima", () => {
+    // 1 de octubre a las 02:00 UTC todavía es 30 de septiembre en Lima.
+    assert.equal(periodoEnCurso(new Date("2026-10-01T02:00:00Z")), "2026-09-01");
+  });
+
+  it("solo se pide con el padrón completo", () => {
+    const [fila] = armarCartera([{ id: "e1", nombre: "Torre" }], new Map(), new Set());
+    assert.equal(fila.cierre, null);
   });
 });
 

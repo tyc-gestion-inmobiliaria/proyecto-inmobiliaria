@@ -75,6 +75,10 @@ export function textoDePorcentaje(valor: number): string {
  */
 export function avisoDeParticipacion(r: ResumenParticipacion): string | null {
   if (r.sumaCien || r.unidades === 0) return null;
+  // Sin ninguna puesta, "faltan 100 % para llegar a 100 %" no dice nada.
+  if (r.sinParticipacion === r.unidades) {
+    return r.unidades === 1 ? "La unidad no tiene participación." : "Ninguna unidad tiene participación.";
+  }
   const partes: string[] = [];
   if (r.diferencia > 0) partes.push(`Faltan ${textoDePorcentaje(r.diferencia)} para llegar a 100 %.`);
   else if (r.diferencia < 0) partes.push(`Se pasa de 100 % por ${textoDePorcentaje(-r.diferencia)}.`);

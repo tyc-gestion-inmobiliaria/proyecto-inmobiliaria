@@ -1,5 +1,5 @@
 /**
- * Piezas que comparten las pantallas de unidades y personas.
+ * Piezas que comparten las pantallas de los módulos.
  *
  * - `CampoDeOpciones`: fichas de una sola elección con su etiqueta y su
  *   error junto a ellas, igual que `TextField` (el signo además del color).
