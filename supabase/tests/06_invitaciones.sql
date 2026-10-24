@@ -8,7 +8,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(40);
+select plan(42);
 
 -- Datos (como postgres, sin RLS) ----------------------------------------------
 
@@ -291,6 +291,15 @@ select ok(
   '40000000-0000-4000-8000-000000000103'::uuid in (select private.mis_unidades()),
   'y queda vinculado a su unidad'
 );
+
+-- La pantalla pregunta si la cuenta todavía no tiene contraseña ----------------
+
+select is(public.cuenta_sin_contrasena(), true, 'una cuenta creada por invitación no tiene contraseña');
+reset role;
+update auth.users set encrypted_password = 'x' where id = '10000000-0000-4000-8000-00000000000a';
+select pg_temp.como('10000000-0000-4000-8000-00000000000a');
+set local role authenticated;
+select is(public.cuenta_sin_contrasena(), false, 'con contraseña, no la pide');
 
 -- Anónimo: no acepta ----------------------------------------------------------------
 

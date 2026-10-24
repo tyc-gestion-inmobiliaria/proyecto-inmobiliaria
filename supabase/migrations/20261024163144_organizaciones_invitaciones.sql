@@ -339,3 +339,39 @@ $$;
 
 revoke all on function public.miembros_de_la_organizacion(uuid) from public, anon;
 grant execute on function public.miembros_de_la_organizacion(uuid) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- ¿La cuenta con sesión todavía no tiene contraseña?
+-- ---------------------------------------------------------------------------
+
+-- Quien abrió el enlace de la invitación y no terminó, al recibir el reenvío
+-- llega con un enlace mágico (su cuenta ya quedó confirmada) pero sigue sin
+-- contraseña. La pantalla de aceptación lo pregunta para pedírsela. Solo
+-- contesta sobre la propia cuenta.
+create function private.cuenta_sin_contrasena()
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select coalesce(u.encrypted_password, '') = ''
+  from auth.users u
+  where u.id = (select auth.uid())
+$$;
+
+revoke all on function private.cuenta_sin_contrasena() from public, anon;
+grant execute on function private.cuenta_sin_contrasena() to authenticated;
+
+create function public.cuenta_sin_contrasena()
+returns boolean
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  select private.cuenta_sin_contrasena()
+$$;
+
+revoke all on function public.cuenta_sin_contrasena() from public, anon;
+grant execute on function public.cuenta_sin_contrasena() to authenticated;
