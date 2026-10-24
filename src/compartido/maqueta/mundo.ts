@@ -238,7 +238,7 @@ function crearMundo(): Mundo {
         if (emitido) {
           const cuota = Math.round(totalCuota * (u.participacion ?? 0)) / 100;
           const agua = Math.round(consumo * 4.5 * 100) / 100;
-          const deudaPrevia = i % 5 === 0 ? 185.5 : 0;
+          const deudaPrevia = 0;
           m.recibos.push({
             id: `rec-${recibo}`,
             numero: recibo++,

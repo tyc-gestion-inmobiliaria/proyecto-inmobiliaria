@@ -28,6 +28,8 @@ import { TouchArea } from "./touch-area";
 
 export function DataTable({ children, minWidth = 640 }: { children: ReactNode; minWidth?: number }) {
   const s = useStyles(makeStyles);
+  // Sin ancho mínimo no hay nada que desplazar: las filas toman el ancho de la tabla y se acomodan.
+  if (minWidth === 0) return <View style={s.table}>{children}</View>;
   return (
     <View style={s.table}>
       <ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={s.grow}>

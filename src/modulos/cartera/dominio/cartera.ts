@@ -153,8 +153,8 @@ export function indicadoresDeLaCartera(filas: readonly FilaCartera[]): Indicador
   const unidades = filas.reduce((suma, f) => suma + f.unidades, 0);
   const porCompletar = filas.filter((f) => f.pendientes.length > 0).length;
   const candidatos: Indicador[] = [
-    { clave: "unidades", etiqueta: "Unidades registradas", valor: unidades },
-    { clave: "por-completar", etiqueta: "Edificios por completar", valor: porCompletar },
+    { clave: "unidades", etiqueta: "Unidades", valor: unidades },
+    { clave: "por-completar", etiqueta: "Por completar", valor: porCompletar },
   ];
   return candidatos.filter((i) => i.valor > 0);
 }

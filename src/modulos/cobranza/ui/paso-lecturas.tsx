@@ -270,7 +270,7 @@ const makeStyles = (t: Tema) =>
     fila: { gap: t.space.xs, paddingVertical: t.space.xs },
     celdas: { flexDirection: "row", flexWrap: "wrap", alignItems: "flex-end", gap: t.space.md },
     unidad: { minWidth: 56, alignSelf: "center" },
-    medida: { width: 120 },
+    medida: { flexGrow: 1, flexBasis: 96, maxWidth: 140 },
     consumo: { minWidth: 96, gap: t.space.xxs, paddingBottom: t.space.sm },
     foto: { flexDirection: "row", gap: t.space.xs, marginLeft: "auto" },
     imagen: { width: "100%", height: 420 },
