@@ -12,7 +12,7 @@
  *   cierre, que ya no cambia: no hay dos cierres del mismo periodo.
  */
 import { router } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ComponentType } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { Cargando, ConOrganizacion } from "@/modulos/organizaciones/ui/con-organizacion";
@@ -45,7 +45,21 @@ import { PasoLecturas } from "./paso-lecturas";
 import { PasoPresupuesto } from "./paso-presupuesto";
 import { PasoRevision } from "./paso-revision";
 
-export function PantallaCierre({ cobranza, edificioId, paso }: { cobranza: CobranzaPuerto; edificioId: string; paso?: string }) {
+/** Lo que otro módulo (las notificaciones) pone en el cierre emitido: el estado de los correos. */
+export type CorreosDelCierre = ComponentType<{ orgId: string; cierreId: string }>;
+
+export function PantallaCierre({
+  cobranza,
+  edificioId,
+  paso,
+  Correos,
+}: {
+  cobranza: CobranzaPuerto;
+  edificioId: string;
+  paso?: string;
+  /** Lo pone la ruta; la cobranza no sabe de correos. */
+  Correos?: CorreosDelCierre;
+}) {
   return (
     <ConOrganizacion>
       {(enCurso) => (
@@ -56,6 +70,7 @@ export function PantallaCierre({ cobranza, edificioId, paso }: { cobranza: Cobra
           edificioId={edificioId}
           editable={enCurso.rol === "administrador"}
           pasoPedido={paso ? (pasoDeClave(paso) ?? (Number(paso) as NumeroDePaso)) : undefined}
+          Correos={Correos}
         />
       )}
     </ConOrganizacion>
@@ -70,12 +85,14 @@ function Inicio({
   edificioId,
   editable,
   pasoPedido,
+  Correos,
 }: {
   cobranza: CobranzaPuerto;
   orgId: string;
   edificioId: string;
   editable: boolean;
   pasoPedido?: NumeroDePaso;
+  Correos?: CorreosDelCierre;
 }) {
   const s = useStyles(makeStyles);
   const periodo = periodoDe(hoyEnLima());
@@ -154,7 +171,7 @@ function Inicio({
     );
   }
 
-  return <Asistente cobranza={cobranza} orgId={orgId} edificio={edificio} inicial={estado.cierre} editable={editable} pasoPedido={pasoPedido} />;
+  return <Asistente cobranza={cobranza} orgId={orgId} edificio={edificio} inicial={estado.cierre} editable={editable} pasoPedido={pasoPedido} Correos={Correos} />;
 }
 
 interface Datos {
@@ -180,6 +197,7 @@ function Asistente({
   inicial,
   editable: puedeEditar,
   pasoPedido,
+  Correos,
 }: {
   cobranza: CobranzaPuerto;
   orgId: string;
@@ -187,6 +205,7 @@ function Asistente({
   inicial: Cierre;
   editable: boolean;
   pasoPedido?: NumeroDePaso;
+  Correos?: CorreosDelCierre;
 }) {
   const t = useTheme();
   const s = useStyles(makeStyles);
@@ -405,6 +424,7 @@ function Asistente({
             motivo={motivoParaNoEmitir(validaciones)}
             editable={puedeEditar}
             onEmitido={recargar}
+            correos={Correos ? <Correos orgId={orgId} cierreId={cierre.id} /> : null}
           />
         )}
 

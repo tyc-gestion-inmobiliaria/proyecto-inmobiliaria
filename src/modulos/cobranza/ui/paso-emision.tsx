@@ -8,7 +8,7 @@
  * - Después: cuántos se emitieron, cuándo vencen y cuánto suman, y una fila
  *   por recibo que lo abre como lo recibe el propietario, con su PDF.
  */
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
 import { FlechaDeFila } from "@/compartido/ui/piezas";
@@ -54,6 +54,7 @@ export function PasoEmision({
   motivo,
   editable,
   onEmitido,
+  correos,
 }: {
   cobranza: CobranzaPuerto;
   orgId: string;
@@ -65,6 +66,8 @@ export function PasoEmision({
   motivo: string | null;
   editable: boolean;
   onEmitido: () => void;
+  /** El estado de los correos de los recibos, si la ruta lo pone. */
+  correos?: ReactNode;
 }) {
   const t = useTheme();
   const s = useStyles(makeStyles);
@@ -100,6 +103,7 @@ export function PasoEmision({
             <Text style={textStyle(t, "title")}>{textoDeSoles(total)}</Text>
           </View>
         </Card>
+        {correos}
         {fallo ? (
           <Text accessibilityRole="alert" style={textStyle(t, "body", t.color.danger.fg)}>
             {`! ${fallo}`}

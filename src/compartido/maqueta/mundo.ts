@@ -328,6 +328,9 @@ function crearMundo(): Mundo {
   // además alquila la 101 de Las Acacias: así el portal tiene dos unidades.
   const residente = m.personas.find((p) => p.id === "p1");
   if (residente) Object.assign(residente, { usuarioId: "cuenta-residente@demo.test", correo: "residente@demo.test" });
+  // El propietario de la 203 de Los Olivos no dejó correo: su recibo no sale por correo.
+  const sinCorreo = m.personas.find((p) => p.id === "p6");
+  if (sinCorreo) sinCorreo.correo = null;
   m.vinculos.push({ id: "v-residente-acacias", orgId: ORG_DEMO, unidadId: "ed-acacias-u101", personaId: "p1", relacion: "inquilino", responsablePago: false });
 
   // Un pago no puede tener fecha futura: a comienzos de mes, se corre a hoy.
