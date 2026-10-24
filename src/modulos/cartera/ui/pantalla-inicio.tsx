@@ -235,8 +235,10 @@ function ResumenDelMes({ filas, style }: { filas: FilaCartera[]; style?: StylePr
   const s = useStyles(makeStyles);
   const r = resumenDelMes(filas);
   return (
-    <Card padding="lg" style={[s.tarjeta, style]}>
+    // El título va fuera de la tarjeta, como el de "Por hacer": las dos columnas arrancan a la misma altura.
+    <View style={[s.columna, style]}>
       <SectionTitle>{textoCortoDePeriodo(periodoEnCurso())}</SectionTitle>
+      <Card padding="lg" style={s.tarjeta}>
       <View accessible accessibilityLabel={`${r.alDia} de ${r.edificios} edificios con el mes emitido`}>
         <Text style={textStyle(t, "display")}>
           {r.alDia}
@@ -249,7 +251,8 @@ function ResumenDelMes({ filas, style }: { filas: FilaCartera[]; style?: StylePr
         {r.enCierre > 0 ? <StatusDot tone="info" label={`${r.enCierre} en cierre`} /> : null}
         {r.porCompletar > 0 ? <StatusDot tone="warning" label={`${r.porCompletar} por completar`} /> : null}
       </View>
-    </Card>
+      </Card>
+    </View>
   );
 }
 

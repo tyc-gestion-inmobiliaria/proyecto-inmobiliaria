@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon, ScreenTitle, textStyle, useStyles, useTheme, type Tema } from "@/ui";
 
 const FOTO = require("../../../../assets/fotos/acceso.jpg");
+const LOGO = require("../../../../assets/marca/logo.png");
 
 const ANCHO_CON_PANEL = 960;
 
@@ -37,6 +38,8 @@ export function TarjetaDeAcceso({ titulo, children }: { titulo: string; children
         >
           <View style={s.formulario}>
             {conPanel ? null : <Marca />}
+            {/* El logo de T&C, completo, arriba del título. */}
+            <Image source={LOGO} style={s.logo} resizeMode="contain" accessibilityLabel="T&C Gestión y Administración Inmobiliaria" />
             <ScreenTitle>{titulo}</ScreenTitle>
             {children}
           </View>
@@ -99,7 +102,9 @@ const makeStyles = (t: Tema) =>
       ...t.elevation.md,
     },
     // El ancho hace que corte después de la coma: "Tus edificios, / piso por piso."
-    titular: { maxWidth: 230 },
+    titular: { maxWidth: 205 },
+    // Las proporciones del logo (720 × 272).
+    logo: { width: 180, height: 68 },
     franja: { width: "100%", height: 168, borderRadius: t.radius.lg, marginBottom: t.space.sm },
     lado: { flex: 1 },
     contenido: { flexGrow: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: t.space.xl },

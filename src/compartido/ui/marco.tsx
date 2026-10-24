@@ -13,7 +13,7 @@
  */
 import { router, usePathname } from "expo-router";
 import { useState, type ReactNode } from "react";
-import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { TODA_LA_CARTERA } from "@/compartido/contexto/contexto";
@@ -23,8 +23,10 @@ import { useOrganizacion } from "@/modulos/organizaciones/ui/organizacion";
 import { useSesion } from "@/modulos/organizaciones/ui/sesion";
 import {
   AppShell,
+  Avatar,
+  resolveInteraction,
+  type EstadoPresionable,
   BottomNav,
-  Button,
   Icon,
   Menu,
   MenuBackdrop,
@@ -39,6 +41,8 @@ import {
 } from "@/ui";
 
 import { ordenarPorTramo, SECCIONES, seccionDeRuta, seccionesDelRol } from "../navegacion/secciones";
+
+const ISOTIPO = require("../../../assets/marca/isotipo.png");
 
 const ANCHO_ANGOSTO = 768;
 const ALTO_BARRA = 56;
@@ -107,16 +111,21 @@ export function Marco({ children }: { children: ReactNode }) {
   const barra = (
     <>
       <View style={s.contexto}>
-        <View style={s.logo} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-          <Icon name="building" size="sm" color={t.color.text.onAccent} />
-        </View>
+        {/* El isotipo de T&C: el edificio con sus iniciales. */}
+        <Image source={ISOTIPO} style={s.logo} resizeMode="contain" accessibilityLabel="T&C" />
         {selectorDeOrg ??
           // En el teléfono el nombre de la administradora ya es el título de Inicio y va en el menú de la cuenta.
           (enCurso && !angosto ? (
-            <Text style={[textStyle(t, "subtitle"), s.nombreOrg]} numberOfLines={1}>
-              {enCurso.orgNombre}
-            </Text>
+            <View style={s.nombreOrg}>
+              <Text style={textStyle(t, "subtitle")} numberOfLines={1}>
+                {enCurso.orgNombre}
+              </Text>
+              <Text style={textStyle(t, "caption", t.color.text.secondary)} numberOfLines={1}>
+                {nombreDelRol(enCurso.rol)}
+              </Text>
+            </View>
           ) : null)}
+        {!angosto && edificios.length > 0 && enCurso?.rol !== "residente" ? <View style={s.separador} /> : null}
         {edificios.length > 0 && enCurso?.rol !== "residente" ? (
           <View style={angosto ? s.selectorAngosto : s.selector}>
             <Select
@@ -134,15 +143,25 @@ export function Marco({ children }: { children: ReactNode }) {
           </View>
         ) : null}
       </View>
-      <Button
-        variant="ghost"
-        size="sm"
-        icon="chevron-down"
-        iconPosition="end"
-        label={angosto || !correo ? "Cuenta" : correo}
+      {/* La cuenta: sus iniciales siempre; el correo, si hay ancho. */}
+      <Pressable
+        accessibilityRole="button"
         accessibilityLabel="Abrir el menú de la cuenta"
+        accessibilityState={{ expanded: menuCuenta }}
         onPress={() => setMenuCuenta((v) => !v)}
-      />
+        style={(estado: EstadoPresionable) => {
+          const i = resolveInteraction(estado, { selected: menuCuenta });
+          return [s.cuenta, (i === "hovered" || i === "selected") && s.cuentaEncima, i === "pressed" && s.cuentaPresionada];
+        }}
+      >
+        <Avatar name={correo || "Cuenta"} size="sm" accessibilityLabel="" />
+        {!angosto && correo ? (
+          <Text style={[textStyle(t, "bodySmall", t.color.text.secondary), s.correo]} numberOfLines={1}>
+            {correo}
+          </Text>
+        ) : null}
+        <Icon name="chevron-down" size="sm" color={t.color.text.secondary} />
+      </Pressable>
     </>
   );
 
@@ -223,15 +242,22 @@ export function Marco({ children }: { children: ReactNode }) {
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
     contexto: { flex: 1, minWidth: 0, flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.md },
-    logo: {
-      width: 32,
-      height: 32,
-      borderRadius: t.radius.sm,
+    // Las proporciones del isotipo (215 × 256).
+    logo: { width: 30, height: 36 },
+    nombreOrg: { flexShrink: 1, maxWidth: 260 },
+    separador: { width: 1, height: 28, backgroundColor: t.color.border.default },
+    cuenta: {
+      flexDirection: "row",
       alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: t.color.accent.base,
+      gap: t.space.sm,
+      minHeight: t.minTouch,
+      paddingHorizontal: t.space.sm,
+      borderRadius: t.radius.full,
+      cursor: "pointer",
     },
-    nombreOrg: { flexShrink: 1 },
+    cuentaEncima: { backgroundColor: t.color.bg.hover },
+    cuentaPresionada: { backgroundColor: t.color.bg.pressed },
+    correo: { maxWidth: 220 },
     selector: { minWidth: 200, maxWidth: 320 },
     selectorAngosto: { flex: 1, minWidth: 0 },
     menuCuenta: { right: t.space.lg },
