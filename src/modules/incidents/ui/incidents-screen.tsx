@@ -276,6 +276,7 @@ function Registro({
       />
       <Select
         label="Dónde"
+        required
         placeholder="Elige la unidad o el área común"
         accessibilityLabel="Dónde pasó"
         options={opciones}

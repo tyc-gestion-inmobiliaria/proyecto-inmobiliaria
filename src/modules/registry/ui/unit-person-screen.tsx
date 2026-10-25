@@ -362,6 +362,7 @@ function Formulario({
         ) : (
           <Select
             label="Persona registrada"
+            required
             value={personaId || undefined}
             onChange={(id) => {
               setPersonaId(id);

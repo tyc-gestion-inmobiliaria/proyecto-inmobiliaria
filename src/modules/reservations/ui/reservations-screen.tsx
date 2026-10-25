@@ -359,6 +359,7 @@ function NuevaReserva({
       />
       <Select
         label="Unidad"
+        required
         placeholder="Elige la unidad"
         accessibilityLabel="Unidad que reserva"
         options={unidades.map((u) => ({ id: u.id, label: `Unidad ${u.numero}`, detail: u.alDia ? undefined : "Con deuda vencida" }))}

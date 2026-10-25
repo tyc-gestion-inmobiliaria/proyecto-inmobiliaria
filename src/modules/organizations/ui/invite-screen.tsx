@@ -185,6 +185,7 @@ function UnidadDelResidente({
     <>
       <Select
         label="Edificio"
+        required
         placeholder="Elige el edificio"
         accessibilityLabel="Edificio"
         value={datos.edificioId}
@@ -246,6 +247,7 @@ function Unidades({
     <>
       <Select
         label="Unidad"
+        required
         placeholder="Elige la unidad"
         accessibilityLabel="Unidad"
         value={datos.unidadId}
@@ -310,6 +312,7 @@ function Persona({
     <>
       <Select
         label="Persona"
+        required
         placeholder="Elige quién es"
         accessibilityLabel="Persona"
         value={datos.personaId}

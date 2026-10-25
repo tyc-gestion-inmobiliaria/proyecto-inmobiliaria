@@ -308,6 +308,7 @@ function Programar({
     >
       <Select
         label="Equipo"
+        required
         placeholder="Elige el equipo"
         accessibilityLabel="Equipo"
         options={equipos.map((q) => ({ id: q.id, label: q.nombre, detail: q.ubicacion }))}
