@@ -7,6 +7,10 @@
  * - "Redactar" es el único primario de la vista. En el editor, "Publicar"
  *   es el primario y "Guardar borrador" el secundario; el borrador solo pide
  *   el título, publicar pide todo, con el error junto a su campo.
+ * - Con `soloLectura` (el residente), solo los publicados, sin pestañas ni
+ *   "Redactar". Supuesto: el residente ve todos los publicados de su
+ *   edificio, también los de "Solo propietarios" (el padrón todavía no dice
+ *   desde acá si es propietario). Sin confirmar con el cliente.
  */
 import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
@@ -38,9 +42,19 @@ const AUDIENCIAS: Audiencia[] = ["todos", "propietarios"];
 /** Lo que está abierto: el editor (nuevo o un borrador) o la lectura de uno publicado. */
 type Abierto = { modo: "editar"; comunicado: Comunicado | null } | { modo: "leer"; comunicado: Comunicado };
 
-export function PantallaComunicados({ comunicados, edificioId }: { comunicados: ComunicadosPuerto; edificioId: string }) {
+export function PantallaComunicados({
+  comunicados,
+  edificioId,
+  soloLectura = false,
+}: {
+  comunicados: ComunicadosPuerto;
+  edificioId: string;
+  /** El residente lee lo publicado; redactar es del equipo. */
+  soloLectura?: boolean;
+}) {
   const s = useStyles(makeStyles);
-  const [pestana, setPestana] = useState<EstadoDelComunicado>("publicado");
+  const [elegida, setPestana] = useState<EstadoDelComunicado>("publicado");
+  const pestana = soloLectura ? "publicado" : elegida;
   const [aviso, setAviso] = useState<AvisoDeAccion | null>(null);
   const [abierto, setAbierto] = useState<Abierto | null>(null);
   const leer = useCallback(() => comunicados.delEdificio(edificioId), [comunicados, edificioId]);
@@ -54,20 +68,26 @@ export function PantallaComunicados({ comunicados, edificioId }: { comunicados: 
     <ScrollView contentContainerStyle={s.pantalla}>
       <PageHeader
         title="Comunicados"
-        actions={<Button icon="pencil" label="Redactar" onPress={() => setAbierto({ modo: "editar", comunicado: null })} testID="comunicados-redactar" />}
+        actions={
+          soloLectura ? undefined : (
+            <Button icon="pencil" label="Redactar" onPress={() => setAbierto({ modo: "editar", comunicado: null })} testID="comunicados-redactar" />
+          )
+        }
       />
-      <Tabs
-        accessibilityLabel="Comunicados"
-        items={[
-          { key: "publicado", label: "Publicados", count: cuenta("publicado") },
-          { key: "borrador", label: "Borradores", count: cuenta("borrador") },
-        ]}
-        value={pestana}
-        onChange={(p) => {
-          setAviso(null);
-          setPestana(p);
-        }}
-      />
+      {soloLectura ? null : (
+        <Tabs
+          accessibilityLabel="Comunicados"
+          items={[
+            { key: "publicado", label: "Publicados", count: cuenta("publicado") },
+            { key: "borrador", label: "Borradores", count: cuenta("borrador") },
+          ]}
+          value={pestana}
+          onChange={(p) => {
+            setAviso(null);
+            setPestana(p);
+          }}
+        />
+      )}
       <LineaDeAviso aviso={aviso} />
       {carga.estado === "cargando" ? <Cargando /> : null}
       {carga.estado === "error" ? (
