@@ -5,7 +5,8 @@
  * Un tramo por cosa dice "de siete, van dos" sin obligar a contar casillas
  * chiquitas: los tramos son finos, van separados por un hueco de 2 y llenan
  * su lugar, así que se leen como un avance y no como una fila de cuadraditos.
- * Con más de veinte, los tramos ya no se distinguen y va una barra corrida.
+ * Con más de ocho, los tramos se achican hasta parecer casillas otra vez y
+ * va una barra corrida, que es lo que importa: cuánto falta del total.
  * Para una magnitud continua está `CellWithBar`.
  *
  * **El color no es la única señal:** lo que falta va en el mismo riel con
@@ -17,8 +18,8 @@ import { textStyle } from "../theme/text-style";
 import { useStyles, useTheme } from "../theme/theme-provider";
 import type { Tema } from "../tokens";
 
-/** Desde aquí va una barra corrida: veinte tramos ya no se distinguen ni caben en un teléfono. */
-const MAX_CELLS = 20;
+/** Desde aquí va una barra corrida: más tramos ya no se leen como pasos sino como casillas. */
+const MAX_CELLS = 8;
 
 export interface MeterProps {
   value: number;
