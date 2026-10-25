@@ -88,14 +88,23 @@ const ICONO_DE_TAREA: Record<Tarea["tipo"], IconName> = {
   "participacion-excedida": "percent",
   "sin-cuenta": "landmark",
   cierre: "receipt",
+  pagos: "inbox",
 };
 
 /** Adónde lleva cada tarea, si ya hay una pantalla donde resolverla y el rol puede. */
-function irALaTarea(tarea: Tarea, editable: boolean): (() => void) | null {
+function irALaTarea(tarea: Tarea, editable: boolean, elegirEdificio: (id: string) => void): (() => void) | null {
   const id = tarea.edificioId;
   switch (tarea.tipo) {
     case "cierre":
       return () => irAlCierre(id, tarea.pasoDelCierre ?? null);
+    case "pagos":
+      // La cola de pagos se recorta con el selector de arriba: se elige el edificio y se va a ella.
+      return editable
+        ? () => {
+            elegirEdificio(id);
+            router.push("/payments");
+          }
+        : null;
     case "sin-unidades":
       return editable ? () => router.push({ pathname: "/buildings/[id]/units/new", params: { id } }) : null;
     case "sin-cuenta":
@@ -221,7 +230,7 @@ function DeLaCartera({ filas, editable, abrir }: { filas: FilaCartera[]; editabl
       </View>
       <View style={s.columna}>
         <SectionTitle>Edificios</SectionTitle>
-        <CardGrid minItemWidth={280} maxColumns={4}>
+        <CardGrid minItemWidth={280} maxColumns={3}>
           {filas.map((f) => (
             <TarjetaDeEdificio key={f.id} fila={f} onPress={() => abrir(f.id)} />
           ))}
@@ -262,6 +271,7 @@ function ResumenDelMes({ filas, style }: { filas: FilaCartera[]; style?: StylePr
 function PorHacer({ tareas, editable, conEdificio, style }: { tareas: Tarea[]; editable: boolean; conEdificio: boolean; style?: StyleProp<ViewStyle> }) {
   const t = useTheme();
   const s = useStyles(makeStyles);
+  const { elegirEdificio } = useContextoDeTrabajo();
   return (
     // La tabla ya es la tarjeta: dentro de otra, en un teléfono, el texto se queda sin ancho.
     <View style={[s.columna, style]}>
@@ -277,7 +287,7 @@ function PorHacer({ tareas, editable, conEdificio, style }: { tareas: Tarea[]; e
       ) : (
         <DataTable minWidth={0}>
           {tareas.map((tarea) => {
-            const ir = irALaTarea(tarea, editable);
+            const ir = irALaTarea(tarea, editable, elegirEdificio);
             const detalle = conEdificio ? `${tarea.edificio} · ${tarea.causa}` : tarea.causa;
             return (
               <TableRow
@@ -303,7 +313,7 @@ function PorHacer({ tareas, editable, conEdificio, style }: { tareas: Tarea[]; e
 function IconoDeTarea({ tarea }: { tarea: Tarea }) {
   const t = useTheme();
   const s = useStyles(makeStyles);
-  const delPadron = tarea.tipo !== "cierre";
+  const delPadron = tarea.tipo !== "cierre" && tarea.tipo !== "pagos";
   return (
     <View style={[s.iconoTarea, { backgroundColor: delPadron ? t.color.warning.bg : t.color.accent.subtle }]}>
       <Icon name={ICONO_DE_TAREA[tarea.tipo]} size="sm" color={delPadron ? t.color.warning.fg : t.color.accent.text} />
@@ -379,10 +389,12 @@ function DelEdificio({ fila, editable }: { fila: FilaCartera; editable: boolean 
   const t = useTheme();
   const s = useStyles(makeStyles);
   const ancho = useWindowDimensions().width >= ANCHO_DOS_COLUMNAS;
+  const { elegirEdificio } = useContextoDeTrabajo();
   const estado = estadoDelEdificio(fila);
   const tareas = tareasDeLaCartera([fila]);
   const siguiente = tareas[0];
-  const ir = siguiente ? irALaTarea(siguiente, editable) : null;
+  const ir = siguiente ? irALaTarea(siguiente, editable, elegirEdificio) : null;
+  const deLosPagos = tareas.filter((x) => x.tipo === "pagos");
   const paso = fila.cierre?.paso ?? null;
 
   return (
@@ -400,6 +412,9 @@ function DelEdificio({ fila, editable }: { fila: FilaCartera; editable: boolean 
       />
       <View style={ancho ? s.dosColumnas : s.columna}>
         <View style={[s.columna, ancho ? s.colTareas : undefined]}>
+          {fila.pendientes.length === 0 && deLosPagos.length > 0 ? (
+            <PorHacer tareas={deLosPagos} editable={editable} conEdificio={false} />
+          ) : null}
           {fila.pendientes.length === 0 ? (
             <Card padding="lg" style={s.tarjeta}>
               <SectionTitle>{`Cierre de ${textoDePeriodo(periodoEnCurso())}`}</SectionTitle>
