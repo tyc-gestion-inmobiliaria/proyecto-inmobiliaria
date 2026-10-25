@@ -40,6 +40,7 @@ import {
   PageHeader,
   SectionTitle,
   StageTrack,
+  StatusBar,
   StatusDot,
   TableRow,
   TdView,
@@ -231,7 +232,8 @@ function DeLaCartera({ filas, editable, abrir }: { filas: FilaCartera[]; editabl
   const tareas = tareasDeLaCartera(filas);
   return (
     <>
-      <View style={ancho ? s.dosColumnas : s.columna}>
+      {/* Las dos columnas se estiran al mismo alto: dos cajas de alturas distintas lado a lado se leen torcidas. */}
+      <View style={ancho ? [s.dosColumnas, s.estiradas] : s.columna}>
         <ResumenDelMes filas={filas} style={ancho ? s.colResumen : undefined} />
         <PorHacer tareas={tareas} editable={editable} conEdificio style={ancho ? s.colTareas : undefined} />
       </View>
@@ -247,7 +249,7 @@ function DeLaCartera({ filas, editable, abrir }: { filas: FilaCartera[]; editabl
   );
 }
 
-/** Cuántos edificios ya emitieron los recibos del mes, con las casillas de los que faltan. */
+/** Cuántos edificios ya emitieron los recibos del mes y en qué está el resto, como barra de estados. */
 function ResumenDelMes({ filas, style }: { filas: FilaCartera[]; style?: StyleProp<ViewStyle> }) {
   const t = useTheme();
   const s = useStyles(makeStyles);
@@ -256,19 +258,22 @@ function ResumenDelMes({ filas, style }: { filas: FilaCartera[]; style?: StylePr
     // El título va fuera de la tarjeta, como el de "Por hacer": las dos columnas arrancan a la misma altura.
     <View style={[s.columna, style]}>
       <SectionTitle>{textoCortoDePeriodo(periodoEnCurso())}</SectionTitle>
-      <Card padding="lg" style={s.tarjeta}>
-      <View accessible accessibilityLabel={`${r.alDia} de ${r.edificios} edificios con el mes emitido`}>
-        <Text style={textStyle(t, "display")}>
-          {r.alDia}
-          <Text style={textStyle(t, "title", t.color.text.secondary)}>{` de ${r.edificios}`}</Text>
-        </Text>
-        <Text style={textStyle(t, "body", t.color.text.secondary)}>{r.edificios === 1 ? "edificio con el mes emitido" : "edificios con el mes emitido"}</Text>
-      </View>
-      <Meter value={r.alDia} total={r.edificios} unit="edificios con el mes emitido" label="" />
-      <View style={s.leyenda}>
-        {r.enCierre > 0 ? <StatusDot tone="info" label={`${r.enCierre} en cierre`} /> : null}
-        {r.porCompletar > 0 ? <StatusDot tone="warning" label={`${r.porCompletar} por completar`} /> : null}
-      </View>
+      <Card padding="lg" style={[s.tarjeta, s.llena]}>
+        <View accessible accessibilityLabel={`${r.alDia} de ${r.edificios} edificios con el mes emitido`}>
+          <Text style={textStyle(t, "display")}>
+            {r.alDia}
+            <Text style={textStyle(t, "title", t.color.text.secondary)}>{` de ${r.edificios}`}</Text>
+          </Text>
+          <Text style={textStyle(t, "body", t.color.text.secondary)}>{r.edificios === 1 ? "edificio con el mes emitido" : "edificios con el mes emitido"}</Text>
+        </View>
+        <StatusBar
+          accessibilityLabel={`${r.alDia} con el mes emitido, ${r.enCierre} en cierre, ${r.porCompletar} por completar`}
+          items={[
+            { key: "al-dia", label: "Mes emitido", value: r.alDia, tone: "done" },
+            { key: "en-cierre", label: "En cierre", value: r.enCierre, tone: "progress" },
+            { key: "por-completar", label: "Por completar", value: r.porCompletar, tone: "attention" },
+          ]}
+        />
       </Card>
     </View>
   );
@@ -358,7 +363,8 @@ function TarjetaDeEdificio({ fila, onPress }: { fila: FilaCartera; onPress: () =
     detalle = <Meter value={paso - 1} total={4} unit="pasos del cierre" label={`Paso ${paso} de 4 · ${fila.cierre?.texto}`} />;
     leido = `Paso ${paso} de 4 del cierre: ${fila.cierre?.texto}`;
   } else {
-    detalle = <Text style={textStyle(t, "bodySmall", t.color.text.secondary)}>Recibos del mes emitidos</Text>;
+    // El mismo riel de cuatro pasos, lleno: las tres tarjetas se leen igual.
+    detalle = <Meter value={4} total={4} unit="pasos del cierre" label="Recibos del mes emitidos" />;
     leido = "Recibos del mes emitidos";
   }
 
@@ -487,11 +493,12 @@ const makeStyles = (t: Tema) =>
     pantalla: { flexGrow: 1, gap: t.space.xl, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
     columna: { gap: t.space.lg },
     dosColumnas: { flexDirection: "row", alignItems: "flex-start", gap: t.space.lg },
+    estiradas: { alignItems: "stretch" },
+    llena: { flexGrow: 1, justifyContent: "space-between" },
     colResumen: { flexBasis: 320, flexGrow: 0, flexShrink: 0 },
     colTareas: { flex: 1, minWidth: 0 },
     tarjeta: { gap: t.space.md },
     titulo: { flexDirection: "row", alignItems: "center", gap: t.space.sm },
-    leyenda: { flexDirection: "row", flexWrap: "wrap", columnGap: t.space.lg, rowGap: t.space.xs },
     alDia: { flexDirection: "row", alignItems: "center", gap: t.space.sm, flexWrap: "wrap" },
     apilada: { gap: t.space.xxs },
     fuerte: { fontWeight: "600" },
