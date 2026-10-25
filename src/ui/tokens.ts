@@ -7,7 +7,7 @@
  * otros valores a `crearTema`— y no buscar colores por cuarenta archivos.
  *
  * Este archivo es **puro**: no importa React Native. Así lo puede leer
- * `scripts/tokens-a-json.ts` desde Node para escribir `tokens/tokens.json`,
+ * `scripts/tokens-to-json.ts` desde Node para escribir `tokens/tokens.json`,
  * que es lo que se importa en Figma. Código y diseño comparten una sola
  * fuente.
  *

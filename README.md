@@ -31,16 +31,16 @@ base local. La CLI de Supabase viene como dependencia de desarrollo
 src/
   app/                 rutas de Expo Router: solo rutas, cada archivo es una URL
     _layout.tsx        tema, sesión, y qué rutas existen con y sin sesión
-    entrar.tsx         /entrar, el inicio de sesión
+    login.tsx          /login, el inicio de sesión
     (app)/             lo que pide sesión: el marco con el menú por secciones
-  modulos/<modulo>/    un módulo por flujo
-    dominio/           reglas puras y tipos, sin React ni Supabase, con sus pruebas
-    aplicacion/        casos de uso y puertos (interfaces de repositorio)
-    infraestructura/   adaptadores: Supabase, y falsos para las pruebas
+  modules/<module>/    un módulo por flujo
+    domain/            reglas puras y tipos, sin React ni Supabase, con sus pruebas
+    application/       casos de uso y puertos (interfaces de repositorio)
+    infrastructure/    adaptadores: Supabase, y falsos para las pruebas
     ui/                pantallas y componentes del módulo
-  compartido/          lo que usan varios módulos: el cliente de Supabase, el marco, las secciones
+  shared/              lo que usan varios módulos: el cliente de Supabase, el marco, las secciones
   ui/                  el kit: tokens, tema, componentes, gráficas
-  tema.ts              la cara de este proyecto sobre el tema neutro del kit
+  theme.ts             la cara de este proyecto sobre el tema neutro del kit
 supabase/
   config.toml          la base local
   migrations/          el esquema, solo por migraciones versionadas
@@ -57,7 +57,7 @@ cuenta) y `cartera` (el inicio, con el paso del cierre de cada edificio).
 Vendrá `auditoria`.
 
 La cobranza no importa de otros módulos: lo que comparte va en
-`src/compartido/` y, cuando una pantalla junta dos módulos (la ficha de la
+`src/shared/` y, cuando una pantalla junta dos módulos (la ficha de la
 unidad, con el padrón y la cobranza), los junta la ruta de `src/app/`. La
 cartera sí lee la lista de edificios del padrón, desde antes.
 

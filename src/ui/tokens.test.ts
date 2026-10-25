@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { contrastRatio, MIN_TEXT_CONTRAST } from "./theme/contrast";
-import { temaDelProyecto, temaOscuroDelProyecto } from "../tema";
+import { temaDelProyecto, temaOscuroDelProyecto } from "../theme";
 import { darkTheme, lightTheme, type Tema } from "./tokens";
 
 /**

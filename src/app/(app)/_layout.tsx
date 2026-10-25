@@ -1,12 +1,12 @@
 import { Slot, usePathname } from "expo-router";
 
-import type { EdificiosDelContextoPuerto } from "@/compartido/contexto/contexto";
-import { ProveedorContexto } from "@/compartido/contexto/proveedor-contexto";
-import { Marco } from "@/compartido/ui/marco";
-import { membresias } from "@/modulos/organizaciones/infraestructura/sesion";
-import { ProveedorOrganizacion, useOrganizacion } from "@/modulos/organizaciones/ui/organizacion";
-import { useSesion } from "@/modulos/organizaciones/ui/sesion";
-import { edificios } from "@/modulos/padron/infraestructura/padron";
+import type { EdificiosDelContextoPuerto } from "@/shared/context/context";
+import { ProveedorContexto } from "@/shared/context/context-provider";
+import { Marco } from "@/shared/ui/frame";
+import { membresias } from "@/modules/organizations/infrastructure/session";
+import { ProveedorOrganizacion, useOrganizacion } from "@/modules/organizations/ui/organization";
+import { useSesion } from "@/modules/organizations/ui/session";
+import { edificios } from "@/modules/registry/infrastructure/registry";
 
 /** El selector de edificio lee del padrón; solo necesita el id y el nombre. */
 const edificiosDelContexto: EdificiosDelContextoPuerto = {

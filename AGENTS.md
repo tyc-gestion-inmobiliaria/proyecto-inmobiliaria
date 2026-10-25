@@ -23,8 +23,8 @@ datos de otra administradora.
 - **Las funciones `security definer` van en `private`**, con
   `set search_path = ''` y sin `execute` para `public` ni `anon`.
 - **Una tabla nueva sin prueba no pasa:** se suma a la lista de
-  `supabase/tests/01_rls_activada.sql` y se escribe su caso en
-  `supabase/tests/02_aislamiento.sql` (no lee, no inserta, no modifica, no
+  `supabase/tests/01_rls_enabled.sql` y se escribe su caso en
+  `supabase/tests/02_isolation.sql` (no lee, no inserta, no modifica, no
   borra de la otra administradora).
 - **El cliente solo usa la clave `anon`.** La clave de servicio vive en los
   secretos de las Edge Functions y de GitHub, nunca en `EXPO_PUBLIC_*`.
@@ -46,20 +46,24 @@ emitido no se edita: se corrige con un ajuste.
 ## Capas de cada módulo
 
 ```
-src/modulos/<modulo>/
-  dominio/          reglas puras y tipos: sin React, sin Supabase, con pruebas
-  aplicacion/       casos de uso y puertos (interfaces)
-  infraestructura/  adaptadores: Supabase y falsos para las pruebas
+src/modules/<module>/
+  domain/           reglas puras y tipos: sin React, sin Supabase, con pruebas
+  application/      casos de uso y puertos (interfaces)
+  infrastructure/   adaptadores: Supabase y falsos para las pruebas
   ui/               pantallas y componentes del módulo
 ```
 
-- `dominio` no importa nada de afuera de `dominio`.
+- `domain` no importa nada de afuera de `domain`.
 - La pantalla habla con puertos; el adaptador de Supabase se elige en la ruta.
 - `src/app/` lleva **solo rutas**: cada archivo es una URL y re-exporta una
   pantalla de un módulo.
-- Lo que usan varios módulos va en `src/compartido/`.
+- Lo que usan varios módulos va en `src/shared/`.
+- **Carpetas, archivos y URLs en inglés** (`src/modules/billing/ui/closing-screen.tsx`,
+  `/buildings/[id]/units`). Lo que lee la persona en pantalla, los commits y los
+  docs van en español. Las tablas de la base y las migraciones ya publicadas
+  conservan su nombre.
 - De quién es cada concepto y qué módulo puede importar a cuál: skill
-  `ddd-modulos` (`.claude/skills/ddd-modulos/SKILL.md`). Se carga antes de
+  `ddd-modules` (`.claude/skills/ddd-modules/SKILL.md`). Se carga antes de
   crear un módulo, una tabla o un caso de uso.
 
 ## Nada de datos inventados
@@ -76,7 +80,7 @@ un comentario (y en la historia), no se dan por ciertas en silencio.
 
 `src/ui/` viene de la plantilla `JTM_templates` y es neutro: nada de nombres
 de cliente, colores de marca ni textos de un dominio. La cara del proyecto va
-en `src/tema.ts`. Lo que no hace bien un componente se arregla **en el kit,
+en `src/theme.ts`. Lo que no hace bien un componente se arregla **en el kit,
 una vez**, no por pantalla.
 
 - **Todo sale de los tokens.** Ningún componente escribe un hexadecimal, un
