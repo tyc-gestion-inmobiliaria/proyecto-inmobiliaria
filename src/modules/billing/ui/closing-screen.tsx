@@ -17,6 +17,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { Cargando, ConOrganizacion } from "@/modules/organizations/ui/with-organization";
 import { Volver } from "@/shared/ui/pieces";
+import { ANCHO_DE_PANTALLA } from "@/shared/ui/layout";
 import { Badge, Button, EmptyState, PageHeader, StepCards, textStyle, useStyles, useTheme, type Tema } from "@/ui";
 
 import { abrirCierre, mensajeDeCobranza } from "../application/use-cases";
@@ -452,7 +453,7 @@ function Asistente({
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
     marco: { flex: 1 },
-    pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: 1080, width: "100%" },
+    pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
     pie: {
       flexDirection: "row",
       flexWrap: "wrap",

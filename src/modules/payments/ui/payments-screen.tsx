@@ -18,6 +18,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useContextoDeTrabajo } from "@/shared/context/context-provider";
 import { useCarga } from "@/shared/ui/use-load";
 import { Cargando, ConOrganizacion } from "@/modules/organizations/ui/with-organization";
+import { ANCHO_DE_PANTALLA } from "@/shared/ui/layout";
 import {
   Badge,
   Button,
@@ -295,9 +296,10 @@ function Alerta({ texto }: { texto: string }) {
 
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
-    pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: 960, width: "100%" },
-    lista: { gap: t.space.md },
-    fila: { gap: t.space.md },
+    pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
+    // En pantalla ancha, dos tarjetas por fila; en el teléfono, una.
+    lista: { flexDirection: "row", flexWrap: "wrap", alignItems: "flex-start", gap: t.space.md },
+    fila: { flexGrow: 1, flexShrink: 1, flexBasis: 480, minWidth: 0, gap: t.space.md },
     cabeza: { flexDirection: "row", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: t.space.md },
     quien: { flexShrink: 1, gap: t.space.xxs },
     cuanto: { alignItems: "flex-end", gap: t.space.xs },

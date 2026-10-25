@@ -19,6 +19,7 @@ import { CampoDeOpciones } from "@/shared/ui/pieces";
 import { useCarga } from "@/shared/ui/use-load";
 import { hoyEnLima, textoDeHace } from "@/shared/format";
 import { Cargando } from "@/modules/organizations/ui/with-organization";
+import { ANCHO_DE_PANTALLA } from "@/shared/ui/layout";
 import { Badge, Button, Card, Dialog, EmptyState, PageHeader, Select, Tabs, TextField, textStyle, useStyles, useTheme, type StatusTone, type Tema } from "@/ui";
 
 import type { IncidenciasPuerto, UnidadCorta } from "../application/ports";
@@ -266,9 +267,10 @@ function Registro({
 
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
-    pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: 960, width: "100%" },
-    lista: { gap: t.space.sm },
-    fila: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.md },
+    pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
+    // En pantalla ancha, dos incidencias por fila; en el teléfono, una.
+    lista: { flexDirection: "row", flexWrap: "wrap", alignItems: "stretch", gap: t.space.sm },
+    fila: { flexGrow: 1, flexShrink: 1, flexBasis: 480, minWidth: 0, flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.md },
     texto: { flexGrow: 1, flexShrink: 1, flexBasis: 260, gap: t.space.xxs },
     cabeza: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.sm },
     titulo: { fontWeight: "600", flexShrink: 1 },

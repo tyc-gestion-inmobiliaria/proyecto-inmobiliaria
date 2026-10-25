@@ -16,6 +16,7 @@ import { CampoDeOpciones, FlechaDeFila } from "@/shared/ui/pieces";
 import { useCarga } from "@/shared/ui/use-load";
 import { textoDeFecha } from "@/shared/format";
 import { Cargando } from "@/modules/organizations/ui/with-organization";
+import { ANCHO_DE_PANTALLA } from "@/shared/ui/layout";
 import { Badge, Button, Card, Dialog, EmptyState, PageHeader, Tabs, TextField, textStyle, useStyles, useTheme, type Tema } from "@/ui";
 
 import type { ComunicadosPuerto } from "../application/ports";
@@ -229,9 +230,10 @@ function Editor({
 
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
-    pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: 880, width: "100%" },
-    lista: { gap: t.space.md },
-    tarjeta: { gap: t.space.sm },
+    pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
+    // Dos comunicados por fila en pantalla ancha: cada uno queda con un ancho cómodo de leer.
+    lista: { flexDirection: "row", flexWrap: "wrap", alignItems: "flex-start", gap: t.space.md },
+    tarjeta: { flexGrow: 1, flexShrink: 1, flexBasis: 480, minWidth: 0, gap: t.space.sm },
     cabeza: { flexDirection: "row", alignItems: "flex-start", gap: t.space.md },
     titulo: { flex: 1, minWidth: 0 },
     meta: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.sm },

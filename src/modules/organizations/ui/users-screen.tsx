@@ -16,6 +16,7 @@ import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
 import { useCarga } from "@/shared/ui/use-load";
+import { ANCHO_DE_PANTALLA } from "@/shared/ui/layout";
 import {
   Badge,
   Button,
@@ -301,7 +302,7 @@ function TablaMiembros({ miembros }: { miembros: Miembro[] }) {
 
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
-    pantalla: { flexGrow: 1, gap: t.space.xl, padding: t.space.xl, maxWidth: 1080, width: "100%" },
+    pantalla: { flexGrow: 1, gap: t.space.xl, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
     cabecera: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: t.space.md },
     bloque: { gap: t.space.md },
     columnaAcciones: { width: 220 },

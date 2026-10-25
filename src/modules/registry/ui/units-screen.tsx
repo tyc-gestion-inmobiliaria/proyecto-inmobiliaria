@@ -17,6 +17,7 @@ import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
 import { Cargando, ConOrganizacion } from "@/modules/organizations/ui/with-organization";
+import { ANCHO_CON_LATERAL, ANCHO_DE_PANTALLA, ANCHO_LATERAL } from "@/shared/ui/layout";
 import {
   ChoiceChips,
   TextField,
@@ -79,6 +80,7 @@ function Lista({
   padron: PuertosDelPadron;
 }) {
   const s = useStyles(makeStyles);
+  const conLateral = useWindowDimensions().width >= ANCHO_CON_LATERAL;
   const leer = useCallback(async () => {
     const [edificios, unidades, participacion, cuentas] = await Promise.all([
       padron.edificios.listar(orgId),
@@ -157,13 +159,23 @@ function Lista({
             description="Pide a un administrador de tu empresa que las registre."
           />
         )
+      ) : conLateral ? (
+        <View style={s.dosColumnas}>
+          <View style={s.principal}>
+            <ConFiltro unidades={unidades} edificioId={edificioId} editable={editable} />
+          </View>
+          <View style={s.lateral}>
+            <Suma resumen={participacion} />
+            <Cuentas cuentas={cuentas} edificioId={edificioId} editable={editable} />
+          </View>
+        </View>
       ) : (
         <>
           <Suma resumen={participacion} />
           <ConFiltro unidades={unidades} edificioId={edificioId} editable={editable} />
         </>
       )}
-      <Cuentas cuentas={cuentas} edificioId={edificioId} editable={editable} />
+      {unidades.length === 0 || !conLateral ? <Cuentas cuentas={cuentas} edificioId={edificioId} editable={editable} /> : null}
     </ScrollView>
   );
 }
@@ -374,9 +386,12 @@ function Cuentas({ cuentas, edificioId, editable }: { cuentas: CuentaBancaria[];
 
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
+    dosColumnas: { flexDirection: "row", alignItems: "flex-start", gap: t.space.xl },
+    principal: { flex: 1, minWidth: 0, gap: t.space.lg },
+    lateral: { width: ANCHO_LATERAL, gap: t.space.lg },
     filtros: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.md },
     buscar: { flexGrow: 1, flexBasis: 240, maxWidth: 380 },
-    pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: 960, width: "100%" },
+    pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
     cabecera: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: t.space.md },
     botones: { flexDirection: "row", flexWrap: "wrap", gap: t.space.sm },
     suma: { gap: t.space.md },
