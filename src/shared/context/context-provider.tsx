@@ -30,6 +30,32 @@ const SIN_ADMINISTRADORA: EstadoContexto = {
   elegirEdificio: () => {},
 };
 
+/**
+ * El edificio elegido se recuerda en el navegador, por administradora: al
+ * abrir otra sección por su dirección o recargar, se sigue en el mismo
+ * edificio en vez de volver a preguntar. Si el navegador no guarda nada, se
+ * empieza con toda la cartera, como antes.
+ */
+const CLAVE_DEL_ELEGIDO = "edificio-elegido";
+
+function leerElegido(orgId: string): string | null {
+  try {
+    return typeof localStorage === "undefined" ? null : localStorage.getItem(`${CLAVE_DEL_ELEGIDO}:${orgId}`);
+  } catch {
+    return null;
+  }
+}
+
+function guardarElegido(orgId: string, id: string | null) {
+  try {
+    if (typeof localStorage === "undefined") return;
+    if (id) localStorage.setItem(`${CLAVE_DEL_ELEGIDO}:${orgId}`, id);
+    else localStorage.removeItem(`${CLAVE_DEL_ELEGIDO}:${orgId}`);
+  } catch {
+    // Sin almacenamiento, el elegido dura lo que la pestaña.
+  }
+}
+
 export function ProveedorContexto({
   orgId,
   ruta,
@@ -43,7 +69,7 @@ export function ProveedorContexto({
 }) {
   const [carga, setCarga] = useState<Carga>("cargando");
   const [edificios, setEdificios] = useState<EdificioDelContexto[]>([]);
-  const [elegido, setElegido] = useState<string | null>(null);
+  const [elegido, setElegido] = useState<string | null>(() => (orgId ? leerElegido(orgId) : null));
 
   useEffect(() => {
     if (!orgId) return;
@@ -63,7 +89,13 @@ export function ProveedorContexto({
     };
   }, [orgId, puerto, ruta]);
 
-  const elegirEdificio = useCallback((id: string | null) => setElegido(id), []);
+  const elegirEdificio = useCallback(
+    (id: string | null) => {
+      setElegido(id);
+      if (orgId) guardarElegido(orgId, id);
+    },
+    [orgId],
+  );
   const edificio = useMemo(() => edificioEnCurso(edificios, elegido), [edificios, elegido]);
   const valor = useMemo(
     () => (orgId ? { carga, edificios, edificio, elegirEdificio } : SIN_ADMINISTRADORA),

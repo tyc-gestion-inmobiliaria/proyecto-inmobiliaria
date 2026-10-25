@@ -118,11 +118,14 @@ export function PantallaAccesos({ accesos, edificioId }: { accesos: AccesosPuert
       ) : null}
 
       {datos && pestana === "paquetes" ? (
-        <>
+        // En pantalla ancha, lo que espera en portería y lo entregado hoy van lado a lado.
+        <View style={s.columnas}>
           {pendientes.length === 0 ? (
-            <EmptyState icon="inbox" title="No hay paquetes en portería" />
+            <View style={s.principal}>
+              <EmptyState icon="inbox" title="No hay paquetes en portería" />
+            </View>
           ) : (
-            <Card padding="md" style={s.tabla}>
+            <Card padding="md" style={[s.tabla, s.principal]}>
               {pendientes.map((p, i) => (
                 <View key={p.id} style={[s.fila, i === 0 && s.primera]}>
                   <Text style={[textStyle(t, "title"), s.unidad]} accessibilityLabel={`Unidad ${p.unidadNumero}`}>
@@ -149,7 +152,7 @@ export function PantallaAccesos({ accesos, edificioId }: { accesos: AccesosPuert
             </Card>
           )}
           {entregados.length > 0 ? (
-            <View style={s.seccion}>
+            <View style={[s.seccion, s.secundaria]}>
               <SectionTitle>Entregados hoy</SectionTitle>
               <Card padding="md" style={s.tabla}>
                 {entregados.map((p, i) => (
@@ -164,7 +167,7 @@ export function PantallaAccesos({ accesos, edificioId }: { accesos: AccesosPuert
               </Card>
             </View>
           ) : null}
-        </>
+        </View>
       ) : null}
 
       {datos && pestana === "visitas" ? (
@@ -434,6 +437,9 @@ const makeStyles = (t: Tema) =>
   StyleSheet.create({
     pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
     seccion: { gap: t.space.sm },
+    columnas: { flexDirection: "row", flexWrap: "wrap", alignItems: "flex-start", gap: t.space.lg },
+    principal: { flexGrow: 2, flexShrink: 1, flexBasis: 520, minWidth: 0 },
+    secundaria: { flexGrow: 1, flexShrink: 1, flexBasis: 340, minWidth: 0 },
     tabla: { paddingVertical: t.space.xs },
     fila: {
       flexDirection: "row",

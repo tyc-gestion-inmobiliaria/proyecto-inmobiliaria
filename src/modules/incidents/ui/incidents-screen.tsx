@@ -268,8 +268,9 @@ function Registro({
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
     pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
-    lista: { gap: t.space.sm },
-    fila: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.md },
+    // En pantalla ancha, dos incidencias por fila; en el teléfono, una.
+    lista: { flexDirection: "row", flexWrap: "wrap", alignItems: "stretch", gap: t.space.sm },
+    fila: { flexGrow: 1, flexShrink: 1, flexBasis: 480, minWidth: 0, flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.md },
     texto: { flexGrow: 1, flexShrink: 1, flexBasis: 260, gap: t.space.xxs },
     cabeza: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.sm },
     titulo: { fontWeight: "600", flexShrink: 1 },
