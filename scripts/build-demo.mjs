@@ -16,7 +16,7 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const env = { ...process.env, EXPO_PUBLIC_DATOS: "maqueta" };
-const r = spawnSync("npx", ["expo", "export", "--platform", "web", "--clear"], { stdio: "inherit", env, shell: true });
+const r = spawnSync("npx expo export --platform web --clear", { stdio: "inherit", env, shell: true });
 if (r.status !== 0) process.exit(r.status ?? 1);
 
 writeFileSync(join("dist", "_redirects"), "/* /index.html 200\n");
