@@ -11,12 +11,15 @@
  *   última acción (que suele ser la principal).
  * - **Sin etiqueta encima ni bajada debajo:** el título va solo. El estado
  *   (`status`) es una insignia con su palabra, no una frase.
+ * - **En el teléfono, los botones se reparten cada fila:** sin eso, el
+ *   tercero (que suele ser el primario) queda solo y corto en la segunda
+ *   fila, y se lee como un resto.
  * - **Migas:** con `back.trail`, en una ventana ancha arriba va el camino
  *   entero ("Edificios › Torre Sol"), cada tramo con su enlace. En el
  *   teléfono queda solo el nivel de arriba, con su flecha: el camino entero no
  *   entra y volver es lo que se usa.
  */
-import { Fragment, type ReactNode } from "react";
+import { Children, Fragment, isValidElement, type ReactElement, type ReactNode } from "react";
 import { StyleSheet, View, useWindowDimensions } from "react-native";
 
 import { useStyles, useTheme } from "../theme/theme-provider";
@@ -43,6 +46,13 @@ export interface PageHeaderProps {
 
 /** Desde este ancho de ventana entran las migas enteras. */
 const ANCHO_PARA_MIGAS = 600;
+
+/** Los botones sueltos, aunque lleguen dentro de un fragmento (`<>…</>`). */
+function botones(actions: ReactNode): ReactNode[] {
+  return Children.toArray(actions).flatMap((a) =>
+    isValidElement(a) && a.type === Fragment ? botones((a as ReactElement<{ children?: ReactNode }>).props.children) : [a],
+  );
+}
 
 export function PageHeader({ title, back, status, actions }: PageHeaderProps) {
   const t = useTheme();
@@ -85,7 +95,19 @@ export function PageHeader({ title, back, status, actions }: PageHeaderProps) {
           {/* La insignia se alinea arriba por su cuenta; junto al título va centrada. */}
           {status ? <View style={s.estado}>{status}</View> : null}
         </View>
-        {actions ? <View style={s.acciones}>{actions}</View> : null}
+        {actions ? (
+          migas || width >= ANCHO_PARA_MIGAS ? (
+            <View style={s.acciones}>{actions}</View>
+          ) : (
+            <View style={[s.acciones, s.accionesAngostas]}>
+              {botones(actions).map((b, i) => (
+                <View key={i} style={s.boton}>
+                  {b}
+                </View>
+              ))}
+            </View>
+          )
+        ) : null}
       </View>
     </View>
   );
@@ -108,4 +130,6 @@ const makeStyles = (t: Tema) =>
     },
     estado: { alignSelf: "center" },
     acciones: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.sm, maxWidth: "100%" },
+    accionesAngostas: { width: "100%", alignItems: "stretch" },
+    boton: { flexGrow: 1 },
   });
