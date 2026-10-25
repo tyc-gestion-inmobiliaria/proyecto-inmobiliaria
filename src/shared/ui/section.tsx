@@ -7,9 +7,11 @@
  *   reconocerlo de un vistazo, como en Inicio y en Edificios; elegirlo cambia
  *   también el selector de arriba.
  * - Con un solo edificio no se pregunta: es ese.
+ * - En el teléfono cada edificio es una fila con su miniatura: una foto a
+ *   todo el ancho por edificio obliga a desplazarse para ver el tercero.
  */
 import type { ReactNode } from "react";
-import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
 import { useContextoDeTrabajo } from "@/shared/context/context-provider";
 import { ANCHO_DE_PANTALLA } from "@/shared/ui/layout";
@@ -17,10 +19,13 @@ import { Card, CardGrid, EmptyState, Icon, ScreenTitle, textStyle, useStyles, us
 
 import { fotoDeEdificio } from "./building-photo";
 
+const ANCHO_ANGOSTO = 600;
+
 export function ConEdificio({ titulo, children }: { titulo: string; children: (edificioId: string) => ReactNode }) {
   const t = useTheme();
   const s = useStyles(makeStyles);
   const { edificio, edificios, elegirEdificio } = useContextoDeTrabajo();
+  const angosto = useWindowDimensions().width < ANCHO_ANGOSTO;
   if (edificio) return <>{children(edificio.id)}</>;
   if (edificios.length === 1) return <>{children(edificios[0].id)}</>;
 
@@ -37,13 +42,19 @@ export function ConEdificio({ titulo, children }: { titulo: string; children: (e
               <Card
                 key={e.id}
                 padding="md"
-                style={s.tarjeta}
+                style={angosto ? [s.tarjeta, s.fila] : s.tarjeta}
                 onPress={() => elegirEdificio(e.id)}
                 accessibilityLabel={`Trabajar en ${e.nombre}`}
                 testID={`elegir-edificio-${e.id}`}
               >
-                <Image source={fotoDeEdificio(e.id)} style={s.foto} resizeMode="cover" accessibilityIgnoresInvertColors aria-hidden />
-                <View style={s.pie}>
+                <Image
+                  source={fotoDeEdificio(e.id)}
+                  style={angosto ? s.miniatura : s.foto}
+                  resizeMode="cover"
+                  accessibilityIgnoresInvertColors
+                  aria-hidden
+                />
+                <View style={angosto ? [s.pie, s.pieEnFila] : s.pie}>
                   <Text style={[textStyle(t, "subtitle"), s.nombre]} numberOfLines={2}>
                     {e.nombre}
                   </Text>
@@ -62,7 +73,11 @@ const makeStyles = (t: Tema) =>
   StyleSheet.create({
     pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
     tarjeta: { flexGrow: 1, gap: t.space.md },
-    foto: { width: "100%", height: 120, borderRadius: t.radius.sm },
+    // El fondo apagado reserva el lugar mientras la foto carga: sin él, la tarjeta se ve vacía un instante.
+    foto: { width: "100%", height: 120, borderRadius: t.radius.sm, backgroundColor: t.color.bg.muted },
+    fila: { flexDirection: "row", alignItems: "center" },
+    miniatura: { width: 56, height: 56, borderRadius: t.radius.sm, backgroundColor: t.color.bg.muted },
+    pieEnFila: { flex: 1, minWidth: 0 },
     pie: { flexDirection: "row", alignItems: "center", gap: t.space.sm, paddingHorizontal: t.space.xs },
     nombre: { flex: 1 },
   });
