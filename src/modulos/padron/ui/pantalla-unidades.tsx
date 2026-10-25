@@ -13,11 +13,13 @@
  *   puede emitir, y el aviso lo dice.
  */
 import { router } from "expo-router";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
 import { Cargando, ConOrganizacion } from "@/modulos/organizaciones/ui/con-organizacion";
 import {
+  ChoiceChips,
+  TextField,
   Button,
   Card,
   DataTable,
@@ -158,7 +160,7 @@ function Lista({
       ) : (
         <>
           <Suma resumen={participacion} />
-          <Tabla unidades={unidades} edificioId={edificioId} editable={editable} />
+          <ConFiltro unidades={unidades} edificioId={edificioId} editable={editable} />
         </>
       )}
       <Cuentas cuentas={cuentas} edificioId={edificioId} editable={editable} />
@@ -184,6 +186,58 @@ function Suma({ resumen }: { resumen: ResumenParticipacion }) {
       </View>
       {aviso ? <Aviso testID="unidades-aviso-participacion">{aviso}</Aviso> : null}
     </Card>
+  );
+}
+
+/** Desde cuántas unidades conviene buscar y filtrar en vez de recorrer. */
+const CON_FILTRO = 8;
+
+/**
+ * En un edificio grande (59 unidades en el portal actual) se busca por número
+ * o tipo, y se dejan solas las que no tienen participación, que es lo que hay
+ * que completar antes del cierre.
+ */
+function ConFiltro({ unidades, edificioId, editable }: { unidades: Unidad[]; edificioId: string; editable: boolean }) {
+  const t = useTheme();
+  const s = useStyles(makeStyles);
+  const [busqueda, setBusqueda] = useState("");
+  const [filtro, setFiltro] = useState<"todas" | "sin">("todas");
+  if (unidades.length <= CON_FILTRO) return <Tabla unidades={unidades} edificioId={edificioId} editable={editable} />;
+  const sinParticipacion = unidades.filter((u) => u.participacion === null).length;
+  const termino = busqueda.trim().toLowerCase();
+  const visibles = unidades.filter(
+    (u) => (filtro === "todas" || u.participacion === null) && (!termino || `${u.numero} ${u.tipo ?? ""}`.toLowerCase().includes(termino)),
+  );
+  return (
+    <>
+      <View style={s.filtros}>
+        <View style={s.buscar}>
+          <TextField
+            value={busqueda}
+            onChangeText={setBusqueda}
+            placeholder="Buscar por número o tipo…"
+            accessibilityLabel="Buscar unidad"
+            onClear={busqueda ? () => setBusqueda("") : undefined}
+          />
+        </View>
+        {sinParticipacion > 0 ? (
+          <ChoiceChips
+            accessibilityLabel="Qué unidades mostrar"
+            value={filtro}
+            onChange={(v) => v && setFiltro(v)}
+            options={[
+              { id: "todas", label: `Todas (${unidades.length})` },
+              { id: "sin", label: `Sin participación (${sinParticipacion})` },
+            ]}
+          />
+        ) : null}
+      </View>
+      {visibles.length === 0 ? (
+        <Text style={textStyle(t, "body", t.color.text.secondary)}>Ninguna unidad coincide con la búsqueda.</Text>
+      ) : (
+        <Tabla unidades={visibles} edificioId={edificioId} editable={editable} />
+      )}
+    </>
   );
 }
 
@@ -320,6 +374,8 @@ function Cuentas({ cuentas, edificioId, editable }: { cuentas: CuentaBancaria[];
 
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
+    filtros: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.md },
+    buscar: { flexGrow: 1, flexBasis: 240, maxWidth: 380 },
     pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: 960, width: "100%" },
     cabecera: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: t.space.md },
     botones: { flexDirection: "row", flexWrap: "wrap", gap: t.space.sm },
