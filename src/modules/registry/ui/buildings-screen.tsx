@@ -23,7 +23,7 @@ import { fotoDeEdificio } from "@/shared/ui/building-photo";
 import { useCarga } from "@/shared/ui/use-load";
 import { Cargando, ConOrganizacion } from "@/modules/organizations/ui/with-organization";
 import { ANCHO_DE_PANTALLA } from "@/shared/ui/layout";
-import { Badge, Button, Card, CardGrid, EmptyState, Icon, PageHeader, StatusDot, TextField, textStyle, useStyles, useTheme, type Tema } from "@/ui";
+import { Badge, Button, Card, CardGrid, EmptyState, Icon, PageHeader, TextField, textStyle, useStyles, useTheme, type Tema } from "@/ui";
 
 import type { PuertosDelPadron } from "../application/ports";
 import type { CuentaBancaria } from "../domain/bank-account";
@@ -155,17 +155,31 @@ function Tarjeta({ ficha, editable }: { ficha: FichaDeEdificio; editable: boolea
       </View>
 
       <View style={s.cuerpo}>
-        <View style={s.titulo}>
-          <Text accessibilityRole="header" style={textStyle(t, "dialogTitle")} numberOfLines={2}>
-            {edificio.nombre}
-          </Text>
-          {edificio.direccion ? (
-            <View style={s.direccion}>
-              <Icon name="home" size="sm" color={t.color.text.tertiary} />
-              <Text style={textStyle(t, "bodySmall", t.color.text.secondary)} numberOfLines={1}>
-                {edificio.direccion}
-              </Text>
-            </View>
+        <View style={s.cabeza}>
+          <View style={s.titulo}>
+            <Text accessibilityRole="header" style={textStyle(t, "dialogTitle")} numberOfLines={2}>
+              {edificio.nombre}
+            </Text>
+            {edificio.direccion ? (
+              <View style={s.direccion}>
+                <Icon name="home" size="sm" color={t.color.text.tertiary} />
+                <Text style={textStyle(t, "bodySmall", t.color.text.secondary)} numberOfLines={1}>
+                  {edificio.direccion}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+          {/* Editar es lo menos frecuente: va como ícono junto al nombre y no le quita lugar a la fila de acciones. */}
+          {editable ? (
+            <Button
+              variant="ghost"
+              iconOnly
+              label="Editar"
+              icon="pencil"
+              size="sm"
+              onPress={() => router.push({ pathname: "/buildings/[id]", params: { id } })}
+              accessibilityLabel={`Editar ${edificio.nombre}`}
+            />
           ) : null}
         </View>
 
@@ -176,17 +190,26 @@ function Tarjeta({ ficha, editable }: { ficha: FichaDeEdificio; editable: boolea
             valor={participacion.unidades === 0 ? "—" : textoDePorcentaje(participacion.total)}
             alerta={participacion.unidades > 0 && !participacion.sumaCien}
           />
-          <Dato etiqueta="Cuenta" valor={cuenta ? cuenta.banco : "Falta"} alerta={!cuenta} />
+          {!cuenta && editable ? (
+            // Sin cuenta, el dato es la acción: registrarla está donde se ve que falta.
+            <View style={s.dato}>
+              <Text style={textStyle(t, "caption", t.color.text.secondary)}>Cuenta</Text>
+              <Button
+                variant="ghost"
+                size="sm"
+                icon="plus"
+                label="Registrar"
+                onPress={() => router.push({ pathname: "/buildings/[id]/accounts/new", params: { id } })}
+                accessibilityLabel={`Falta la cuenta bancaria. Registrar la cuenta de ${edificio.nombre}`}
+                style={s.registrar}
+              />
+            </View>
+          ) : (
+            <Dato etiqueta="Cuenta" valor={cuenta ? cuenta.banco : "Falta"} alerta={!cuenta} />
+          )}
         </View>
 
-        {estado.faltan.length > 1 ? (
-          <View style={s.faltan}>
-            {estado.faltan.slice(1).map((f) => (
-              <StatusDot key={f} tone="warning" label={f} />
-            ))}
-          </View>
-        ) : null}
-
+        {/* Las acciones van al pie: todas las tarjetas tienen las mismas y quedan a la misma altura. */}
         <View style={s.acciones}>
           <Button
             variant="secondary"
@@ -205,26 +228,6 @@ function Tarjeta({ ficha, editable }: { ficha: FichaDeEdificio; editable: boolea
             onPress={() => router.push({ pathname: "/buildings/[id]/closing", params: { id } })}
             accessibilityLabel={`Abrir el cierre del mes de ${edificio.nombre}`}
           />
-          {editable && !cuenta ? (
-            <Button
-              variant="secondary"
-              label="Registrar cuenta"
-              icon="landmark"
-              size="sm"
-              onPress={() => router.push({ pathname: "/buildings/[id]/accounts/new", params: { id } })}
-              accessibilityLabel={`Registrar la cuenta bancaria de ${edificio.nombre}`}
-            />
-          ) : null}
-          {editable ? (
-            <Button
-              variant="ghost"
-              label="Editar"
-              icon="pencil"
-              size="sm"
-              onPress={() => router.push({ pathname: "/buildings/[id]", params: { id } })}
-              accessibilityLabel={`Editar ${edificio.nombre}`}
-            />
-          ) : null}
         </View>
       </View>
     </Card>
@@ -254,8 +257,10 @@ const makeStyles = (t: Tema) =>
     portada: { height: 150 },
     foto: { width: "100%", height: "100%" },
     insignia: { position: "absolute", top: t.space.md, left: t.space.md },
-    cuerpo: { padding: t.space.lg, gap: t.space.lg },
-    titulo: { gap: t.space.xs },
+    cuerpo: { flexGrow: 1, padding: t.space.lg, gap: t.space.lg },
+    cabeza: { flexDirection: "row", alignItems: "flex-start", gap: t.space.sm },
+    titulo: { flex: 1, minWidth: 0, gap: t.space.xs },
+    registrar: { alignSelf: "flex-start", marginLeft: -t.space.sm, marginTop: -t.space.xs },
     direccion: { flexDirection: "row", alignItems: "center", gap: t.space.xs },
     datos: {
       flexDirection: "row",
@@ -266,6 +271,5 @@ const makeStyles = (t: Tema) =>
       borderColor: t.color.border.subtle,
     },
     dato: { flex: 1, minWidth: 0, gap: t.space.xxs },
-    faltan: { gap: t.space.xs },
-    acciones: { flexDirection: "row", flexWrap: "wrap", gap: t.space.sm },
+    acciones: { flexDirection: "row", flexWrap: "wrap", gap: t.space.sm, marginTop: "auto" },
   });
