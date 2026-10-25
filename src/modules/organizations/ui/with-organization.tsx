@@ -7,6 +7,7 @@
 import type { ReactNode } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
+import { ANCHO_DE_PANTALLA } from "@/shared/ui/layout";
 import { Button, EmptyState, textStyle, useStyles, useTheme, type Tema } from "@/ui";
 
 import type { Membresia } from "../domain/membership";
@@ -57,6 +58,6 @@ export function Cargando() {
 
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
-    pantalla: { flexGrow: 1, padding: t.space.xl, maxWidth: 960, width: "100%" },
+    pantalla: { flexGrow: 1, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
     cargando: { alignItems: "center", justifyContent: "center", gap: t.space.sm, paddingVertical: t.space.xxl },
   });

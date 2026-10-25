@@ -27,6 +27,7 @@ import { textoCortoDePeriodo, textoDePeriodo } from "@/modules/billing/domain/pe
 import { Cargando, ConOrganizacion } from "@/modules/organizations/ui/with-organization";
 import type { EdificiosPuerto } from "@/modules/registry/application/ports";
 import { puedeEditarEdificios } from "@/modules/registry/domain/building";
+import { ANCHO_DE_PANTALLA } from "@/shared/ui/layout";
 import {
   Badge,
   Button,
@@ -460,7 +461,7 @@ function Dato({ etiqueta, children }: { etiqueta: string; children: ReactNode })
 
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
-    pantalla: { flexGrow: 1, gap: t.space.xl, padding: t.space.xl, maxWidth: 1180, width: "100%" },
+    pantalla: { flexGrow: 1, gap: t.space.xl, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
     columna: { gap: t.space.lg },
     dosColumnas: { flexDirection: "row", alignItems: "flex-start", gap: t.space.lg },
     colResumen: { flexBasis: 320, flexGrow: 0, flexShrink: 0 },

@@ -20,6 +20,7 @@ import { CampoDeOpciones } from "@/shared/ui/pieces";
 import { useCarga } from "@/shared/ui/use-load";
 import { diasEntre, hoyEnLima, textoDeDia } from "@/shared/format";
 import { Cargando } from "@/modules/organizations/ui/with-organization";
+import { ANCHO_DE_PANTALLA } from "@/shared/ui/layout";
 import {
   Badge,
   Button,
@@ -367,7 +368,7 @@ function CampoDia({ valor, hoy, error, onChange }: { valor: string | undefined; 
 
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
-    pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: 960, width: "100%" },
+    pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
     dia: { gap: t.space.xs },
     tarjetaDia: { paddingVertical: t.space.xs },
     fila: {

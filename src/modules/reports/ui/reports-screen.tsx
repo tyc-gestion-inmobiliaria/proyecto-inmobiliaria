@@ -18,6 +18,7 @@ import { useContextoDeTrabajo } from "@/shared/context/context-provider";
 import { useCarga } from "@/shared/ui/use-load";
 import { textoDeFecha, textoDeSoles } from "@/shared/format";
 import { Cargando } from "@/modules/organizations/ui/with-organization";
+import { ANCHO_DE_PANTALLA } from "@/shared/ui/layout";
 import {
   Button,
   Card,
@@ -195,7 +196,7 @@ function Apilada({ tabla }: { tabla: TablaDeReporte }) {
 
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
-    pantalla: { flexGrow: 1, gap: t.space.xl, padding: t.space.xl, maxWidth: 1180, width: "100%" },
+    pantalla: { flexGrow: 1, gap: t.space.xl, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
     columna: { gap: t.space.lg },
     dosColumnas: { flexDirection: "row", alignItems: "flex-start", gap: t.space.xl },
     colLista: { flexBasis: 300, flexGrow: 0, flexShrink: 0 },

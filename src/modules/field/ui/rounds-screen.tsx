@@ -30,6 +30,7 @@ import type { Cierre } from "@/modules/billing/domain/closing";
 import { avisoDeLectura, consumo, leerMedida, textoDeMetros, type Lectura } from "@/modules/billing/domain/reading";
 import { hoyEnLima, periodoDe, textoCortoDePeriodo } from "@/modules/billing/domain/period";
 import { Cargando, ConOrganizacion } from "@/modules/organizations/ui/with-organization";
+import { ANCHO_DE_PANTALLA } from "@/shared/ui/layout";
 import {
   Badge,
   Button,
@@ -334,7 +335,7 @@ function UnidadEnCurso({
 
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
-    pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: 1080, width: "100%" },
+    pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
     avance: { gap: t.space.xs },
     columna: { gap: t.space.md },
     columnas: { flexDirection: "row", alignItems: "flex-start", gap: t.space.lg },

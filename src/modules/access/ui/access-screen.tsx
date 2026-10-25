@@ -17,6 +17,7 @@ import { LineaDeAviso, type AvisoDeAccion } from "@/shared/ui/action-notice";
 import { useCarga } from "@/shared/ui/use-load";
 import { hoyEnLima, textoDeHora } from "@/shared/format";
 import { Cargando } from "@/modules/organizations/ui/with-organization";
+import { ANCHO_DE_PANTALLA } from "@/shared/ui/layout";
 import { Button, Card, Dialog, EmptyState, PageHeader, SectionTitle, Select, StatusDot, Tabs, TextField, textStyle, useStyles, useTheme, type Tema } from "@/ui";
 
 import type { AccesosPuerto, UnidadCorta } from "../application/ports";
@@ -431,7 +432,7 @@ function NuevaVisita({
 
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
-    pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: 960, width: "100%" },
+    pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
     seccion: { gap: t.space.sm },
     tabla: { paddingVertical: t.space.xs },
     fila: {

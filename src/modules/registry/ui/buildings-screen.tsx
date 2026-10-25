@@ -22,6 +22,7 @@ import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { fotoDeEdificio } from "@/shared/ui/building-photo";
 import { useCarga } from "@/shared/ui/use-load";
 import { Cargando, ConOrganizacion } from "@/modules/organizations/ui/with-organization";
+import { ANCHO_DE_PANTALLA } from "@/shared/ui/layout";
 import { Badge, Button, Card, EmptyState, Icon, PageHeader, StatusDot, TextField, textStyle, useStyles, useTheme, type Tema } from "@/ui";
 
 import type { PuertosDelPadron } from "../application/ports";
@@ -246,7 +247,7 @@ function Dato({ etiqueta, valor, alerta = false }: { etiqueta: string; valor: st
 
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
-    pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: 1180, width: "100%" },
+    pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
     busqueda: { maxWidth: 420 },
     rejilla: { flexDirection: "row", flexWrap: "wrap", gap: t.space.lg },
     // La foto llega al borde de la tarjeta.

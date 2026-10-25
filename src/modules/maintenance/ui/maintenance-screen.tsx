@@ -19,6 +19,7 @@ import { LineaDeAviso, type AvisoDeAccion } from "@/shared/ui/action-notice";
 import { useCarga } from "@/shared/ui/use-load";
 import { hoyEnLima, textoDeFecha } from "@/shared/format";
 import { Cargando } from "@/modules/organizations/ui/with-organization";
+import { ANCHO_DE_PANTALLA } from "@/shared/ui/layout";
 import {
   Badge,
   Button,
@@ -233,7 +234,7 @@ function FilaDeTarea({
 
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
-    pantalla: { flexGrow: 1, gap: t.space.xl, padding: t.space.xl, maxWidth: 1080, width: "100%" },
+    pantalla: { flexGrow: 1, gap: t.space.xl, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
     resumen: { flexDirection: "row", flexWrap: "wrap", columnGap: t.space.lg, rowGap: t.space.xs },
     seccion: { gap: t.space.md },
     lista: { paddingVertical: t.space.xs },

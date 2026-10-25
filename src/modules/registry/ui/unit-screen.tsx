@@ -22,6 +22,7 @@ import { useCallback, useRef, useState, type ComponentType, type ReactNode } fro
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View, useWindowDimensions, type TextInput } from "react-native";
 
 import { Cargando, ConOrganizacion } from "@/modules/organizations/ui/with-organization";
+import { ANCHO_DE_PANTALLA } from "@/shared/ui/layout";
 import {
   Avatar,
   Badge,
@@ -492,7 +493,7 @@ function Personas({
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
     flex: { flex: 1 },
-    pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: 960, width: "100%" },
+    pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
     tarjeta: { width: "100%", maxWidth: 640, gap: t.space.lg },
     pantallaFicha: { maxWidth: 1200 },
     bloque: { width: "100%", gap: t.space.md },

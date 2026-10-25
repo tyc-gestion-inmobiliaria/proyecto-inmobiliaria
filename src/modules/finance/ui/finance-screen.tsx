@@ -18,6 +18,7 @@ import { CampoDeOpciones } from "@/shared/ui/pieces";
 import { useCarga } from "@/shared/ui/use-load";
 import { hoyEnLima, nombreDelMes, textoDeFecha, textoDeSoles } from "@/shared/format";
 import { Cargando } from "@/modules/organizations/ui/with-organization";
+import { ANCHO_DE_PANTALLA } from "@/shared/ui/layout";
 import {
   Button,
   Card,
@@ -286,7 +287,7 @@ function NuevoEgreso({
 
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
-    pantalla: { flexGrow: 1, gap: t.space.xl, padding: t.space.xl, maxWidth: 1080, width: "100%" },
+    pantalla: { flexGrow: 1, gap: t.space.xl, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
     cifras: { flexDirection: "row", flexWrap: "wrap", gap: t.space.md },
     cifra: { flexGrow: 1, flexShrink: 1, flexBasis: 220 },
     seccion: { gap: t.space.md },
