@@ -78,23 +78,30 @@ export function FormCell({ children, narrow }: { children: ReactNode; narrow?: b
 /**
  * Elegir una entre pocas opciones, como fichas. Es un grupo de radio: una
  * sola puesta. Con `clearable`, tocar la puesta la quita.
+ *
+ * Como filtro, `allLabel` pone primero la ficha de "todo" ("Todas las
+ * áreas"), elegida cuando no hay filtro: sin ella, el filtro apagado no se
+ * distingue de un grupo sin elegir y no se ve qué se está mirando.
  */
 export function ChoiceChips<T extends string>({
   options,
   value,
   onChange,
   clearable,
+  allLabel,
   accessibilityLabel,
 }: {
   options: { id: T; label: string; disabled?: boolean }[];
   value: T | undefined;
   onChange: (value: T | undefined) => void;
   clearable?: boolean;
+  allLabel?: string;
   accessibilityLabel: string;
 }) {
   const s = useStyles(makeStyles);
   return (
     <View style={s.chips} accessibilityRole="radiogroup" accessibilityLabel={accessibilityLabel}>
+      {allLabel ? <Chip label={allLabel} selected={value === undefined} onPress={() => onChange(undefined)} /> : null}
       {options.map((o) => (
         <Chip
           key={o.id}

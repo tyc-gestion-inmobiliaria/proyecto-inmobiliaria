@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { accionesDeLaReserva, diasReservables, porDia, proximas, puedeCambiar, turnosOcupados, validarReserva, type Reserva } from "./reservation";
+import { accionesDeLaReserva, diasReservables, reservasVisibles, porDia, proximas, puedeCambiar, turnosOcupados, validarReserva, type Reserva } from "./reservation";
 
 function res(id: string, extra: Partial<Reserva> = {}): Reserva {
   return { id, edificioId: "e", areaId: "a1", unidadId: "u1", unidadNumero: "101", fecha: "2026-10-25", turno: "noche", estado: "pendiente", ...extra };
@@ -57,5 +57,19 @@ describe("reservas", () => {
       ["2026-10-25", 2],
       ["2026-10-26", 1],
     ]);
+  });
+});
+
+describe("lo que ve el residente", () => {
+  it("solo cancela, y solo lo que no está cancelado", () => {
+    assert.deepEqual(accionesDeLaReserva("pendiente", true), ["cancelar"]);
+    assert.deepEqual(accionesDeLaReserva("confirmada", true), ["cancelar"]);
+    assert.deepEqual(accionesDeLaReserva("cancelada", true), []);
+  });
+
+  it("ve las reservas de sus unidades; el equipo, todas", () => {
+    const lista = [res("a"), res("b", { unidadId: "u2" })];
+    assert.deepEqual(reservasVisibles(lista, new Set(["u2"])).map((r) => r.id), ["b"]);
+    assert.equal(reservasVisibles(lista, null).length, 2);
   });
 });

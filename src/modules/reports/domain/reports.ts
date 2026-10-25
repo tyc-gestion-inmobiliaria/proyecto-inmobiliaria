@@ -233,3 +233,23 @@ export function generar(id: ReporteId, d: Datos, ctx: { hoy: string; edificioId:
       return porValidar(d, ctx.edificioId);
   }
 }
+
+/**
+ * La tabla como CSV, para abrirla en una hoja de cálculo: los títulos de las
+ * columnas, una línea por fila y la de totales al final. Los montos van en
+ * soles con punto decimal y sin el "S/", para que la hoja los lea como
+ * números; las fechas, en ISO. Supuesto: coma como separador (falta saber
+ * con qué hoja de cálculo trabaja el cliente).
+ */
+export function csvDelReporte(tabla: TablaDeReporte): string {
+  const celda = (c: Celda, col: Columna): string => {
+    if (c === null || c === undefined) return "";
+    if (col.tipo === "soles") return (Number(c) / 100).toFixed(2);
+    if (col.tipo === "porcentaje") return String(Math.round(Number(c) * 100) / 100);
+    return String(c);
+  };
+  const escapar = (v: string) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+  const linea = (valores: string[]) => valores.map(escapar).join(",");
+  const filas = tabla.total ? [...tabla.filas, tabla.total] : tabla.filas;
+  return [linea(tabla.columnas.map((c) => c.titulo)), ...filas.map((f) => linea(tabla.columnas.map((c) => celda(f[c.clave], c))))].join("\n");
+}

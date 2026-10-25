@@ -84,3 +84,54 @@ export function textoDeFrecuencia(meses: number): string {
   if (meses === 12) return "Anual";
   return `Cada ${meses} meses`;
 }
+
+/** Las frecuencias que se ofrecen al programar (supuesto: las del cronograma de la maqueta; falta confirmar si hay otras). */
+export const FRECUENCIAS = [1, 3, 6, 12] as const;
+
+export const TAREA_MAXIMA = 120;
+
+/** "24/10/2026" o "2026-10-24" → ISO; null si no es una fecha. */
+export function leerFecha(texto: string): string | null {
+  const t = texto.trim();
+  const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(t);
+  const local = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(t);
+  const partes = iso ? [iso[1], iso[2], iso[3]] : local ? [local[3], local[2], local[1]] : null;
+  if (!partes) return null;
+  const [a, m, d] = partes.map(Number);
+  const f = new Date(Date.UTC(a, m - 1, d));
+  if (f.getUTCFullYear() !== a || f.getUTCMonth() !== m - 1 || f.getUTCDate() !== d) return null;
+  return f.toISOString().slice(0, 10);
+}
+
+export interface DatosDeTarea {
+  equipoId: string | undefined;
+  tarea: string;
+  frecuenciaMeses: number | undefined;
+  /** Como la escribe la persona: "24/10/2026". */
+  proxima: string;
+}
+
+export type ErroresDeTarea = Partial<Record<keyof DatosDeTarea, string>>;
+
+export type ValidacionDeTarea =
+  | { ok: true; tarea: { equipoId: string; tarea: string; frecuenciaMeses: number; proxima: string } }
+  | { ok: false; errores: ErroresDeTarea };
+
+/**
+ * Programar una tarea nueva en el cronograma. Supuesto: la primera vez se
+ * programa de hoy en adelante; lo que ya pasó se registra marcándolo hecho.
+ */
+export function validarTarea(d: DatosDeTarea, hoy: string): ValidacionDeTarea {
+  const e: ErroresDeTarea = {};
+  if (!d.equipoId) e.equipoId = "Elige el equipo.";
+  const tarea = d.tarea.trim();
+  if (tarea === "") e.tarea = "Escribe qué hay que hacer.";
+  else if (tarea.length > TAREA_MAXIMA) e.tarea = `Usa ${TAREA_MAXIMA} caracteres o menos.`;
+  if (!d.frecuenciaMeses) e.frecuenciaMeses = "Elige cada cuánto toca.";
+  const proxima = leerFecha(d.proxima);
+  if (d.proxima.trim() === "") e.proxima = "Escribe cuándo toca la primera vez.";
+  else if (proxima === null) e.proxima = "Escribe la fecha como 24/10/2026.";
+  else if (proxima < hoy) e.proxima = "La fecha no puede ser anterior a hoy.";
+  if (Object.keys(e).length > 0 || !d.equipoId || !d.frecuenciaMeses || !proxima) return { ok: false, errores: e };
+  return { ok: true, tarea: { equipoId: d.equipoId, tarea, frecuenciaMeses: d.frecuenciaMeses, proxima } };
+}

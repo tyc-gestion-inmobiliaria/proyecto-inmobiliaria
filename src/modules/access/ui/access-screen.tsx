@@ -335,6 +335,7 @@ function NuevoPaquete({
     >
       <Select
         label="Unidad"
+        required
         placeholder="Elige la unidad"
         accessibilityLabel="Unidad del paquete"
         options={opciones}
@@ -407,6 +408,7 @@ function NuevaVisita({
     >
       <Select
         label="Unidad que visita"
+        required
         placeholder="Elige la unidad"
         accessibilityLabel="Unidad que visita"
         options={opciones}

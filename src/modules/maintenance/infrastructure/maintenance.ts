@@ -64,6 +64,17 @@ export const mantenimientoMaqueta: MantenimientoPuerto = {
     tareas[i] = marcarHecha(tareas[i], hoy);
     return demora({ ok: true as const, valor: { ...tareas[i] } });
   },
+
+  programar(nueva) {
+    const equipo = equipos.find((q) => q.id === nueva.equipoId && q.edificioId === nueva.edificioId);
+    if (!equipo) return demora({ ok: false as const, mensaje: "Ese equipo ya no está en el edificio." });
+    // Idempotente ante el doble toque: la misma tarea del mismo equipo en la misma fecha no se repite.
+    const igual = tareas.find((t) => t.equipoId === nueva.equipoId && t.tarea === nueva.tarea && t.proxima === nueva.proxima);
+    if (igual) return demora({ ok: true as const, valor: { ...igual } });
+    const tarea: TareaDeMantenimiento = { id: `tar-${tareas.length + 1}`, ...nueva, ultima: null };
+    tareas.push(tarea);
+    return demora({ ok: true as const, valor: { ...tarea } });
+  },
 };
 
 export const mantenimientoAdaptador: MantenimientoPuerto = mantenimientoMaqueta;

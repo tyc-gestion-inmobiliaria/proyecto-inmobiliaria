@@ -175,4 +175,26 @@ describe("estado, resumen y tareas de la cartera", () => {
     assert.equal(tareas[2].pasoDelCierre, 1);
     assert.equal(tareas[2].causa, "Paso 1 de 4 del cierre");
   });
+
+  it("los pagos por validar van al final, también del edificio que ya emitió", () => {
+    const conPagos = armarCartera(
+      edificios,
+      new Map([
+        ["e1", completo],
+        ["e2", completo],
+        ["e3", { ...completo, sinParticipacion: 1 }],
+      ]),
+      new Set(["e1", "e2"]),
+      new Map([["e1", { estado: "emitido", paso: 4 }]]),
+      new Map([["e1", 1], ["e3", 3]]),
+    );
+    const tareas = tareasDeLaCartera(conPagos);
+    assert.deepEqual(
+      tareas.slice(3).map((t) => [t.edificioId, t.tipo, t.causa]),
+      [
+        ["e1", "pagos", "1 pago por validar"],
+        ["e3", "pagos", "3 pagos por validar"],
+      ],
+    );
+  });
 });

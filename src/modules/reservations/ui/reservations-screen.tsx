@@ -11,6 +11,8 @@
  *   de negocio: solo reservan las unidades al día; ver el dominio).
  * - Los turnos ya tomados se ven en la lista, apagados y con la palabra
  *   "ocupado".
+ * - Con `propias` (el residente), la lista trae solo las reservas de sus
+ *   unidades, sin "Confirmar", y la reserva nueva se pide para una de ellas.
  */
 import { useCallback, useState, type ReactNode } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
@@ -48,6 +50,7 @@ import {
   HORARIO_DEL_TURNO,
   porDia,
   proximas,
+  reservasVisibles,
   TEXTO_DEL_ESTADO,
   TEXTO_DEL_TURNO,
   TURNOS,
@@ -80,7 +83,22 @@ function textoDelDia(fecha: string, hoy: string): string {
   return n === 0 ? `Hoy · ${dia}` : n === 1 ? `Mañana · ${dia}` : dia;
 }
 
-export function PantallaReservas({ reservas, edificioId }: { reservas: ReservasPuerto; edificioId: string }) {
+/** Una unidad de quien mira, cuando es residente. */
+export interface UnidadPropia {
+  id: string;
+  numero: string;
+}
+
+export function PantallaReservas({
+  reservas,
+  edificioId,
+  propias,
+}: {
+  reservas: ReservasPuerto;
+  edificioId: string;
+  /** Las unidades del residente en este edificio; sin esto, mira el equipo. */
+  propias?: UnidadPropia[];
+}) {
   const s = useStyles(makeStyles);
   const [pestana, setPestana] = useState<Pestana>("proximas");
   const [area, setArea] = useState<string | undefined>(undefined);
@@ -97,7 +115,8 @@ export function PantallaReservas({ reservas, edificioId }: { reservas: ReservasP
   const hoy = hoyEnLima();
 
   const datos = carga.estado === "listo" ? carga.valor : null;
-  const futuras = datos ? proximas(datos.reservas, hoy).filter((r) => !area || r.areaId === area) : [];
+  const ids = propias ? new Set(propias.map((u) => u.id)) : null;
+  const futuras = datos ? proximas(reservasVisibles(datos.reservas, ids), hoy).filter((r) => !area || r.areaId === area) : [];
   const vigentes = futuras.filter((r) => r.estado !== "cancelada");
   const canceladas = futuras.filter((r) => r.estado === "cancelada");
   const visibles = pestana === "proximas" ? vigentes : canceladas;
@@ -117,6 +136,7 @@ export function PantallaReservas({ reservas, edificioId }: { reservas: ReservasP
         <ChoiceChips
           accessibilityLabel="Filtrar por área"
           clearable
+          allLabel="Todas las áreas"
           options={datos.areas.map((a) => ({ id: a.id, label: a.nombre }))}
           value={area}
           onChange={setArea}
@@ -150,7 +170,15 @@ export function PantallaReservas({ reservas, edificioId }: { reservas: ReservasP
       {porDia(visibles).map((g) => (
         <Dia key={g.fecha} titulo={textoDelDia(g.fecha, hoy)}>
           {g.reservas.map((r, i) => (
-            <FilaDeReserva key={r.id} reserva={r} area={nombreDelArea(r.areaId)} conArea={!area} primera={i === 0} onAccion={(a) => actuar(r, a)} />
+            <FilaDeReserva
+              key={r.id}
+              reserva={r}
+              area={nombreDelArea(r.areaId)}
+              conArea={!area}
+              primera={i === 0}
+              residente={propias !== undefined}
+              onAccion={(a) => actuar(r, a)}
+            />
           ))}
         </Dia>
       ))}
@@ -160,6 +188,7 @@ export function PantallaReservas({ reservas, edificioId }: { reservas: ReservasP
           edificioId={edificioId}
           areas={datos.areas}
           tomadas={datos.reservas}
+          propias={ids}
           areaInicial={area}
           hoy={hoy}
           onCerrar={() => setReservando(false)}
@@ -195,18 +224,20 @@ function FilaDeReserva({
   area,
   conArea,
   primera,
+  residente,
   onAccion,
 }: {
   reserva: Reserva;
   area: string;
   conArea: boolean;
   primera: boolean;
+  residente: boolean;
   onAccion: (a: AccionDeReserva) => Promise<void>;
 }) {
   const t = useTheme();
   const s = useStyles(makeStyles);
   const [enCurso, setEnCurso] = useState(false);
-  const acciones = accionesDeLaReserva(r.estado);
+  const acciones = accionesDeLaReserva(r.estado, residente);
   const nombre = `${area}, unidad ${r.unidadNumero}`;
 
   async function confirmar() {
@@ -255,6 +286,7 @@ function NuevaReserva({
   edificioId,
   areas,
   tomadas,
+  propias,
   areaInicial,
   hoy,
   onCerrar,
@@ -264,6 +296,8 @@ function NuevaReserva({
   edificioId: string;
   areas: AreaComun[];
   tomadas: Reserva[];
+  /** Las unidades del residente; `null`, el equipo reserva para cualquiera. */
+  propias: ReadonlySet<string> | null;
   areaInicial: string | undefined;
   hoy: string;
   onCerrar: () => void;
@@ -275,7 +309,7 @@ function NuevaReserva({
   const [enviando, setEnviando] = useState(false);
   const leer = useCallback(() => reservas.unidades(edificioId), [reservas, edificioId]);
   const { carga } = useCarga<UnidadParaReservar[]>(leer);
-  const unidades = carga.estado === "listo" ? carga.valor : [];
+  const unidades = carga.estado === "listo" ? carga.valor.filter((u) => !propias || propias.has(u.id)) : [];
   const ocupados = datos.areaId && datos.fecha ? turnosOcupados(tomadas, datos.areaId, datos.fecha) : new Set<string>();
   const elegida = areas.find((a) => a.id === datos.areaId);
 
@@ -325,6 +359,7 @@ function NuevaReserva({
       />
       <Select
         label="Unidad"
+        required
         placeholder="Elige la unidad"
         accessibilityLabel="Unidad que reserva"
         options={unidades.map((u) => ({ id: u.id, label: `Unidad ${u.numero}`, detail: u.alDia ? undefined : "Con deuda vencida" }))}

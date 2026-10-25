@@ -111,6 +111,14 @@ export interface ColorTokens {
     grid: string;
     /** El eje y la línea del cero. */
     axis: string;
+    /**
+     * Los estados como marcas de una gráfica (los tramos de una barra de
+     * estados): listo, en curso y por atender. Son pasos aparte del texto de
+     * estado porque una marca pide otra luz que una letra; los tres juntos
+     * pasan el validador de paletas como vecinos, en claro y en oscuro. Van
+     * siempre con su palabra al lado: el color no es la única señal.
+     */
+    status: { done: string; progress: string; attention: string };
   };
 }
 
@@ -251,6 +259,7 @@ export const lightTheme: Tema = {
       muted: "#b9b9c2",
       grid: neutral[100],
       axis: neutral[300],
+      status: { done: "#18744a", progress: "#2c5b97", attention: "#955600" },
     },
   },
   elevation: {
@@ -312,6 +321,7 @@ export const darkTheme: Tema = {
       muted: "#55555f",
       grid: "#26262c",
       axis: "#45454e",
+      status: { done: "#2fa35e", progress: "#4f8ff0", attention: "#c27d14" },
     },
   },
   elevation: {

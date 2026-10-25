@@ -32,6 +32,7 @@ import {
   Badge,
   Button,
   Card,
+  CardGrid,
   DataTable,
   EmptyState,
   Icon,
@@ -39,6 +40,7 @@ import {
   PageHeader,
   SectionTitle,
   StageTrack,
+  StatusBar,
   StatusDot,
   TableRow,
   TdView,
@@ -87,14 +89,30 @@ const ICONO_DE_TAREA: Record<Tarea["tipo"], IconName> = {
   "participacion-excedida": "percent",
   "sin-cuenta": "landmark",
   cierre: "receipt",
+  pagos: "inbox",
 };
 
 /** Adónde lleva cada tarea, si ya hay una pantalla donde resolverla y el rol puede. */
-function irALaTarea(tarea: Tarea, editable: boolean): (() => void) | null {
+function irALaTarea(tarea: Tarea, editable: boolean, elegirEdificio: (id: string) => void): (() => void) | null {
   const id = tarea.edificioId;
   switch (tarea.tipo) {
     case "cierre":
+      // El personal no lleva el cierre: las lecturas las carga en su recorrido.
+      if (!editable && tarea.pasoDelCierre === 1) {
+        return () => {
+          elegirEdificio(id);
+          router.push("/readings");
+        };
+      }
       return () => irAlCierre(id, tarea.pasoDelCierre ?? null);
+    case "pagos":
+      // La cola de pagos se recorta con el selector de arriba: se elige el edificio y se va a ella.
+      return editable
+        ? () => {
+            elegirEdificio(id);
+            router.push("/payments");
+          }
+        : null;
     case "sin-unidades":
       return editable ? () => router.push({ pathname: "/buildings/[id]/units/new", params: { id } }) : null;
     case "sin-cuenta":
@@ -214,23 +232,24 @@ function DeLaCartera({ filas, editable, abrir }: { filas: FilaCartera[]; editabl
   const tareas = tareasDeLaCartera(filas);
   return (
     <>
-      <View style={ancho ? s.dosColumnas : s.columna}>
+      {/* Las dos columnas se estiran al mismo alto: dos cajas de alturas distintas lado a lado se leen torcidas. */}
+      <View style={ancho ? [s.dosColumnas, s.estiradas] : s.columna}>
         <ResumenDelMes filas={filas} style={ancho ? s.colResumen : undefined} />
         <PorHacer tareas={tareas} editable={editable} conEdificio style={ancho ? s.colTareas : undefined} />
       </View>
       <View style={s.columna}>
         <SectionTitle>Edificios</SectionTitle>
-        <View style={s.rejilla}>
+        <CardGrid minItemWidth={280} maxColumns={3}>
           {filas.map((f) => (
             <TarjetaDeEdificio key={f.id} fila={f} onPress={() => abrir(f.id)} />
           ))}
-        </View>
+        </CardGrid>
       </View>
     </>
   );
 }
 
-/** Cuántos edificios ya emitieron los recibos del mes, con las casillas de los que faltan. */
+/** Cuántos edificios ya emitieron los recibos del mes y en qué está el resto, como barra de estados. */
 function ResumenDelMes({ filas, style }: { filas: FilaCartera[]; style?: StyleProp<ViewStyle> }) {
   const t = useTheme();
   const s = useStyles(makeStyles);
@@ -239,28 +258,37 @@ function ResumenDelMes({ filas, style }: { filas: FilaCartera[]; style?: StylePr
     // El título va fuera de la tarjeta, como el de "Por hacer": las dos columnas arrancan a la misma altura.
     <View style={[s.columna, style]}>
       <SectionTitle>{textoCortoDePeriodo(periodoEnCurso())}</SectionTitle>
-      <Card padding="lg" style={s.tarjeta}>
-      <View accessible accessibilityLabel={`${r.alDia} de ${r.edificios} edificios con el mes emitido`}>
-        <Text style={textStyle(t, "display")}>
-          {r.alDia}
-          <Text style={textStyle(t, "title", t.color.text.secondary)}>{` de ${r.edificios}`}</Text>
-        </Text>
-        <Text style={textStyle(t, "body", t.color.text.secondary)}>{r.edificios === 1 ? "edificio con el mes emitido" : "edificios con el mes emitido"}</Text>
-      </View>
-      <Meter value={r.alDia} total={r.edificios} unit="edificios con el mes emitido" label="" />
-      <View style={s.leyenda}>
-        {r.enCierre > 0 ? <StatusDot tone="info" label={`${r.enCierre} en cierre`} /> : null}
-        {r.porCompletar > 0 ? <StatusDot tone="warning" label={`${r.porCompletar} por completar`} /> : null}
-      </View>
+      <Card padding="lg" style={[s.tarjeta, s.llena]}>
+        <View accessible accessibilityLabel={`${r.alDia} de ${r.edificios} edificios con el mes emitido`}>
+          <Text style={textStyle(t, "display")}>
+            {r.alDia}
+            <Text style={textStyle(t, "title", t.color.text.secondary)}>{` de ${r.edificios}`}</Text>
+          </Text>
+          <Text style={textStyle(t, "body", t.color.text.secondary)}>{r.edificios === 1 ? "edificio con el mes emitido" : "edificios con el mes emitido"}</Text>
+        </View>
+        <StatusBar
+          accessibilityLabel={`${r.alDia} con el mes emitido, ${r.enCierre} en cierre, ${r.porCompletar} por completar`}
+          items={[
+            { key: "al-dia", label: "Mes emitido", value: r.alDia, tone: "done" },
+            { key: "en-cierre", label: "En cierre", value: r.enCierre, tone: "progress" },
+            { key: "por-completar", label: "Por completar", value: r.porCompletar, tone: "attention" },
+          ]}
+        />
       </Card>
     </View>
   );
 }
 
-/** Lo que hay que hacer, una fila por tarea, cada una con su destino. */
-function PorHacer({ tareas, editable, conEdificio, style }: { tareas: Tarea[]; editable: boolean; conEdificio: boolean; style?: StyleProp<ViewStyle> }) {
+/**
+ * Lo que hay que hacer, una fila por tarea, cada una con su destino. Solo va
+ * lo que quien mira puede resolver: al personal no le sirve una fila de
+ * "Registrar cuenta bancaria" que no abre nada.
+ */
+function PorHacer({ tareas: todas, editable, conEdificio, style }: { tareas: Tarea[]; editable: boolean; conEdificio: boolean; style?: StyleProp<ViewStyle> }) {
   const t = useTheme();
   const s = useStyles(makeStyles);
+  const { elegirEdificio } = useContextoDeTrabajo();
+  const tareas = todas.filter((x) => irALaTarea(x, editable, elegirEdificio) !== null);
   return (
     // La tabla ya es la tarjeta: dentro de otra, en un teléfono, el texto se queda sin ancho.
     <View style={[s.columna, style]}>
@@ -276,7 +304,7 @@ function PorHacer({ tareas, editable, conEdificio, style }: { tareas: Tarea[]; e
       ) : (
         <DataTable minWidth={0}>
           {tareas.map((tarea) => {
-            const ir = irALaTarea(tarea, editable);
+            const ir = irALaTarea(tarea, editable, elegirEdificio);
             const detalle = conEdificio ? `${tarea.edificio} · ${tarea.causa}` : tarea.causa;
             return (
               <TableRow
@@ -289,7 +317,7 @@ function PorHacer({ tareas, editable, conEdificio, style }: { tareas: Tarea[]; e
                   <Text style={[textStyle(t, "body"), s.fuerte]}>{tarea.paso}</Text>
                   <Text style={textStyle(t, "bodySmall", t.color.text.secondary)}>{detalle}</Text>
                 </TdView>
-                {ir ? <FlechaDeFila /> : null}
+                <FlechaDeFila />
               </TableRow>
             );
           })}
@@ -302,7 +330,7 @@ function PorHacer({ tareas, editable, conEdificio, style }: { tareas: Tarea[]; e
 function IconoDeTarea({ tarea }: { tarea: Tarea }) {
   const t = useTheme();
   const s = useStyles(makeStyles);
-  const delPadron = tarea.tipo !== "cierre";
+  const delPadron = tarea.tipo !== "cierre" && tarea.tipo !== "pagos";
   return (
     <View style={[s.iconoTarea, { backgroundColor: delPadron ? t.color.warning.bg : t.color.accent.subtle }]}>
       <Icon name={ICONO_DE_TAREA[tarea.tipo]} size="sm" color={delPadron ? t.color.warning.fg : t.color.accent.text} />
@@ -340,7 +368,8 @@ function TarjetaDeEdificio({ fila, onPress }: { fila: FilaCartera; onPress: () =
     detalle = <Meter value={paso - 1} total={4} unit="pasos del cierre" label={`Paso ${paso} de 4 · ${fila.cierre?.texto}`} />;
     leido = `Paso ${paso} de 4 del cierre: ${fila.cierre?.texto}`;
   } else {
-    detalle = <Text style={textStyle(t, "bodySmall", t.color.text.secondary)}>Recibos del mes emitidos</Text>;
+    // El mismo riel de cuatro pasos, lleno: las tres tarjetas se leen igual.
+    detalle = <Meter value={4} total={4} unit="pasos del cierre" label="Recibos del mes emitidos" />;
     leido = "Recibos del mes emitidos";
   }
 
@@ -378,10 +407,14 @@ function DelEdificio({ fila, editable }: { fila: FilaCartera; editable: boolean 
   const t = useTheme();
   const s = useStyles(makeStyles);
   const ancho = useWindowDimensions().width >= ANCHO_DOS_COLUMNAS;
+  const { elegirEdificio } = useContextoDeTrabajo();
   const estado = estadoDelEdificio(fila);
   const tareas = tareasDeLaCartera([fila]);
-  const siguiente = tareas[0];
-  const ir = siguiente ? irALaTarea(siguiente, editable) : null;
+  // El siguiente paso es el primero que quien mira puede resolver.
+  const siguiente = tareas.find((x) => irALaTarea(x, editable, elegirEdificio) !== null);
+  const ir = siguiente ? irALaTarea(siguiente, editable, elegirEdificio) : null;
+  // Si validar pagos ya es el botón de arriba, no se repite como fila.
+  const deLosPagos = tareas.filter((x) => x.tipo === "pagos" && x !== siguiente);
   const paso = fila.cierre?.paso ?? null;
 
   return (
@@ -399,6 +432,9 @@ function DelEdificio({ fila, editable }: { fila: FilaCartera; editable: boolean 
       />
       <View style={ancho ? s.dosColumnas : s.columna}>
         <View style={[s.columna, ancho ? s.colTareas : undefined]}>
+          {fila.pendientes.length === 0 && deLosPagos.length > 0 ? (
+            <PorHacer tareas={deLosPagos} editable={editable} conEdificio={false} />
+          ) : null}
           {fila.pendientes.length === 0 ? (
             <Card padding="lg" style={s.tarjeta}>
               <SectionTitle>{`Cierre de ${textoDePeriodo(periodoEnCurso())}`}</SectionTitle>
@@ -464,18 +500,18 @@ const makeStyles = (t: Tema) =>
     pantalla: { flexGrow: 1, gap: t.space.xl, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
     columna: { gap: t.space.lg },
     dosColumnas: { flexDirection: "row", alignItems: "flex-start", gap: t.space.lg },
+    estiradas: { alignItems: "stretch" },
+    llena: { flexGrow: 1, justifyContent: "space-between" },
     colResumen: { flexBasis: 320, flexGrow: 0, flexShrink: 0 },
     colTareas: { flex: 1, minWidth: 0 },
     tarjeta: { gap: t.space.md },
     titulo: { flexDirection: "row", alignItems: "center", gap: t.space.sm },
-    leyenda: { flexDirection: "row", flexWrap: "wrap", columnGap: t.space.lg, rowGap: t.space.xs },
     alDia: { flexDirection: "row", alignItems: "center", gap: t.space.sm, flexWrap: "wrap" },
     apilada: { gap: t.space.xxs },
     fuerte: { fontWeight: "600" },
     iconoTarea: { width: 36, height: 36, borderRadius: t.radius.sm, alignItems: "center", justifyContent: "center" },
-    rejilla: { flexDirection: "row", flexWrap: "wrap", gap: t.space.md },
     // La foto llega al borde de la tarjeta: sin relleno ni separación arriba.
-    edificio: { flexGrow: 1, flexShrink: 1, flexBasis: 280, padding: 0, gap: 0, overflow: "hidden" },
+    edificio: { flexGrow: 1, padding: 0, gap: 0, overflow: "hidden" },
     portada: { height: 132 },
     foto: { width: "100%", height: "100%" },
     insigniaSobreFoto: { position: "absolute", top: t.space.md, left: t.space.md },

@@ -132,6 +132,7 @@ function DelMes({ resumen: r }: { resumen: ResumenDelMes }) {
           <ChoiceChips
             accessibilityLabel="Filtrar movimientos"
             clearable
+            allLabel="Todos"
             options={[
               { id: "ingreso", label: "Ingresos" },
               { id: "egreso", label: "Egresos" },
@@ -279,7 +280,7 @@ function NuevoEgreso({
         helper={elegido ? `Saldo: ${textoDeSoles(elegido.saldo)}` : undefined}
       />
       <TextField label="Fecha" required value={datos.fecha} onChangeText={(v) => cambiar("fecha", v)} placeholder="dd/mm/aaaa" error={errores.fecha} />
-      <TextField label="Proveedor" value={datos.proveedor} onChangeText={(v) => cambiar("proveedor", v)} />
+      <TextField label="Proveedor" value={datos.proveedor} onChangeText={(v) => cambiar("proveedor", v)} helper="Opcional." />
       <LineaDeAviso aviso={general} />
     </Dialog>
   );

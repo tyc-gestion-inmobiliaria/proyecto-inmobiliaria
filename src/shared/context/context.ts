@@ -30,3 +30,33 @@ export function edificioEnCurso(
 export interface EdificiosDelContextoPuerto {
   listar(orgId: string): Promise<EdificioDelContexto[]>;
 }
+
+/**
+ * El edificio que nombra la dirección: `/buildings/<id>/…`. Cuando se entra a
+ * un edificio por un enlace, la ficha manda sobre lo que había quedado
+ * elegido arriba; si no, el selector diría un edificio y la pantalla otro.
+ * `/buildings/new` es el alta, no un edificio.
+ */
+export function edificioDeLaRuta(ruta: string): string | null {
+  const m = /^\/buildings\/([^/]+)/.exec(ruta);
+  if (!m || m[1] === "new") return null;
+  return decodeURIComponent(m[1]);
+}
+
+/**
+ * Adónde lleva cambiar el edificio de arriba estando dentro de uno: al mismo
+ * lugar del otro edificio si existe en todos (el cierre, las unidades), y si
+ * no (una unidad, una cuenta, que son de ese edificio), a sus unidades. Con
+ * toda la cartera, a la lista de edificios. Fuera de un edificio, no se
+ * navega: la sección se recorta sola. `null` es quedarse donde se está.
+ */
+export function rutaAlCambiarDeEdificio(ruta: string, id: string | null): string | null {
+  const actual = edificioDeLaRuta(ruta);
+  if (!actual) return null;
+  if (!id) return "/buildings";
+  if (id === actual) return null;
+  const resto = ruta.slice(`/buildings/${encodeURIComponent(actual)}`.length);
+  const destino = encodeURIComponent(id);
+  if (resto === "/closing") return `/buildings/${destino}/closing`;
+  return `/buildings/${destino}/units`;
+}

@@ -23,6 +23,7 @@ import {
   Badge,
   Button,
   Card,
+  CardGrid,
   ConfirmButton,
   Dialog,
   EmptyState,
@@ -125,7 +126,7 @@ function Contenido({ pagos, orgId, gestiona }: { pagos: PagosPuerto; orgId: stri
       ) : null}
       {carga.estado === "listo" && carga.valor.length === 0 ? <EmptyState title={VACIO[estado]} /> : null}
       {carga.estado === "listo" && carga.valor.length > 0 ? (
-        <View style={s.lista}>
+        <CardGrid minItemWidth={480}>
           {carga.valor.map((p) => (
             <FilaDePago
               key={p.id}
@@ -138,7 +139,7 @@ function Contenido({ pagos, orgId, gestiona }: { pagos: PagosPuerto; orgId: stri
               onRevertir={() => revertir(p)}
             />
           ))}
-        </View>
+        </CardGrid>
       ) : null}
       {rechazando ? <Rechazo pagos={pagos} pago={rechazando} onCerrar={() => setRechazando(null)} onHecho={() => rechazado(rechazando)} /> : null}
     </ScrollView>
@@ -297,9 +298,8 @@ function Alerta({ texto }: { texto: string }) {
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
     pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
-    // En pantalla ancha, dos tarjetas por fila; en el teléfono, una.
-    lista: { flexDirection: "row", flexWrap: "wrap", alignItems: "flex-start", gap: t.space.md },
-    fila: { flexGrow: 1, flexShrink: 1, flexBasis: 480, minWidth: 0, gap: t.space.md },
+    // En pantalla ancha, dos tarjetas por fila (`CardGrid`); en el teléfono, una.
+    fila: { flexGrow: 1, gap: t.space.md },
     cabeza: { flexDirection: "row", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: t.space.md },
     quien: { flexShrink: 1, gap: t.space.xxs },
     cuanto: { alignItems: "flex-end", gap: t.space.xs },

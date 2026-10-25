@@ -63,6 +63,8 @@ export interface SelectProps {
   /** Qué se elige, para quien no ve la pantalla. */
   accessibilityLabel: string;
   label?: string;
+  /** Lleva el asterisco en la etiqueta, como `TextField`. */
+  required?: boolean;
   size?: "sm" | "md";
   /**
    * La opción que significa "sin filtrar" (`Todas`, `Cualquiera`). Con esto
@@ -114,6 +116,7 @@ export function Select({
   placeholder,
   accessibilityLabel,
   label,
+  required,
   size = "md",
   neutro,
   onClear,
@@ -211,7 +214,7 @@ export function Select({
 
   return (
     <View style={[s.wrap, open && s.wrapOpen]}>
-      {label ? <FieldLabel>{label}</FieldLabel> : null}
+      {label ? <FieldLabel required={required}>{label}</FieldLabel> : null}
 
       <Pressable
         ref={control}

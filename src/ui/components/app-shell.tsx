@@ -6,9 +6,25 @@
  * los suyos. Lo que sí resuelve es lo que se repetía en cada módulo: el
  * reparto del espacio, el estado de carga, y los menús que se abren desde la
  * barra (`Menu`, `MenuNote`, `MenuItem`) con su fondo que los cierra.
+ *
+ * En la web, lo primero que toma el foco con el teclado es "Saltar al
+ * contenido": sin él, cada pantalla pide recorrer la barra y el menú entero
+ * (más de quince paradas) antes de llegar a lo que se vino a hacer. Está
+ * fuera de la vista hasta que recibe el foco. El contenido es la región
+ * principal (`main`).
  */
-import type { ReactNode } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View, useWindowDimensions, type StyleProp, type ViewStyle } from "react-native";
+import { useRef, useState, type ReactNode } from "react";
+import {
+  ActivityIndicator,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native";
 
 import { resolveInteraction, type EstadoPresionable, type ForcedInteraction } from "../pressable-state";
 import { textStyle } from "../theme/text-style";
@@ -29,19 +45,50 @@ export interface AppShellProps {
   overlay?: ReactNode;
   children: ReactNode;
   style?: StyleProp<ViewStyle>;
+  /** El enlace para saltar la barra y el menú con el teclado (solo web). */
+  skipLabel?: string;
 }
 
-export function AppShell({ sidebar, topBar, bottomBar, loading, loadingLabel = "Cargando…", overlay, children, style }: AppShellProps) {
+/** El contenido recibe el foco del salto para que el siguiente Tab siga desde ahí; no es un control, no lleva anillo. */
+const SIN_CONTORNO = { outlineStyle: "none" } as unknown as ViewStyle;
+
+export function AppShell({
+  sidebar,
+  topBar,
+  bottomBar,
+  loading,
+  loadingLabel = "Cargando…",
+  overlay,
+  children,
+  style,
+  skipLabel = "Saltar al contenido",
+}: AppShellProps) {
   const t = useTheme();
   const s = useStyles(makeStyles);
   // En una ventana angosta la barra pierde margen: cada punto de ancho cuenta.
   const angosto = useWindowDimensions().width < 768;
+  const contenido = useRef<View>(null);
+  const [saltoVisible, setSaltoVisible] = useState(false);
+  // En la web la vista es un elemento del DOM; con tabIndex -1 toma el foco sin entrar en el recorrido.
+  const enfocarContenido = () => (contenido.current as unknown as { focus?: () => void } | null)?.focus?.();
+  const destino = Platform.OS === "web" ? ({ tabIndex: -1, role: "main" } as object) : null;
   return (
     <View style={[s.frame, style]}>
+      {Platform.OS === "web" ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={enfocarContenido}
+          onFocus={() => setSaltoVisible(true)}
+          onBlur={() => setSaltoVisible(false)}
+          style={[s.salto, !saltoVisible && s.saltoOculto]}
+        >
+          <Text style={textStyle(t, "body", t.color.text.onAccent)}>{skipLabel}</Text>
+        </Pressable>
+      ) : null}
       {topBar ? <View style={[s.topBar, angosto && s.topBarNarrow]}>{topBar}</View> : null}
       <View style={s.body}>
         {sidebar}
-        <View style={s.content}>
+        <View ref={contenido} style={[s.content, Platform.OS === "web" && SIN_CONTORNO]} {...destino}>
           {loading ? (
             <View style={s.loading} accessibilityLiveRegion="polite">
               <ActivityIndicator color={t.color.text.secondary} />
@@ -150,6 +197,19 @@ const makeStyles = (t: Tema) =>
     topBarNarrow: { paddingHorizontal: t.space.lg, gap: t.space.sm },
     body: { flex: 1, flexDirection: "row" },
     content: { flex: 1 },
+    salto: {
+      position: "absolute",
+      top: t.space.sm,
+      left: t.space.sm,
+      zIndex: 10,
+      minHeight: t.control.md,
+      justifyContent: "center",
+      paddingHorizontal: t.space.lg,
+      borderRadius: t.radius.md,
+      backgroundColor: t.color.accent.base,
+    },
+    // Fuera de la vista pero en el recorrido del teclado: "display: none" lo sacaría del foco.
+    saltoOculto: { left: -10000, width: 1, height: 1, minHeight: 0, overflow: "hidden", padding: 0 },
     loading: { flex: 1, alignItems: "center", justifyContent: "center", gap: t.space.sm },
     menu: {
       position: "absolute",

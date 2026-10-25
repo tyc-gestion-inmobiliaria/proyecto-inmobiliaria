@@ -25,7 +25,7 @@ import {
   EmptyState,
   ErrorSummary,
   FormFooter,
-  ScreenTitle,
+  PageHeader,
   Select,
   TextField,
   textStyle,
@@ -54,6 +54,8 @@ import {
 import { puedeEditarPadron, type Unidad } from "../domain/unit";
 import { nombreDeLaRelacion, RELACIONES, type Relacion, type Vinculo } from "../domain/link";
 import { CampoDeOpciones, Volver } from "@/shared/ui/pieces";
+import { useNombreDelEdificio } from "@/shared/context/context-provider";
+import { irALasUnidades } from "./units-screen";
 import { useCarga } from "@/shared/ui/use-load";
 
 interface Props {
@@ -124,7 +126,6 @@ function Contenido({ padron, edificioId, unidadId, vinculoId, orgId, editable }:
   return (
     <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={s.pantalla} keyboardShouldPersistTaps="handled">
-        <Volver label="Unidad" onPress={volver} />
         <Formulario
           padron={padron}
           orgId={orgId}
@@ -168,6 +169,7 @@ function Formulario({
 }) {
   const t = useTheme();
   const s = useStyles(makeStyles);
+  const nombreDelEdificio = useNombreDelEdificio(unidad.edificioId);
   const [personas, setPersonas] = useState(personasIniciales);
   const [vinculo, setVinculo] = useState(vinculoInicial);
   const persona = vinculo ? personas.find((p) => p.id === vinculo.personaId) : undefined;
@@ -261,151 +263,164 @@ function Formulario({
   ];
 
   return (
-    <Card style={s.tarjeta} padding="xl">
-      <ScreenTitle>{persona ? persona.nombre : `Agregar persona a la unidad ${unidad.numero}`}</ScreenTitle>
-      <ErrorSummary
-        title={lista.length === 1 ? "Corrige 1 campo para guardar" : `Corrige ${lista.length} campos para guardar`}
-        focusKey={intentosFallidos}
-        items={lista}
-      />
-
-      {!editando && elegibles.length > 0 ? (
-        <CampoDeOpciones<Modo>
-          label="Persona"
-          options={[
-            { id: "nueva", label: "Nueva" },
-            { id: "existente", label: "Ya registrada" },
-          ]}
-          value={modo}
-          onChange={(m) => {
-            if (m) setModo(m);
-          }}
-        />
-      ) : null}
-
-      {conDatos ? (
-        <>
-          <TextField
-            inputRef={refNombre}
-            label="Nombre"
-            required
-            value={datos.nombre}
-            onChangeText={(v) => cambiar("nombre", v)}
-            placeholder="Ej.: María Quispe Rojas"
-            autoCapitalize="words"
-            autoFocus={!editando}
-            error={errores.nombre}
-            testID="persona-nombre"
-          />
-          <CampoDeOpciones
-            label="Tipo de documento"
-            options={OPCIONES_DOCUMENTO}
-            value={datos.documentoTipo || undefined}
-            onChange={(tipo) => cambiar("documentoTipo", tipo ?? "")}
-            clearable
-            error={errores.documentoTipo}
-            helper="Opcional."
-          />
-          <TextField
-            inputRef={refDocumento}
-            label="Número de documento"
-            value={datos.documentoNumero}
-            onChangeText={(v) => cambiar("documentoNumero", v)}
-            placeholder={datos.documentoTipo === "ruc" ? "Ej.: 20123456789" : "Ej.: 45678912"}
-            autoCapitalize="characters"
-            error={errores.documentoNumero}
-            testID="persona-documento"
-          />
-          <View style={s.fila}>
-            <View style={s.celda}>
-              <TextField
-                inputRef={refCorreo}
-                label="Correo"
-                value={datos.correo}
-                onChangeText={(v) => cambiar("correo", v)}
-                placeholder="Ej.: nombre@correo.com"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                helper="Opcional."
-                error={errores.correo}
-                testID="persona-correo"
-              />
-            </View>
-            <View style={s.celda}>
-              <TextField
-                inputRef={refTelefono}
-                label="Teléfono"
-                value={datos.telefono}
-                onChangeText={(v) => cambiar("telefono", v)}
-                placeholder="Ej.: +51 987 654 321"
-                keyboardType="phone-pad"
-                helper="Opcional."
-                error={errores.telefono}
-                testID="persona-telefono"
-              />
-            </View>
-          </View>
-        </>
-      ) : (
-        <Select
-          label="Persona registrada"
-          value={personaId || undefined}
-          onChange={(id) => {
-            setPersonaId(id);
-            setErrores((e) => ({ ...e, personaId: undefined }));
-          }}
-          placeholder="Elige a la persona"
-          accessibilityLabel="Persona registrada"
-          options={elegibles.map((p) => ({ id: p.id, label: p.nombre, detail: detalleDePersona(p) }))}
-          filterFrom={6}
-          error={errores.personaId}
-        />
-      )}
-
-      <CampoDeOpciones
-        label="Vínculo con la unidad"
-        required
-        options={OPCIONES_RELACION}
-        value={relacion}
-        onChange={(r) => {
-          setRelacion(r);
-          if (r) setErrores((e) => ({ ...e, relacion: undefined }));
+    <>
+      <PageHeader
+        title={persona ? persona.nombre : `Agregar persona a la unidad ${unidad.numero}`}
+        back={{
+          label: `Unidad ${unidad.numero}`,
+          onPress: volver,
+          trail: [
+            { label: "Edificios", onPress: () => router.navigate("/buildings") },
+            { label: nombreDelEdificio ?? "Unidades", onPress: () => irALasUnidades(unidad.edificioId) },
+          ],
         }}
-        error={errores.relacion}
       />
-      <View style={s.casilla}>
-        <Checkbox
-          label="Responsable de pago"
-          checked={responsable}
-          onChange={setResponsable}
-          disabled={Boolean(vinculo?.responsablePago)}
+      <Card style={s.tarjeta} padding="xl">
+        <ErrorSummary
+          title={lista.length === 1 ? "Corrige 1 campo para guardar" : `Corrige ${lista.length} campos para guardar`}
+          focusKey={intentosFallidos}
+          items={lista}
         />
-        {vinculo?.responsablePago ? (
-          <Text style={textStyle(t, "caption", t.color.text.secondary)}>Para cambiarlo, márcalo en otra persona de la unidad.</Text>
-        ) : null}
-      </View>
 
-      <FormFooter error={general}>
-        <Button variant="secondary" label="Cancelar" onPress={volver} disabled={enviando} />
-        <Button
-          label={editando ? "Guardar cambios" : "Agregar a la unidad"}
-          onPress={guardar}
-          loading={enviando}
-          testID="persona-guardar"
-        />
-      </FormFooter>
-      {editando ? (
-        <View style={s.quitar}>
-          <ConfirmButton
-            variant="danger"
-            label="Quitar de la unidad"
-            question={`¿Quitar a ${persona?.nombre ?? "esta persona"} de la unidad ${unidad.numero}?`}
-            confirmLabel="Sí, quitar"
-            onConfirm={quitar}
+        {!editando && elegibles.length > 0 ? (
+          <CampoDeOpciones<Modo>
+            label="Persona"
+            options={[
+              { id: "nueva", label: "Nueva" },
+              { id: "existente", label: "Ya registrada" },
+            ]}
+            value={modo}
+            onChange={(m) => {
+              if (m) setModo(m);
+            }}
           />
+        ) : null}
+
+        {conDatos ? (
+          <>
+            <TextField
+              inputRef={refNombre}
+              label="Nombre"
+              required
+              value={datos.nombre}
+              onChangeText={(v) => cambiar("nombre", v)}
+              placeholder="Ej.: María Quispe Rojas"
+              autoCapitalize="words"
+              autoFocus={!editando}
+              error={errores.nombre}
+              testID="persona-nombre"
+            />
+            <CampoDeOpciones
+              label="Tipo de documento"
+              options={OPCIONES_DOCUMENTO}
+              value={datos.documentoTipo || undefined}
+              onChange={(tipo) => cambiar("documentoTipo", tipo ?? "")}
+              clearable
+              error={errores.documentoTipo}
+              helper="Opcional."
+            />
+            <TextField
+              inputRef={refDocumento}
+              label="Número de documento"
+              value={datos.documentoNumero}
+              onChangeText={(v) => cambiar("documentoNumero", v)}
+              placeholder={datos.documentoTipo === "ruc" ? "Ej.: 20123456789" : "Ej.: 45678912"}
+              autoCapitalize="characters"
+              error={errores.documentoNumero}
+              testID="persona-documento"
+            />
+            <View style={s.fila}>
+              <View style={s.celda}>
+                <TextField
+                  inputRef={refCorreo}
+                  label="Correo"
+                  value={datos.correo}
+                  onChangeText={(v) => cambiar("correo", v)}
+                  placeholder="Ej.: nombre@correo.com"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  helper="Opcional."
+                  error={errores.correo}
+                  testID="persona-correo"
+                />
+              </View>
+              <View style={s.celda}>
+                <TextField
+                  inputRef={refTelefono}
+                  label="Teléfono"
+                  value={datos.telefono}
+                  onChangeText={(v) => cambiar("telefono", v)}
+                  placeholder="Ej.: +51 987 654 321"
+                  keyboardType="phone-pad"
+                  helper="Opcional."
+                  error={errores.telefono}
+                  testID="persona-telefono"
+                />
+              </View>
+            </View>
+          </>
+        ) : (
+          <Select
+            label="Persona registrada"
+            required
+            value={personaId || undefined}
+            onChange={(id) => {
+              setPersonaId(id);
+              setErrores((e) => ({ ...e, personaId: undefined }));
+            }}
+            placeholder="Elige a la persona"
+            accessibilityLabel="Persona registrada"
+            options={elegibles.map((p) => ({ id: p.id, label: p.nombre, detail: detalleDePersona(p) }))}
+            filterFrom={6}
+            error={errores.personaId}
+          />
+        )}
+
+        <CampoDeOpciones
+          label="Vínculo con la unidad"
+          required
+          options={OPCIONES_RELACION}
+          value={relacion}
+          onChange={(r) => {
+            setRelacion(r);
+            if (r) setErrores((e) => ({ ...e, relacion: undefined }));
+          }}
+          error={errores.relacion}
+        />
+        <View style={s.casilla}>
+          <Checkbox
+            label="Responsable de pago"
+            checked={responsable}
+            onChange={setResponsable}
+            disabled={Boolean(vinculo?.responsablePago)}
+          />
+          {vinculo?.responsablePago ? (
+            <Text style={textStyle(t, "caption", t.color.text.secondary)}>Para cambiarlo, márcalo en otra persona de la unidad.</Text>
+          ) : null}
         </View>
-      ) : null}
-    </Card>
+
+        <FormFooter error={general}>
+          <Button variant="secondary" label="Cancelar" onPress={volver} disabled={enviando} />
+          <Button
+            label={editando ? "Guardar cambios" : "Agregar a la unidad"}
+            onPress={guardar}
+            loading={enviando}
+            testID="persona-guardar"
+          />
+        </FormFooter>
+        {editando ? (
+          <View style={s.quitar}>
+            <ConfirmButton
+              variant="danger"
+              label="Quitar de la unidad"
+              question={`¿Quitar a ${persona?.nombre ?? "esta persona"} de la unidad ${unidad.numero}?`}
+              confirmLabel="Sí, quitar"
+              onConfirm={quitar}
+            />
+          </View>
+        ) : null}
+      </Card>
+    </>
   );
 }
 

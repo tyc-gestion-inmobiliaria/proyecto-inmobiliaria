@@ -7,6 +7,10 @@
  * - "Redactar" es el único primario de la vista. En el editor, "Publicar"
  *   es el primario y "Guardar borrador" el secundario; el borrador solo pide
  *   el título, publicar pide todo, con el error junto a su campo.
+ * - Con `soloLectura` (el residente), solo los publicados, sin pestañas ni
+ *   "Redactar". Supuesto: el residente ve todos los publicados de su
+ *   edificio, también los de "Solo propietarios" (el padrón todavía no dice
+ *   desde acá si es propietario). Sin confirmar con el cliente.
  */
 import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
@@ -17,7 +21,7 @@ import { useCarga } from "@/shared/ui/use-load";
 import { textoDeFecha } from "@/shared/format";
 import { Cargando } from "@/modules/organizations/ui/with-organization";
 import { ANCHO_DE_PANTALLA } from "@/shared/ui/layout";
-import { Badge, Button, Card, Dialog, EmptyState, PageHeader, Tabs, TextField, textStyle, useStyles, useTheme, type Tema } from "@/ui";
+import { Badge, Button, Card, CardGrid, Dialog, EmptyState, PageHeader, Tabs, TextField, textStyle, useStyles, useTheme, type Tema } from "@/ui";
 
 import type { ComunicadosPuerto } from "../application/ports";
 import {
@@ -38,9 +42,19 @@ const AUDIENCIAS: Audiencia[] = ["todos", "propietarios"];
 /** Lo que está abierto: el editor (nuevo o un borrador) o la lectura de uno publicado. */
 type Abierto = { modo: "editar"; comunicado: Comunicado | null } | { modo: "leer"; comunicado: Comunicado };
 
-export function PantallaComunicados({ comunicados, edificioId }: { comunicados: ComunicadosPuerto; edificioId: string }) {
+export function PantallaComunicados({
+  comunicados,
+  edificioId,
+  soloLectura = false,
+}: {
+  comunicados: ComunicadosPuerto;
+  edificioId: string;
+  /** El residente lee lo publicado; redactar es del equipo. */
+  soloLectura?: boolean;
+}) {
   const s = useStyles(makeStyles);
-  const [pestana, setPestana] = useState<EstadoDelComunicado>("publicado");
+  const [elegida, setPestana] = useState<EstadoDelComunicado>("publicado");
+  const pestana = soloLectura ? "publicado" : elegida;
   const [aviso, setAviso] = useState<AvisoDeAccion | null>(null);
   const [abierto, setAbierto] = useState<Abierto | null>(null);
   const leer = useCallback(() => comunicados.delEdificio(edificioId), [comunicados, edificioId]);
@@ -54,20 +68,26 @@ export function PantallaComunicados({ comunicados, edificioId }: { comunicados: 
     <ScrollView contentContainerStyle={s.pantalla}>
       <PageHeader
         title="Comunicados"
-        actions={<Button icon="pencil" label="Redactar" onPress={() => setAbierto({ modo: "editar", comunicado: null })} testID="comunicados-redactar" />}
+        actions={
+          soloLectura ? undefined : (
+            <Button icon="pencil" label="Redactar" onPress={() => setAbierto({ modo: "editar", comunicado: null })} testID="comunicados-redactar" />
+          )
+        }
       />
-      <Tabs
-        accessibilityLabel="Comunicados"
-        items={[
-          { key: "publicado", label: "Publicados", count: cuenta("publicado") },
-          { key: "borrador", label: "Borradores", count: cuenta("borrador") },
-        ]}
-        value={pestana}
-        onChange={(p) => {
-          setAviso(null);
-          setPestana(p);
-        }}
-      />
+      {soloLectura ? null : (
+        <Tabs
+          accessibilityLabel="Comunicados"
+          items={[
+            { key: "publicado", label: "Publicados", count: cuenta("publicado") },
+            { key: "borrador", label: "Borradores", count: cuenta("borrador") },
+          ]}
+          value={pestana}
+          onChange={(p) => {
+            setAviso(null);
+            setPestana(p);
+          }}
+        />
+      )}
       <LineaDeAviso aviso={aviso} />
       {carga.estado === "cargando" ? <Cargando /> : null}
       {carga.estado === "error" ? (
@@ -80,7 +100,7 @@ export function PantallaComunicados({ comunicados, edificioId }: { comunicados: 
       {carga.estado === "listo" && visibles.length === 0 ? (
         <EmptyState icon="send" title={pestana === "publicado" ? "Todavía no hay comunicados publicados" : "No hay borradores"} />
       ) : null}
-      <View style={s.lista}>
+      <CardGrid minItemWidth={480}>
         {visibles.map((c) => (
           <TarjetaDeComunicado
             key={c.id}
@@ -88,7 +108,7 @@ export function PantallaComunicados({ comunicados, edificioId }: { comunicados: 
             onPress={() => setAbierto(c.estado === "borrador" ? { modo: "editar", comunicado: c } : { modo: "leer", comunicado: c })}
           />
         ))}
-      </View>
+      </CardGrid>
       {abierto?.modo === "leer" ? <Lectura comunicado={abierto.comunicado} onCerrar={() => setAbierto(null)} /> : null}
       {abierto?.modo === "editar" ? (
         <Editor
@@ -232,8 +252,7 @@ const makeStyles = (t: Tema) =>
   StyleSheet.create({
     pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
     // Dos comunicados por fila en pantalla ancha: cada uno queda con un ancho cómodo de leer.
-    lista: { flexDirection: "row", flexWrap: "wrap", alignItems: "flex-start", gap: t.space.md },
-    tarjeta: { flexGrow: 1, flexShrink: 1, flexBasis: 480, minWidth: 0, gap: t.space.sm },
+    tarjeta: { flexGrow: 1, gap: t.space.sm },
     cabeza: { flexDirection: "row", alignItems: "flex-start", gap: t.space.md },
     titulo: { flex: 1, minWidth: 0 },
     meta: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.sm },

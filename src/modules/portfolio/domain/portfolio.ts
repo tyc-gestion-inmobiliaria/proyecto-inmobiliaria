@@ -3,8 +3,9 @@
  * (PB-11, H1 y H8). Reglas puras, sin React ni Supabase.
  *
  * Se arma con lo que hay en la base: unidades, la suma de participaciones
- * (vista `participacion_por_edificio`), si tiene cuenta bancaria y el cierre
- * del mes en curso (vista `cierre_por_edificio`, PB-21).
+ * (vista `participacion_por_edificio`), si tiene cuenta bancaria, el cierre
+ * del mes en curso (vista `cierre_por_edificio`, PB-21) y cuántos pagos
+ * esperan validación (tabla `pago`, PB-27).
  *
  * Supuesto: un edificio está listo para cobrar cuando tiene unidades, su
  * participación suma exactamente 100 % y tiene una cuenta bancaria. Es lo que
@@ -71,6 +72,8 @@ export interface FilaCartera {
   pendientes: Pendiente[];
   /** Con el padrón completo, lo que toca en el cierre del mes. */
   cierre: PasoDelCierre | null;
+  /** Cuántos pagos reportados o registrados esperan validación. */
+  porValidar: number;
 }
 
 const SIN_UNIDADES: EstadoDelPadron = { unidades: 0, sinParticipacion: 0, total: 0, sumaCien: false };
@@ -125,6 +128,7 @@ export function armarCartera(
   padron: ReadonlyMap<string, EstadoDelPadron>,
   conCuenta: ReadonlySet<string>,
   cierres: ReadonlyMap<string, CierreDelMes> = new Map(),
+  porValidar: ReadonlyMap<string, number> = new Map(),
 ): FilaCartera[] {
   return edificios.map((e) => {
     const estado = padron.get(e.id) ?? SIN_UNIDADES;
@@ -138,6 +142,7 @@ export function armarCartera(
       tieneCuenta,
       pendientes,
       cierre: pendientes.length === 0 ? pasoDelCierre(cierres.get(e.id)) : null,
+      porValidar: porValidar.get(e.id) ?? 0,
     };
   });
 }
@@ -180,11 +185,11 @@ export function resumenDelMes(filas: readonly FilaCartera[]): ResumenDelMes {
   return r;
 }
 
-/** Algo que hay que hacer en un edificio: un pendiente del padrón o el paso del cierre. */
+/** Algo que hay que hacer en un edificio: un pendiente del padrón, el paso del cierre o los pagos por validar. */
 export interface Tarea {
   edificioId: string;
   edificio: string;
-  tipo: TipoPendiente | "cierre";
+  tipo: TipoPendiente | "cierre" | "pagos";
   /** Qué hacer: "Completar participación", "Cargar lecturas". */
   paso: string;
   /** Por qué, o en qué punto está. */
@@ -195,8 +200,10 @@ export interface Tarea {
 
 /**
  * Lo que hay que hacer en toda la cartera. Primero los pendientes del padrón
- * (sin ellos no se puede cobrar), después el cierre de los que están listos;
- * dentro de cada grupo, en el orden de los edificios.
+ * (sin ellos no se puede cobrar), después el cierre de los que están listos
+ * y al final los pagos que esperan validación (se validan aunque el mes no
+ * haya cerrado: son de recibos anteriores); dentro de cada grupo, en el
+ * orden de los edificios.
  */
 export function tareasDeLaCartera(filas: readonly FilaCartera[]): Tarea[] {
   const delPadron = filas.flatMap((f) =>
@@ -207,5 +214,10 @@ export function tareasDeLaCartera(filas: readonly FilaCartera[]): Tarea[] {
     if (!f.cierre || !paso) return [];
     return [{ edificioId: f.id, edificio: f.nombre, tipo: "cierre", paso: f.cierre.texto, causa: `Paso ${paso} de 4 del cierre`, pasoDelCierre: paso }];
   });
-  return [...delPadron, ...delCierre];
+  const deLosPagos = filas.flatMap((f): Tarea[] =>
+    f.porValidar > 0
+      ? [{ edificioId: f.id, edificio: f.nombre, tipo: "pagos", paso: "Validar pagos", causa: enPlural(f.porValidar, "pago por validar", "pagos por validar") }]
+      : [],
+  );
+  return [...delPadron, ...delCierre, ...deLosPagos];
 }

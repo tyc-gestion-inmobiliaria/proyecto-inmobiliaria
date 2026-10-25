@@ -91,6 +91,8 @@ export const temaDelProyecto = crearTema({
     warning: { fg: "#a14a06", bg: "#fff7e6" },
     danger: { fg: "#c42020", bg: "#fef2f2", hoverBg: "#fde4e4" },
     info: { fg: "#1d4ed8", bg: "#eff5ff" },
+    // Los tramos de estado, del mismo tono que las insignias (validados como vecinos con el validador de paletas).
+    chart: { status: { done: "#15803d", progress: "#1d4ed8", attention: "#a14a06" } },
   },
   elevation: {
     none: { boxShadow: "none", elevation: 0 },

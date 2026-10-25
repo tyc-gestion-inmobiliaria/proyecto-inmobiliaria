@@ -10,9 +10,11 @@
  * - El CCI se escribe como venga (con espacios o guiones) y se dice cuántos
  *   dígitos lleva.
  */
+import { router } from "expo-router";
 import { useCallback, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, type TextInput } from "react-native";
 
+import { useNombreDelEdificio } from "@/shared/context/context-provider";
 import { Cargando, ConOrganizacion } from "@/modules/organizations/ui/with-organization";
 import { Button, Card, EmptyState, ErrorSummary, FormFooter, PageHeader, TextField, useStyles, type Tema } from "@/ui";
 
@@ -139,6 +141,7 @@ function Campos({
     cci: refCci,
   };
   const volver = () => irALasUnidades(edificioId);
+  const nombreDelEdificio = useNombreDelEdificio(edificioId);
 
   function cambiar<K extends CampoCuenta>(campo: K, valor: DatosCuenta[K]) {
     const nuevos = { ...datos, [campo]: valor };
@@ -172,7 +175,11 @@ function Campos({
       <ScrollView contentContainerStyle={s.pantalla} keyboardShouldPersistTaps="handled">
         <PageHeader
           title={cuenta ? "Editar cuenta bancaria" : "Registrar cuenta bancaria"}
-          back={{ label: "Unidades", onPress: () => irALasUnidades(edificioId) }}
+          back={{
+            label: nombreDelEdificio ?? "Unidades",
+            onPress: volver,
+            trail: [{ label: "Edificios", onPress: () => router.navigate("/buildings") }],
+          }}
         />
         <Card style={s.tarjeta} padding="xl">
           <ErrorSummary

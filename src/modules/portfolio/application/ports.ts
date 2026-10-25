@@ -15,4 +15,6 @@ export interface EstadoDeLaCarteraPuerto {
   edificiosConCuenta(orgId: string): Promise<Set<string>>;
   /** El cierre del periodo de cada edificio que ya lo abrió, por id de edificio. */
   cierresDelPeriodo(orgId: string, periodo: string): Promise<Map<string, CierreDelMes>>;
+  /** Cuántos pagos esperan validación en cada edificio, por id de edificio. Sin pagos, no figura. */
+  pagosPorValidar(orgId: string): Promise<Map<string, number>>;
 }
