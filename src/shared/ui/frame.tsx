@@ -11,12 +11,12 @@
  *   o el nombre del edificio. Con un edificio elegido el control queda
  *   marcado aunque esté cerrado, porque lo que se ve es un recorte.
  */
-import { router, usePathname } from "expo-router";
+import { router, usePathname, type Href } from "expo-router";
 import { useState, type ReactNode } from "react";
 import { Image, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { TODA_LA_CARTERA } from "@/shared/context/context";
+import { rutaAlCambiarDeEdificio, TODA_LA_CARTERA } from "@/shared/context/context";
 import { useContextoDeTrabajo } from "@/shared/context/context-provider";
 import { nombreDelRol } from "@/modules/organizations/domain/membership";
 import { useOrganizacion } from "@/modules/organizations/ui/organization";
@@ -132,7 +132,13 @@ export function Marco({ children }: { children: ReactNode }) {
               size="sm"
               value={edificio?.id ?? TODA_LA_CARTERA}
               neutro={TODA_LA_CARTERA}
-              onChange={(id) => elegirEdificio(id === TODA_LA_CARTERA ? null : id)}
+              onChange={(valor) => {
+                const id = valor === TODA_LA_CARTERA ? null : valor;
+                elegirEdificio(id);
+                // Dentro de un edificio, la pantalla pasa al otro: si no, la dirección lo volvería a elegir.
+                const destino = rutaAlCambiarDeEdificio(ruta, id);
+                if (destino) router.navigate(destino as Href);
+              }}
               placeholder="Edificio"
               accessibilityLabel="Edificio"
               options={[

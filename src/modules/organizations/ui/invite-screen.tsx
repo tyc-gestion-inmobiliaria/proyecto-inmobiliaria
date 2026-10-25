@@ -15,7 +15,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, type TextInput 
 
 import { CampoDeOpciones } from "@/shared/ui/pieces";
 import { useCarga } from "@/shared/ui/use-load";
-import { Button, Card, EmptyState, ErrorSummary, FormFooter, ScreenTitle, Select, TextField, useStyles, type Tema } from "@/ui";
+import { Button, Card, EmptyState, ErrorSummary, FormFooter, PageHeader, Select, TextField, useStyles, type Tema } from "@/ui";
 
 import { invitar } from "../application/invitations";
 import type { InvitacionesPuerto, UnidadesParaInvitarPuerto } from "../application/ports";
@@ -108,8 +108,8 @@ function Formulario({
   return (
     <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={s.pantalla} keyboardShouldPersistTaps="handled">
+        <PageHeader title="Invitar" back={{ label: "Usuarios", onPress: volverALaLista }} />
         <Card style={s.tarjeta} padding="xl">
-          <ScreenTitle>Invitar</ScreenTitle>
           <ErrorSummary
             title={lista.length === 1 ? "Corrige 1 campo para enviar" : `Corrige ${lista.length} campos para enviar`}
             focusKey={intentosFallidos}
@@ -347,6 +347,6 @@ function Persona({
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
     flex: { flex: 1 },
-    pantalla: { flexGrow: 1, gap: t.space.xl, padding: t.space.xl, maxWidth: 960, width: "100%" },
+    pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: 960, width: "100%" },
     tarjeta: { width: "100%", maxWidth: 640, gap: t.space.lg },
   });

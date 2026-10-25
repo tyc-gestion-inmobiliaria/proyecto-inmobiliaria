@@ -124,7 +124,7 @@ function Contenido({ padron, edificioId, unidadId, vinculoId, orgId, editable }:
   return (
     <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={s.pantalla} keyboardShouldPersistTaps="handled">
-        <Volver label="Unidad" onPress={volver} />
+        <Volver label={`Unidad ${carga.valor.unidad.numero}`} onPress={volver} />
         <Formulario
           padron={padron}
           orgId={orgId}
