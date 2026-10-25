@@ -2,13 +2,14 @@
  * El mantenimiento de un edificio: el cronograma de tareas y los equipos con
  * su proveedor.
  *
- * - Arriba, cuántas tareas están vencidas y cuántas vencen pronto, en
- *   palabras y con su signo.
  * - El cronograma va por fecha: lo vencido primero ("! Vencida hace 3
  *   días"), luego lo que vence en los próximos días y lo demás. Cada tarea
- *   lleva quién la hace y cómo llamarlo.
- * - "✓ Marcar hecha" es una acción por fila (no hay primario en la vista):
- *   la marca hecha hoy y dice cuándo toca la siguiente.
+ *   lleva quién la hace y cómo llamarlo. Sin resumen arriba: lo vencido ya
+ *   encabeza la lista, con su signo y su palabra.
+ * - "Programar tarea" es el único primario: suma una tarea al cronograma de
+ *   un equipo del edificio.
+ * - "✓ Marcar hecha" es una acción por fila: la marca hecha hoy y dice
+ *   cuándo toca la siguiente.
  * - Equipos y proveedores: en tabla en una ventana ancha; apilados en el
  *   teléfono.
  */
@@ -16,6 +17,7 @@ import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
 import { LineaDeAviso, type AvisoDeAccion } from "@/shared/ui/action-notice";
+import { CampoDeOpciones } from "@/shared/ui/pieces";
 import { useCarga } from "@/shared/ui/use-load";
 import { hoyEnLima, textoDeFecha } from "@/shared/format";
 import { Cargando } from "@/modules/organizations/ui/with-organization";
@@ -25,13 +27,15 @@ import {
   Button,
   Card,
   DataTable,
+  Dialog,
   EmptyState,
   PageHeader,
+  Select,
   SectionTitle,
-  StatusDot,
   TableHead,
   TableRow,
   Td,
+  TextField,
   Th,
   textStyle,
   useStyles,
@@ -42,12 +46,16 @@ import {
 
 import type { DelEdificio, MantenimientoPuerto } from "../application/ports";
 import {
-  contarPorEstado,
   DIAS_DE_AVISO,
   diasParaLaTarea,
   estadoDeLaTarea,
+  FRECUENCIAS,
   ordenarCronograma,
   textoDeFrecuencia,
+  validarTarea,
+  type DatosDeTarea,
+  type Equipo,
+  type ErroresDeTarea,
   type EstadoDeTarea,
   type TareaDeMantenimiento,
 } from "../domain/maintenance";
@@ -68,6 +76,7 @@ function textoDelPlazo(t: TareaDeMantenimiento, hoy: string): string {
 export function PantallaMantenimiento({ mantenimiento, edificioId }: { mantenimiento: MantenimientoPuerto; edificioId: string }) {
   const s = useStyles(makeStyles);
   const [aviso, setAviso] = useState<AvisoDeAccion | null>(null);
+  const [programando, setProgramando] = useState(false);
   const leer = useCallback(() => mantenimiento.delEdificio(edificioId), [mantenimiento, edificioId]);
   const { carga, reintentar } = useCarga(leer);
   const hoy = hoyEnLima();
@@ -84,7 +93,14 @@ export function PantallaMantenimiento({ mantenimiento, edificioId }: { mantenimi
 
   return (
     <ScrollView contentContainerStyle={s.pantalla}>
-      <PageHeader title="Mantenimiento" />
+      <PageHeader
+        title="Mantenimiento"
+        actions={
+          carga.estado === "listo" && carga.valor.equipos.length > 0 ? (
+            <Button icon="plus" label="Programar tarea" onPress={() => setProgramando(true)} testID="mantenimiento-programar" />
+          ) : undefined
+        }
+      />
       <LineaDeAviso aviso={aviso} />
       {carga.estado === "cargando" ? <Cargando /> : null}
       {carga.estado === "error" ? (
@@ -95,6 +111,20 @@ export function PantallaMantenimiento({ mantenimiento, edificioId }: { mantenimi
         />
       ) : null}
       {carga.estado === "listo" ? <Contenido datos={carga.valor} hoy={hoy} onHecha={hecha} /> : null}
+      {programando && carga.estado === "listo" ? (
+        <Programar
+          mantenimiento={mantenimiento}
+          edificioId={edificioId}
+          equipos={carga.valor.equipos}
+          hoy={hoy}
+          onCerrar={() => setProgramando(false)}
+          onHecho={(tarea, equipo) => {
+            setProgramando(false);
+            setAviso({ tono: "ok", texto: `${equipo}: "${tarea.tarea}" programada para el ${textoDeFecha(tarea.proxima)}.` });
+            reintentar();
+          }}
+        />
+      ) : null}
     </ScrollView>
   );
 }
@@ -103,7 +133,6 @@ function Contenido({ datos, hoy, onHecha }: { datos: DelEdificio; hoy: string; o
   const t = useTheme();
   const s = useStyles(makeStyles);
   const angosto = useWindowDimensions().width < ANCHO_ANGOSTO;
-  const cuenta = contarPorEstado(datos.tareas, hoy);
   const equipo = (id: string) => datos.equipos.find((q) => q.id === id);
   const proveedor = (id: string | null) => datos.proveedores.find((p) => p.id === id);
 
@@ -111,12 +140,6 @@ function Contenido({ datos, hoy, onHecha }: { datos: DelEdificio; hoy: string; o
 
   return (
     <>
-      <View style={s.resumen}>
-        {cuenta.vencida > 0 ? <StatusDot tone="danger" label={`! ${cuenta.vencida} ${cuenta.vencida === 1 ? "vencida" : "vencidas"}`} /> : null}
-        {cuenta.por_vencer > 0 ? <StatusDot tone="warning" label={`${cuenta.por_vencer} en los próximos ${DIAS_DE_AVISO} días`} /> : null}
-        {cuenta.vencida === 0 && cuenta.por_vencer === 0 ? <StatusDot tone="success" label="✓ Todo al día" /> : null}
-      </View>
-
       <View style={s.seccion}>
         <SectionTitle>Cronograma</SectionTitle>
         <Card padding="md" style={s.lista}>
@@ -232,10 +255,98 @@ function FilaDeTarea({
   );
 }
 
+function Programar({
+  mantenimiento,
+  edificioId,
+  equipos,
+  hoy,
+  onCerrar,
+  onHecho,
+}: {
+  mantenimiento: MantenimientoPuerto;
+  edificioId: string;
+  equipos: Equipo[];
+  hoy: string;
+  onCerrar: () => void;
+  onHecho: (tarea: TareaDeMantenimiento, equipo: string) => void;
+}) {
+  const [datos, setDatos] = useState<DatosDeTarea>({ equipoId: undefined, tarea: "", frecuenciaMeses: undefined, proxima: "" });
+  const [errores, setErrores] = useState<ErroresDeTarea>({});
+  const [general, setGeneral] = useState<AvisoDeAccion | null>(null);
+  const [enviando, setEnviando] = useState(false);
+
+  function cambiar<K extends keyof DatosDeTarea>(campo: K, valor: DatosDeTarea[K]) {
+    setDatos((d) => ({ ...d, [campo]: valor }));
+    setErrores((e) => ({ ...e, [campo]: undefined }));
+  }
+
+  async function programar() {
+    if (enviando) return;
+    const v = validarTarea(datos, hoy);
+    if (!v.ok) {
+      setErrores(v.errores);
+      return;
+    }
+    setEnviando(true);
+    const r = await mantenimiento.programar({ edificioId, ...v.tarea });
+    setEnviando(false);
+    if (r.ok) onHecho(r.valor, equipos.find((q) => q.id === r.valor.equipoId)?.nombre ?? "Equipo");
+    else setGeneral({ tono: "error", texto: r.mensaje });
+  }
+
+  return (
+    <Dialog
+      visible
+      title="Programar tarea"
+      onClose={onCerrar}
+      footer={
+        <>
+          <Button variant="secondary" label="Cancelar" onPress={onCerrar} disabled={enviando} />
+          <Button label="Programar" onPress={programar} loading={enviando} testID="mantenimiento-guardar" />
+        </>
+      }
+    >
+      <Select
+        label="Equipo"
+        placeholder="Elige el equipo"
+        accessibilityLabel="Equipo"
+        options={equipos.map((q) => ({ id: q.id, label: q.nombre, detail: q.ubicacion }))}
+        value={datos.equipoId}
+        onChange={(id) => cambiar("equipoId", id)}
+        error={errores.equipoId}
+      />
+      <TextField
+        label="Qué hay que hacer"
+        required
+        value={datos.tarea}
+        onChangeText={(v) => cambiar("tarea", v)}
+        placeholder="Ej.: revisión y engrase"
+        error={errores.tarea}
+      />
+      <CampoDeOpciones
+        label="Cada cuánto"
+        required
+        options={FRECUENCIAS.map((f) => ({ id: String(f), label: textoDeFrecuencia(f) }))}
+        value={datos.frecuenciaMeses ? String(datos.frecuenciaMeses) : undefined}
+        onChange={(f) => cambiar("frecuenciaMeses", f ? Number(f) : undefined)}
+        error={errores.frecuenciaMeses}
+      />
+      <TextField
+        label="Primera vez"
+        required
+        value={datos.proxima}
+        onChangeText={(v) => cambiar("proxima", v)}
+        placeholder="dd/mm/aaaa"
+        error={errores.proxima}
+      />
+      <LineaDeAviso aviso={general} />
+    </Dialog>
+  );
+}
+
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
     pantalla: { flexGrow: 1, gap: t.space.xl, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
-    resumen: { flexDirection: "row", flexWrap: "wrap", columnGap: t.space.lg, rowGap: t.space.xs },
     seccion: { gap: t.space.md },
     lista: { paddingVertical: t.space.xs },
     fila: {
