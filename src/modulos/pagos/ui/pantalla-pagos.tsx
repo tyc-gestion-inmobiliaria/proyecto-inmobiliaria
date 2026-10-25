@@ -180,13 +180,25 @@ function FilaDePago({
 
   return (
     <Card padding="lg" style={s.fila}>
+      {/* Quién y de dónde a la izquierda; el monto, que es lo que se valida, grande a la derecha. */}
       <View style={s.cabeza}>
-        <Text style={[textStyle(t, "body"), s.unidad]}>{conEdificio ? `${pago.edificioNombre} · Unidad ${pago.unidadNumero}` : `Unidad ${pago.unidadNumero}`}</Text>
-        <Badge tone={TONO_DEL_ESTADO[pago.estado]} label={TEXTO_DEL_ESTADO[pago.estado]} />
+        <View style={s.quien}>
+          <Text style={textStyle(t, "subtitle")}>{`Unidad ${pago.unidadNumero}`}</Text>
+          {conEdificio ? <Text style={textStyle(t, "bodySmall", t.color.text.secondary)}>{pago.edificioNombre}</Text> : null}
+        </View>
+        <View style={s.cuanto}>
+          <Text style={textStyle(t, "title")}>{textoDeCentimos(pago.monto)}</Text>
+          <Badge tone={TONO_DEL_ESTADO[pago.estado]} label={TEXTO_DEL_ESTADO[pago.estado]} />
+        </View>
       </View>
-      <Text style={textStyle(t, "data")}>{textoDeCentimos(pago.monto)}</Text>
-      <Text style={textStyle(t, "bodySmall", t.color.text.secondary)}>{detalle.join(" · ")}</Text>
-      {pago.motivoRechazo ? <Text style={textStyle(t, "bodySmall")}>{`Motivo: ${pago.motivoRechazo}`}</Text> : null}
+      <View style={s.detalle}>
+        {detalle.map((d) => (
+          <Text key={d} style={textStyle(t, "bodySmall", t.color.text.secondary)}>
+            {d}
+          </Text>
+        ))}
+      </View>
+      {pago.motivoRechazo ? <Text style={textStyle(t, "bodySmall", t.color.danger.fg)}>{`! Motivo: ${pago.motivoRechazo}`}</Text> : null}
       {pago.comprobante || acciones.length > 0 ? (
         <View style={s.acciones}>
           {pago.comprobante ? <VerComprobante pagos={pagos} ruta={pago.comprobante} unidadNumero={pago.unidadNumero} /> : null}
@@ -285,8 +297,18 @@ const makeStyles = (t: Tema) =>
   StyleSheet.create({
     pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: 960, width: "100%" },
     lista: { gap: t.space.md },
-    fila: { gap: t.space.xs },
-    cabeza: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: t.space.sm },
-    unidad: { fontWeight: "600", flexShrink: 1 },
-    acciones: { flexDirection: "row", flexWrap: "wrap", gap: t.space.sm, marginTop: t.space.sm },
+    fila: { gap: t.space.md },
+    cabeza: { flexDirection: "row", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: t.space.md },
+    quien: { flexShrink: 1, gap: t.space.xxs },
+    cuanto: { alignItems: "flex-end", gap: t.space.xs },
+    detalle: { flexDirection: "row", flexWrap: "wrap", columnGap: t.space.lg, rowGap: t.space.xxs },
+    acciones: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "flex-end",
+      gap: t.space.sm,
+      paddingTop: t.space.md,
+      borderTopWidth: 1,
+      borderTopColor: t.color.border.subtle,
+    },
   });

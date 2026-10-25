@@ -2,14 +2,18 @@
  * Las piezas de las secciones del menú que trabajan sobre un edificio.
  *
  * - `ConEdificio`: si hay un edificio elegido arriba, muestra la sección de
- *   ese edificio; si se trabaja con toda la cartera, pide elegir uno con una
- *   fila por edificio, y elegirlo cambia también el selector de arriba.
+ *   ese edificio; si se trabaja con toda la cartera, pide elegir uno. Cada
+ *   edificio es una tarjeta con su foto de portada (genérica por ahora), para
+ *   reconocerlo de un vistazo, como en Inicio y en Edificios; elegirlo cambia
+ *   también el selector de arriba.
  */
 import type { ReactNode } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { useContextoDeTrabajo } from "@/compartido/contexto/proveedor-contexto";
-import { EmptyState, Icon, ScreenTitle, resolveInteraction, textStyle, useStyles, useTheme, type EstadoPresionable, type Tema } from "@/ui";
+import { Card, EmptyState, Icon, ScreenTitle, textStyle, useStyles, useTheme, type Tema } from "@/ui";
+
+import { fotoDeEdificio } from "./foto-de-edificio";
 
 export function ConEdificio({ titulo, children }: { titulo: string; children: (edificioId: string) => ReactNode }) {
   const t = useTheme();
@@ -23,26 +27,29 @@ export function ConEdificio({ titulo, children }: { titulo: string; children: (e
       {edificios.length === 0 ? (
         <EmptyState icon="building" title="Todavía no hay edificios" description="Registra uno en Edificios para empezar." />
       ) : (
-        <View style={s.lista}>
-          <Text style={[textStyle(t, "label", t.color.text.secondary), s.cabeza]}>Elige un edificio</Text>
-          {edificios.map((e) => (
-            <Pressable
-              key={e.id}
-              accessibilityRole="button"
-              onPress={() => elegirEdificio(e.id)}
-              style={(estado: EstadoPresionable) => {
-                const i = resolveInteraction(estado);
-                return [s.fila, i === "hovered" && s.filaEncima, i === "pressed" && s.filaPresionada];
-              }}
-            >
-              <View style={s.iconoFila} aria-hidden>
-                <Icon name="building" size="sm" color={t.color.accent.text} />
-              </View>
-              <Text style={[textStyle(t, "body"), s.nombre]}>{e.nombre}</Text>
-              <Icon name="chevron-right" size="sm" color={t.color.text.secondary} />
-            </Pressable>
-          ))}
-        </View>
+        <>
+          <Text style={textStyle(t, "body", t.color.text.secondary)}>¿En qué edificio vas a trabajar?</Text>
+          <View style={s.rejilla}>
+            {edificios.map((e) => (
+              <Card
+                key={e.id}
+                padding="md"
+                style={s.tarjeta}
+                onPress={() => elegirEdificio(e.id)}
+                accessibilityLabel={`Trabajar en ${e.nombre}`}
+                testID={`elegir-edificio-${e.id}`}
+              >
+                <Image source={fotoDeEdificio(e.id)} style={s.foto} resizeMode="cover" accessibilityIgnoresInvertColors aria-hidden />
+                <View style={s.pie}>
+                  <Text style={[textStyle(t, "subtitle"), s.nombre]} numberOfLines={2}>
+                    {e.nombre}
+                  </Text>
+                  <Icon name="chevron-right" size="sm" color={t.color.accent.text} />
+                </View>
+              </Card>
+            ))}
+          </View>
+        </>
       )}
     </ScrollView>
   );
@@ -50,35 +57,10 @@ export function ConEdificio({ titulo, children }: { titulo: string; children: (e
 
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
-    pantalla: { flexGrow: 1, gap: t.space.xl, padding: t.space.xl, maxWidth: 1080, width: "100%" },
-    lista: {
-      overflow: "hidden",
-      maxWidth: 560,
-      borderWidth: 1,
-      borderColor: t.color.border.default,
-      borderRadius: t.radius.md,
-      backgroundColor: t.color.bg.surface,
-    },
-    cabeza: { paddingHorizontal: t.space.lg, paddingTop: t.space.lg, paddingBottom: t.space.sm },
-    fila: {
-      minHeight: 56,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: t.space.md,
-      paddingHorizontal: t.space.lg,
-      borderTopWidth: 1,
-      borderTopColor: t.color.border.subtle,
-      cursor: "pointer",
-    },
-    filaEncima: { backgroundColor: t.color.bg.hover },
-    filaPresionada: { backgroundColor: t.color.bg.pressed },
-    iconoFila: {
-      width: 32,
-      height: 32,
-      borderRadius: t.radius.sm,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: t.color.accent.subtle,
-    },
+    pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: 1080, width: "100%" },
+    rejilla: { flexDirection: "row", flexWrap: "wrap", gap: t.space.md },
+    tarjeta: { flexGrow: 1, flexShrink: 1, flexBasis: 220, maxWidth: 340, gap: t.space.md },
+    foto: { width: "100%", height: 120, borderRadius: t.radius.sm },
+    pie: { flexDirection: "row", alignItems: "center", gap: t.space.sm, paddingHorizontal: t.space.xs },
     nombre: { flex: 1 },
   });
