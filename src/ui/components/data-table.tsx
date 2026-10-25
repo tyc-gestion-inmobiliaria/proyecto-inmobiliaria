@@ -28,6 +28,8 @@ import { TouchArea } from "./touch-area";
 
 export function DataTable({ children, minWidth = 640 }: { children: ReactNode; minWidth?: number }) {
   const s = useStyles(makeStyles);
+  // Sin ancho mínimo no hay nada que desplazar: las filas toman el ancho de la tabla y se acomodan.
+  if (minWidth === 0) return <View style={s.table}>{children}</View>;
   return (
     <View style={s.table}>
       <ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={s.grow}>
@@ -56,7 +58,8 @@ export function TableRow({ children, onPress, selected = false, accessibilityLab
   if (!onPress) return <View style={[s.row, selected && s.rowSelected]}>{children}</View>;
   return (
     <Pressable
-      accessibilityRole="button"
+      // Una fila que abre algo es un enlace; como botón, en la web no podría llevar botones adentro.
+      accessibilityRole="link"
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ selected }}
       onPress={onPress}
@@ -235,7 +238,8 @@ const makeStyles = (t: Tema) =>
     table: {
       backgroundColor: t.color.bg.surface,
       borderWidth: 1,
-      borderColor: t.color.border.default,
+      borderColor: t.color.border.subtle,
+      ...t.elevation.sm,
       borderRadius: t.radius.md,
       overflow: "hidden",
     },

@@ -63,7 +63,7 @@ export function leerParticipacion(texto: string): LecturaParticipacion {
 
 const PORCENTAJE = new Intl.NumberFormat("es-PE", { maximumFractionDigits: 4 });
 
-/** "12,5 %": la participación como se lee, con hasta cuatro decimales. */
+/** "12.5 %": la participación como se lee (en Perú, punto decimal), con hasta cuatro decimales. */
 export function textoDePorcentaje(valor: number): string {
   return `${PORCENTAJE.format(valor)} %`;
 }

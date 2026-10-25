@@ -26,6 +26,7 @@ import {
   type ResultadoPedirRecuperacion,
 } from "../aplicacion/recuperar-contrasena";
 import type { Credenciales } from "../dominio/credenciales";
+import { esEnlaceDeInvitacion } from "../dominio/invitacion";
 import { leerEnlaceDeRecuperacion, type NuevaContrasena } from "../dominio/recuperacion";
 
 interface EstadoSesion {
@@ -67,6 +68,8 @@ export function ProveedorSesion({ puerto, children }: { puerto: SesionPuerto; ch
     let vigente = true;
 
     async function abrirEnlace(url: string | null): Promise<void> {
+      // El enlace de una invitación lo lee su propia pantalla (`/invitacion`).
+      if (esEnlaceDeInvitacion(url)) return;
       const enlace = leerEnlaceDeRecuperacion(url);
       if (!enlace) return;
       limpiarDireccion();

@@ -1,6 +1,7 @@
 /**
  * `CobranzaPuerto` sobre Supabase: tablas `cierre`, `lectura`, `partida` y
- * `recibo`, las funciones `abrir_cierre`, `recibos_del_cierre` y
+ * `recibo` (que se lee por la vista `recibo_con_saldo`, con lo pagado), la
+ * vista `saldo_de_la_unidad`, las funciones `abrir_cierre`, `recibos_del_cierre` y
  * `emitir_cierre`, y el bucket privado `lecturas`.
  *
  * El dinero lo calcula la base; acá solo se lee. La RLS decide qué se ve y
@@ -109,10 +110,12 @@ interface FilaRecibo {
   total: number | string;
   vence: string;
   emitido_en: string;
+  pagado: number | string;
+  pendiente: number | string;
 }
 
 const COLUMNAS_RECIBO =
-  "id, numero, cierre_id, edificio_id, unidad_id, unidad_numero, periodo, participacion, consumo, cuota, agua, deuda_previa, total, vence, emitido_en";
+  "id, numero, cierre_id, edificio_id, unidad_id, unidad_numero, periodo, participacion, consumo, cuota, agua, deuda_previa, total, vence, emitido_en, pagado, pendiente";
 
 function aRecibo(f: FilaRecibo): Recibo {
   return {
@@ -131,6 +134,8 @@ function aRecibo(f: FilaRecibo): Recibo {
     total: monto(f.total),
     vence: f.vence,
     emitidoEn: f.emitido_en,
+    pagado: monto(f.pagado),
+    pendiente: monto(f.pendiente),
   };
 }
 
@@ -238,7 +243,7 @@ export const cobranzaSupabase: CobranzaPuerto = {
   async lecturas(orgId, cierreId) {
     const { data, error } = await cliente()
       .from("lectura")
-      .select("id, unidad_id, anterior, actual, foto, unidad(numero)")
+      .select("id, unidad_id, anterior, actual, foto, tomada_en, unidad(numero)")
       .eq("org_id", orgId)
       .eq("cierre_id", cierreId)
       .returns<
@@ -248,6 +253,7 @@ export const cobranzaSupabase: CobranzaPuerto = {
           anterior: number | string | null;
           actual: number | string | null;
           foto: string | null;
+          tomada_en: string | null;
           unidad: { numero: string } | null;
         }[]
       >();
@@ -261,6 +267,11 @@ export const cobranzaSupabase: CobranzaPuerto = {
           anterior: num(f.anterior),
           actual: num(f.actual),
           foto: f.foto,
+          // Falta el correo de quién la tomó: la base guarda `tomada_por`, pero
+          // el correo de otra cuenta solo lo da `miembros_de_la_organizacion`
+          // (organizaciones), que es solo para el administrador.
+          tomadaPor: null,
+          tomadaEn: f.tomada_en,
         }),
       )
       .sort(porNumero);
@@ -371,7 +382,7 @@ export const cobranzaSupabase: CobranzaPuerto = {
 
   async recibosDelCierre(orgId, cierreId) {
     const { data, error } = await cliente()
-      .from("recibo")
+      .from("recibo_con_saldo")
       .select(COLUMNAS_RECIBO)
       .eq("org_id", orgId)
       .eq("cierre_id", cierreId)
@@ -383,7 +394,7 @@ export const cobranzaSupabase: CobranzaPuerto = {
 
   async recibosDeLaUnidad(orgId, unidadId) {
     const { data, error } = await cliente()
-      .from("recibo")
+      .from("recibo_con_saldo")
       .select(COLUMNAS_RECIBO)
       .eq("org_id", orgId)
       .eq("unidad_id", unidadId)
@@ -393,8 +404,19 @@ export const cobranzaSupabase: CobranzaPuerto = {
     return (data ?? []).map(aRecibo);
   },
 
+  async saldoDeLaUnidad(orgId, unidadId) {
+    const { data, error } = await cliente()
+      .from("saldo_de_la_unidad")
+      .select("saldo, por_validar")
+      .eq("org_id", orgId)
+      .eq("unidad_id", unidadId)
+      .maybeSingle<{ saldo: number | string; por_validar: number | string }>();
+    if (error) throw error;
+    return { saldo: monto(data?.saldo ?? 0), porValidar: monto(data?.por_validar ?? 0) };
+  },
+
   async recibo(orgId, reciboId) {
-    const { data, error } = await cliente().from("recibo").select(COLUMNAS_RECIBO).eq("org_id", orgId).eq("id", reciboId).maybeSingle<FilaRecibo>();
+    const { data, error } = await cliente().from("recibo_con_saldo").select(COLUMNAS_RECIBO).eq("org_id", orgId).eq("id", reciboId).maybeSingle<FilaRecibo>();
     if (error) throw error;
     return data ? aRecibo(data) : null;
   },

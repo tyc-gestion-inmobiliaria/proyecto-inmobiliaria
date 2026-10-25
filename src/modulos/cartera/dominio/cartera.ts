@@ -42,7 +42,7 @@ export interface CierreDelMes {
 
 /** Lo que toca en el cierre del mes, y a qué paso lleva (PB-21). */
 export interface PasoDelCierre {
-  texto: "Cargar lecturas" | "Emitir recibos" | "Al día";
+  texto: "Cargar lecturas" | "Emitir recibos" | "Mes emitido";
   /** El paso del cierre al que lleva, o null si no hay nada que hacer. */
   paso: 1 | 2 | 3 | 4 | null;
 }
@@ -50,7 +50,8 @@ export interface PasoDelCierre {
 export function pasoDelCierre(cierre: CierreDelMes | null | undefined): PasoDelCierre {
   if (!cierre || (cierre.estado === "borrador" && cierre.paso === 1)) return { texto: "Cargar lecturas", paso: 1 };
   if (cierre.estado === "borrador") return { texto: "Emitir recibos", paso: cierre.paso };
-  return { texto: "Al día", paso: null };
+  // "Mes emitido" y no "Al día": los recibos salieron, pero eso no dice que se hayan pagado.
+  return { texto: "Mes emitido", paso: null };
 }
 
 /** El mes en curso en Lima, como su primer día: "2026-10-01". */
@@ -72,18 +73,15 @@ export interface FilaCartera {
   cierre: PasoDelCierre | null;
 }
 
-export interface Indicador {
-  clave: "unidades" | "por-completar";
-  etiqueta: string;
-  valor: number;
-}
-
 const SIN_UNIDADES: EstadoDelPadron = { unidades: 0, sinParticipacion: 0, total: 0, sumaCien: false };
 
-/** "92,5 %": hasta cuatro decimales, coma decimal, sin ceros de más. */
+/**
+ * "92.5 %": hasta cuatro decimales, sin ceros de más. Con punto decimal, como
+ * los montos (S/ 3,730.00) y la participación en el padrón.
+ */
 export function formatoPorcentaje(valor: number): string {
   const texto = (Math.round(valor * 10_000) / 10_000).toFixed(4).replace(/\.?0+$/, "");
-  return `${texto.replace(".", ",")} %`;
+  return `${texto} %`;
 }
 
 function enPlural(n: number, uno: string, varios: string): string {
@@ -145,16 +143,69 @@ export function armarCartera(
 }
 
 /**
- * Las cifras de arriba. Solo entra la que tiene algo que contar (H8): una
- * tarjeta en cero no dice nada que la tabla no diga. Recaudación, morosidad,
- * incidencias y reservas no existen en la base y no se arman.
+ * Dónde está cada edificio este mes:
+ * - `por-completar`: al padrón le falta algo y no se puede cobrar.
+ * - `en-cierre`: el padrón está completo y los recibos del mes no salieron.
+ * - `al-dia`: los recibos del mes ya se emitieron.
  */
-export function indicadoresDeLaCartera(filas: readonly FilaCartera[]): Indicador[] {
-  const unidades = filas.reduce((suma, f) => suma + f.unidades, 0);
-  const porCompletar = filas.filter((f) => f.pendientes.length > 0).length;
-  const candidatos: Indicador[] = [
-    { clave: "unidades", etiqueta: "Unidades registradas", valor: unidades },
-    { clave: "por-completar", etiqueta: "Edificios por completar", valor: porCompletar },
-  ];
-  return candidatos.filter((i) => i.valor > 0);
+export type EstadoDelEdificio = "por-completar" | "en-cierre" | "al-dia";
+
+export const TEXTO_DEL_ESTADO: Record<EstadoDelEdificio, string> = {
+  "por-completar": "Por completar",
+  "en-cierre": "En cierre",
+  "al-dia": "Mes emitido",
+};
+
+export function estadoDelEdificio(f: Pick<FilaCartera, "pendientes" | "cierre">): EstadoDelEdificio {
+  if (f.pendientes.length > 0) return "por-completar";
+  return f.cierre?.paso === null ? "al-dia" : "en-cierre";
+}
+
+export interface ResumenDelMes {
+  edificios: number;
+  alDia: number;
+  enCierre: number;
+  porCompletar: number;
+}
+
+/** Cuántos edificios hay en cada estado. Lo que se mira es cuántos faltan para emitir el mes. */
+export function resumenDelMes(filas: readonly FilaCartera[]): ResumenDelMes {
+  const r: ResumenDelMes = { edificios: filas.length, alDia: 0, enCierre: 0, porCompletar: 0 };
+  for (const f of filas) {
+    const e = estadoDelEdificio(f);
+    if (e === "al-dia") r.alDia += 1;
+    else if (e === "en-cierre") r.enCierre += 1;
+    else r.porCompletar += 1;
+  }
+  return r;
+}
+
+/** Algo que hay que hacer en un edificio: un pendiente del padrón o el paso del cierre. */
+export interface Tarea {
+  edificioId: string;
+  edificio: string;
+  tipo: TipoPendiente | "cierre";
+  /** Qué hacer: "Completar participación", "Cargar lecturas". */
+  paso: string;
+  /** Por qué, o en qué punto está. */
+  causa: string;
+  /** Con `tipo: "cierre"`, el paso del cierre al que lleva. */
+  pasoDelCierre?: 1 | 2 | 3 | 4;
+}
+
+/**
+ * Lo que hay que hacer en toda la cartera. Primero los pendientes del padrón
+ * (sin ellos no se puede cobrar), después el cierre de los que están listos;
+ * dentro de cada grupo, en el orden de los edificios.
+ */
+export function tareasDeLaCartera(filas: readonly FilaCartera[]): Tarea[] {
+  const delPadron = filas.flatMap((f) =>
+    f.pendientes.map((p): Tarea => ({ edificioId: f.id, edificio: f.nombre, tipo: p.tipo, paso: p.paso, causa: p.causa })),
+  );
+  const delCierre = filas.flatMap((f): Tarea[] => {
+    const paso = f.pendientes.length === 0 ? f.cierre?.paso : null;
+    if (!f.cierre || !paso) return [];
+    return [{ edificioId: f.id, edificio: f.nombre, tipo: "cierre", paso: f.cierre.texto, causa: `Paso ${paso} de 4 del cierre`, pasoDelCierre: paso }];
+  });
+  return [...delPadron, ...delCierre];
 }

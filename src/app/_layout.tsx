@@ -1,21 +1,22 @@
 import { Stack } from "expo-router";
-import { ActivityIndicator, StyleSheet, View, useColorScheme } from "react-native";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 
 import { cargarFuente } from "@/compartido/ui/fuente";
-import { sesionSupabase } from "@/modulos/organizaciones/infraestructura/sesion-supabase";
+import { sesion } from "@/modulos/organizaciones/infraestructura/sesion";
 import { ProveedorSesion, useSesion } from "@/modulos/organizaciones/ui/sesion";
-import { temaDelProyecto, temaOscuroDelProyecto } from "@/tema";
+import { temaDelProyecto } from "@/tema";
 import { ThemeProvider, useStyles, useTheme, type Tema } from "@/ui";
 
 // En web, la fuente del tema se declara una vez, antes de pintar nada.
 cargarFuente();
 
 export default function RootLayout() {
-  // El tema sigue al del sistema: claro u oscuro.
-  const esquema = useColorScheme();
+  // Va siempre en claro, como la marca de T&C: con el sistema en oscuro la app
+  // se veía negra. El tema oscuro sigue definido y medido (`temaOscuroDelProyecto`)
+  // para cuando se ofrezca elegirlo en la cuenta.
   return (
-    <ThemeProvider theme={esquema === "dark" ? temaOscuroDelProyecto : temaDelProyecto}>
-      <ProveedorSesion puerto={sesionSupabase}>
+    <ThemeProvider theme={temaDelProyecto}>
+      <ProveedorSesion puerto={sesion}>
         <Rutas />
       </ProveedorSesion>
     </ThemeProvider>
@@ -25,7 +26,8 @@ export default function RootLayout() {
 /**
  * Sin sesión existen `/entrar` y `/recuperar`; con sesión, el grupo `(app)`;
  * al volver del enlace del correo, solo `/nueva-contrasena`. Las rutas
- * protegidas no se pueden abrir por URL sin haber entrado.
+ * protegidas no se pueden abrir por URL sin haber entrado. `/invitacion`
+ * existe siempre: se llega sin sesión y la abre el propio enlace.
  */
 function Rutas() {
   const t = useTheme();
@@ -53,6 +55,12 @@ function Rutas() {
         <Stack.Screen name="entrar" />
         <Stack.Screen name="recuperar" />
       </Stack.Protected>
+      {/*
+        Al final a propósito: al entrar o salir, el Stack muestra la primera
+        pantalla que quede disponible; si fuera esta, toda sesión nueva caería
+        en la invitación en vez de en Inicio.
+      */}
+      <Stack.Screen name="invitacion" />
     </Stack>
   );
 }

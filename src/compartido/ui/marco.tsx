@@ -3,15 +3,17 @@
  * trabajo (administradora y edificio) y la cuenta, y el contenido de la ruta.
  *
  * - **Ancho (web, tableta):** menú lateral con las secciones por tramos.
- * - **Angosto (teléfono):** las mismas secciones en una barra abajo, al
- *   alcance del pulgar, y el contenido con todo el ancho (PB-10).
+ * - **Angosto (teléfono):** las secciones en una barra abajo, al alcance del
+ *   pulgar, y el contenido con todo el ancho (PB-10). Con más de cinco, van
+ *   las cuatro del trabajo diario y "Más" abre el resto: más entradas no se
+ *   leen en el ancho de un teléfono.
  * - **El selector de edificio** dice siempre dónde se está: "Toda la cartera"
  *   o el nombre del edificio. Con un edificio elegido el control queda
  *   marcado aunque esté cerrado, porque lo que se ve es un recorte.
  */
 import { router, usePathname } from "expo-router";
 import { useState, type ReactNode } from "react";
-import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { TODA_LA_CARTERA } from "@/compartido/contexto/contexto";
@@ -21,8 +23,10 @@ import { useOrganizacion } from "@/modulos/organizaciones/ui/organizacion";
 import { useSesion } from "@/modulos/organizaciones/ui/sesion";
 import {
   AppShell,
+  Avatar,
+  resolveInteraction,
+  type EstadoPresionable,
   BottomNav,
-  Button,
   Icon,
   Menu,
   MenuBackdrop,
@@ -36,12 +40,38 @@ import {
   type Tema,
 } from "@/ui";
 
-import { ordenarPorTramo, SECCIONES, seccionDeRuta } from "../navegacion/secciones";
+import { ordenarPorTramo, SECCIONES, seccionDeRuta, seccionesDelRol } from "../navegacion/secciones";
+
+const ISOTIPO = require("../../../assets/marca/isotipo.png");
 
 const ANCHO_ANGOSTO = 768;
 const ALTO_BARRA = 56;
+const ALTO_BARRA_ABAJO = 64;
 
-const ENTRADAS = ordenarPorTramo(SECCIONES).map((x) => ({ key: x.key, label: x.label, group: x.grupo, icon: x.icono }));
+/**
+ * Las que quedan a la vista en la barra del teléfono; el resto va en "Más".
+ * El personal trabaja en el edificio: a mano, las lecturas.
+ */
+const EN_LA_BARRA: Record<string, string[]> = {
+  personal: ["inicio", "lecturas", "unidades", "edificios"],
+  otro: ["inicio", "edificios", "cobranza", "unidades"],
+};
+const MAS = "mas";
+
+/** Las secciones que ve el rol, para el menú lateral, la barra del teléfono y su "Más". */
+function entradasDelRol(rol: string | undefined) {
+  const todas = ordenarPorTramo(seccionesDelRol(rol)).map((x) => ({ key: x.key, label: x.label, group: x.grupo, icon: x.icono }));
+  const conMas = todas.length > 5;
+  const enLaBarra = EN_LA_BARRA[rol ?? ""] ?? EN_LA_BARRA.otro;
+  const barra = conMas
+    ? [
+        // En la barra va el nombre corto: el largo no entra en el ancho de un teléfono.
+        ...enLaBarra.flatMap((k) => todas.filter((e) => e.key === k)).map((e) => ({ ...e, label: e.key === "unidades" ? "Unidades" : e.label })),
+        { key: MAS, label: "Más", group: undefined, icon: "more-horizontal" as const },
+      ]
+    : todas;
+  return { todas, conMas, enLaBarra, barra, mas: todas.filter((e) => !enLaBarra.includes(e.key)) };
+}
 
 function irA(key: string, activa: string | undefined) {
   const destino = SECCIONES.find((x) => x.key === key);
@@ -59,8 +89,10 @@ export function Marco({ children }: { children: ReactNode }) {
   const { edificios, edificio, elegirEdificio } = useContextoDeTrabajo();
   const [plegado, setPlegado] = useState(false);
   const [menuCuenta, setMenuCuenta] = useState(false);
+  const [menuMas, setMenuMas] = useState(false);
 
   const angosto = width < ANCHO_ANGOSTO;
+  const entradas = entradasDelRol(enCurso?.rol);
   const activa = seccionDeRuta(ruta)?.key;
   const correo = cuenta?.correo ?? "";
 
@@ -79,17 +111,22 @@ export function Marco({ children }: { children: ReactNode }) {
   const barra = (
     <>
       <View style={s.contexto}>
-        <View style={s.logo} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-          <Icon name="building" size="sm" color={t.color.text.onAccent} />
-        </View>
+        {/* El isotipo de T&C: el edificio con sus iniciales. */}
+        <Image source={ISOTIPO} style={s.logo} resizeMode="contain" accessibilityLabel="T&C" />
         {selectorDeOrg ??
           // En el teléfono el nombre de la administradora ya es el título de Inicio y va en el menú de la cuenta.
           (enCurso && !angosto ? (
-            <Text style={[textStyle(t, "subtitle"), s.nombreOrg]} numberOfLines={1}>
-              {enCurso.orgNombre}
-            </Text>
+            <View style={s.nombreOrg}>
+              <Text style={textStyle(t, "subtitle")} numberOfLines={1}>
+                {enCurso.orgNombre}
+              </Text>
+              <Text style={textStyle(t, "caption", t.color.text.secondary)} numberOfLines={1}>
+                {nombreDelRol(enCurso.rol)}
+              </Text>
+            </View>
           ) : null)}
-        {edificios.length > 0 ? (
+        {!angosto && edificios.length > 0 && enCurso?.rol !== "residente" ? <View style={s.separador} /> : null}
+        {edificios.length > 0 && enCurso?.rol !== "residente" ? (
           <View style={angosto ? s.selectorAngosto : s.selector}>
             <Select
               size="sm"
@@ -106,19 +143,50 @@ export function Marco({ children }: { children: ReactNode }) {
           </View>
         ) : null}
       </View>
-      <Button
-        variant="ghost"
-        size="sm"
-        icon="chevron-down"
-        iconPosition="end"
-        label={angosto || !correo ? "Cuenta" : correo}
+      {/* La cuenta: sus iniciales siempre; el correo, si hay ancho. */}
+      <Pressable
+        accessibilityRole="button"
         accessibilityLabel="Abrir el menú de la cuenta"
+        accessibilityState={{ expanded: menuCuenta }}
         onPress={() => setMenuCuenta((v) => !v)}
-      />
+        style={(estado: EstadoPresionable) => {
+          const i = resolveInteraction(estado, { selected: menuCuenta });
+          return [s.cuenta, (i === "hovered" || i === "selected") && s.cuentaEncima, i === "pressed" && s.cuentaPresionada];
+        }}
+      >
+        <Avatar name={correo || "Cuenta"} size="sm" accessibilityLabel="" />
+        {!angosto && correo ? (
+          <Text style={[textStyle(t, "bodySmall", t.color.text.secondary), s.correo]} numberOfLines={1}>
+            {correo}
+          </Text>
+        ) : null}
+        <Icon name="chevron-down" size="sm" color={t.color.text.secondary} />
+      </Pressable>
     </>
   );
 
   const nota = enCurso ? `${correo}\n${nombreDelRol(enCurso.rol)} · ${enCurso.orgNombre}` : correo;
+
+  const activaEnLaBarra = entradas.conMas && activa && !entradas.enLaBarra.includes(activa) ? MAS : activa;
+
+  const mas = menuMas ? (
+    <>
+      <MenuBackdrop onClose={() => setMenuMas(false)} />
+      <Menu style={[s.menuMas, { bottom: insets.bottom + ALTO_BARRA_ABAJO }]}>
+        {entradas.mas.map((e) => (
+          <MenuItem
+            key={e.key}
+            label={e.label}
+            current={e.key === activa}
+            onPress={() => {
+              setMenuMas(false);
+              irA(e.key, activa);
+            }}
+          />
+        ))}
+      </Menu>
+    </>
+  ) : null;
 
   const menu = menuCuenta ? (
     <>
@@ -141,12 +209,12 @@ export function Marco({ children }: { children: ReactNode }) {
     <AppShell
       style={{ paddingTop: insets.top }}
       topBar={barra}
-      overlay={menu}
+      overlay={menu ?? mas}
       sidebar={
         angosto ? undefined : (
           <SideMenu
             accessibilityLabel="Secciones"
-            items={ENTRADAS}
+            items={entradas.todas}
             activeKey={activa}
             onSelect={(key) => irA(key, activa)}
             collapsed={plegado}
@@ -158,9 +226,9 @@ export function Marco({ children }: { children: ReactNode }) {
         angosto ? (
           <BottomNav
             accessibilityLabel="Secciones"
-            items={ENTRADAS}
-            activeKey={activa}
-            onSelect={(key) => irA(key, activa)}
+            items={entradas.barra}
+            activeKey={activaEnLaBarra}
+            onSelect={(key) => (key === MAS ? setMenuMas((v) => !v) : irA(key, activa))}
             style={{ paddingBottom: insets.bottom }}
           />
         ) : undefined
@@ -174,16 +242,24 @@ export function Marco({ children }: { children: ReactNode }) {
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
     contexto: { flex: 1, minWidth: 0, flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.md },
-    logo: {
-      width: 32,
-      height: 32,
-      borderRadius: t.radius.sm,
+    // Las proporciones del isotipo (215 × 256).
+    logo: { width: 30, height: 36 },
+    nombreOrg: { flexShrink: 1, maxWidth: 260 },
+    separador: { width: 1, height: 28, backgroundColor: t.color.border.default },
+    cuenta: {
+      flexDirection: "row",
       alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: t.color.accent.base,
+      gap: t.space.sm,
+      minHeight: t.minTouch,
+      paddingHorizontal: t.space.sm,
+      borderRadius: t.radius.full,
+      cursor: "pointer",
     },
-    nombreOrg: { flexShrink: 1 },
+    cuentaEncima: { backgroundColor: t.color.bg.hover },
+    cuentaPresionada: { backgroundColor: t.color.bg.pressed },
+    correo: { maxWidth: 220 },
     selector: { minWidth: 200, maxWidth: 320 },
     selectorAngosto: { flex: 1, minWidth: 0 },
     menuCuenta: { right: t.space.lg },
+    menuMas: { right: t.space.sm, left: t.space.sm },
   });

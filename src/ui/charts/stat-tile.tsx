@@ -112,10 +112,11 @@ export function StatTile({
 
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
-    ficha: { flexGrow: 1, flexBasis: 150, minWidth: 0, gap: t.space.xs },
+    ficha: { flexGrow: 1, flexBasis: 96, minWidth: 0, gap: t.space.xs },
     cifra: { fontVariant: ["proportional-nums"] },
-    cabeza: { flexDirection: "row", alignItems: "center", gap: t.space.sm },
-    nombre: { flexShrink: 1 },
+    // Si el nombre no cabe al lado del ícono, baja debajo en vez de cortarse.
+    cabeza: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.sm },
+    nombre: { flexGrow: 1, flexBasis: 72, minWidth: 0 },
     icono: {
       width: 28,
       height: 28,

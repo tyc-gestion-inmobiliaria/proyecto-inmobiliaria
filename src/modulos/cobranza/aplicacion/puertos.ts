@@ -43,6 +43,13 @@ export interface CuentaDelRecibo {
   moneda: string;
 }
 
+export interface SaldoDeLaUnidad {
+  /** Lo cargado menos lo pagado; negativo si queda a favor. */
+  saldo: number;
+  /** Pagos reportados que esperan validación. */
+  porValidar: number;
+}
+
 export interface CambiosDelCierre {
   paso?: NumeroDePaso;
   montoAgua?: number;
@@ -80,6 +87,8 @@ export interface CobranzaPuerto {
 
   recibosDelCierre(orgId: string, cierreId: string): Promise<Recibo[]>;
   recibosDeLaUnidad(orgId: string, unidadId: string): Promise<Recibo[]>;
+  /** El saldo de la unidad con los pagos aplicados, como lo calcula la base. */
+  saldoDeLaUnidad(orgId: string, unidadId: string): Promise<SaldoDeLaUnidad>;
   recibo(orgId: string, reciboId: string): Promise<Recibo | null>;
   nombreDeLaAdministradora(orgId: string): Promise<string>;
 

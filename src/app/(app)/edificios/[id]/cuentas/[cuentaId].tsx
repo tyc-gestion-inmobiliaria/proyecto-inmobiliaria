@@ -1,9 +1,9 @@
 import { useLocalSearchParams } from "expo-router";
 
-import { cuentasBancariasSupabase } from "@/modulos/padron/infraestructura/padron-supabase";
+import { padron } from "@/modulos/padron/infraestructura/padron";
 import { PantallaCuenta } from "@/modulos/padron/ui/pantalla-cuenta";
 
 export default function EditarCuenta() {
   const { id, cuentaId } = useLocalSearchParams<{ id: string; cuentaId: string }>();
-  return <PantallaCuenta cuentas={cuentasBancariasSupabase} edificioId={id} id={cuentaId} />;
+  return <PantallaCuenta cuentas={padron.cuentas} edificioId={id} id={cuentaId} />;
 }

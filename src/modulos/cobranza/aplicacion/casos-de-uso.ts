@@ -5,7 +5,7 @@
  */
 import { avisoDeLectura, leerMedida } from "../dominio/lectura";
 import { leerPartidas, type ErroresDePartida, type FilaDePartida } from "../dominio/presupuesto";
-import { estadoDeLaUnidad, saldoDeLaUnidad, type Recibo } from "../dominio/recibo";
+import { estadoDeLaUnidad, type Recibo } from "../dominio/recibo";
 import type { CobranzaPuerto, FalloDeCobranza, Resultado } from "./puertos";
 
 const MENSAJE: Record<FalloDeCobranza, string> = {
@@ -78,10 +78,11 @@ export async function abrirCierre(puerto: CobranzaPuerto, edificioId: string, pe
 export interface EstadoDeCuenta {
   recibos: Recibo[];
   saldo: number;
+  porValidar: number;
   estado: ReturnType<typeof estadoDeLaUnidad>;
 }
 
 export async function estadoDeCuenta(puerto: CobranzaPuerto, orgId: string, unidadId: string, hoy: string): Promise<EstadoDeCuenta> {
-  const recibos = await puerto.recibosDeLaUnidad(orgId, unidadId);
-  return { recibos, saldo: saldoDeLaUnidad(recibos), estado: estadoDeLaUnidad(recibos, hoy) };
+  const [recibos, { saldo, porValidar }] = await Promise.all([puerto.recibosDeLaUnidad(orgId, unidadId), puerto.saldoDeLaUnidad(orgId, unidadId)]);
+  return { recibos, saldo, porValidar, estado: estadoDeLaUnidad(recibos, saldo, hoy) };
 }

@@ -31,7 +31,6 @@ import {
   ErrorSummary,
   FormFooter,
   Icon,
-  KeyValueRow,
   PageHeader,
   SectionTitle,
   TableRow,
@@ -66,9 +65,11 @@ import { Aviso, FlechaDeFila, Volver } from "@/compartido/ui/piezas";
 import { irALasUnidades } from "./pantalla-unidades";
 import { useCarga } from "@/compartido/ui/usar-carga";
 
-/** Lo que otro módulo (la cobranza) pone en la ficha. El padrón no sabe de recibos. */
+/** Lo que otros módulos (cobranza, pagos) ponen en la ficha. El padrón no sabe de recibos ni de pagos. */
 export interface CuentaDeLaUnidad {
   estado?: { texto: string; tono: StatusTone };
+  /** La acción primaria de la ficha, junto a "Editar unidad" (por ejemplo, "Registrar pago"). */
+  accion?: ReactNode;
   /** Va en la pestaña Resumen, entre los datos y las personas. */
   resumen?: ReactNode;
   pestanas: { key: string; label: string; contenido: ReactNode }[];
@@ -222,16 +223,19 @@ function FichaConPestanas({
         back={{ label: "Unidades", onPress: volver }}
         status={cuenta.estado ? <Badge tone={cuenta.estado.tono} label={cuenta.estado.texto} /> : null}
         actions={
-          editable ? (
-            <Button
-              variant="secondary"
-              icon="pencil"
-              label="Editar unidad"
-              onPress={() =>
-                router.push({ pathname: "/edificios/[id]/unidades/[unidadId]/editar", params: { id: edificioId, unidadId: unidad.id } })
-              }
-            />
-          ) : null
+          <>
+            {editable ? (
+              <Button
+                variant="secondary"
+                icon="pencil"
+                label="Editar unidad"
+                onPress={() =>
+                  router.push({ pathname: "/edificios/[id]/unidades/[unidadId]/editar", params: { id: edificioId, unidadId: unidad.id } })
+                }
+              />
+            ) : null}
+            {cuenta.accion}
+          </>
         }
       />
       {pestanas.length > 1 ? <Tabs accessibilityLabel="Secciones de la ficha" items={pestanas} value={pestana} onChange={setPestana} /> : null}
@@ -240,8 +244,8 @@ function FichaConPestanas({
       ) : (
         <View style={anchoDeColumnas ? s.columnas : s.apilado}>
           <View style={anchoDeColumnas ? s.columnaAncha : s.apilado}>
-            <Ficha unidad={unidad} />
             {cuenta.resumen}
+            <Ficha unidad={unidad} />
           </View>
           <View style={anchoDeColumnas ? s.columnaAncha : s.apilado}>{personas}</View>
         </View>
@@ -385,17 +389,30 @@ function Formulario({
   );
 }
 
+/** Los datos de la unidad en una fila de tres: el rótulo arriba y el valor abajo, que es lo que se lee. */
 function Ficha({ unidad }: { unidad: Unidad }) {
+  const t = useTheme();
   const s = useStyles(makeStyles);
+  const datos: { etiqueta: string; valor: string; falta?: boolean }[] = [
+    { etiqueta: "Tipo", valor: unidad.tipo ?? "—" },
+    { etiqueta: "Área", valor: textoDeArea(unidad.areaM2) },
+    {
+      etiqueta: "Participación",
+      valor: unidad.participacion === null ? "! Sin participación" : textoDePorcentaje(unidad.participacion),
+      falta: unidad.participacion === null,
+    },
+  ];
   return (
     <Card style={s.bloque} padding="lg">
       <SectionTitle>Datos de la unidad</SectionTitle>
-      <KeyValueRow label="Tipo" value={unidad.tipo ?? "—"} />
-      <KeyValueRow label="Área" value={textoDeArea(unidad.areaM2)} />
-      <KeyValueRow
-        label="Participación"
-        value={unidad.participacion === null ? "Sin participación" : textoDePorcentaje(unidad.participacion)}
-      />
+      <View style={s.datos}>
+        {datos.map((d) => (
+          <View key={d.etiqueta} style={s.dato} accessible accessibilityLabel={`${d.etiqueta}: ${d.valor}`}>
+            <Text style={textStyle(t, "bodySmall", t.color.text.secondary)}>{d.etiqueta}</Text>
+            <Text style={textStyle(t, "subtitle", d.falta ? t.color.warning.fg : t.color.text.primary)}>{d.valor}</Text>
+          </View>
+        ))}
+      </View>
     </Card>
   );
 }
@@ -488,7 +505,10 @@ const makeStyles = (t: Tema) =>
     celda: { flexGrow: 1, flexBasis: 200 },
     cabecera: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: t.space.md },
     titulo: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.sm },
+    acciones: { flexDirection: "row", flexWrap: "wrap", alignItems: "flex-start", gap: t.space.sm },
     persona: { gap: t.space.xs },
     insignias: { flexDirection: "row", flexWrap: "wrap", gap: t.space.xs },
+    datos: { flexDirection: "row", flexWrap: "wrap", gap: t.space.lg },
+    dato: { flexGrow: 1, flexBasis: 90, gap: t.space.xxs },
 
   });

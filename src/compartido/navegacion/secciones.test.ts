@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { ordenarPorTramo, SECCIONES, seccionDeRuta, type Seccion } from "./secciones";
+import { ordenarPorTramo, SECCIONES, seccionDeRuta, seccionesDelModo, seccionesDelRol, type Seccion } from "./secciones";
 
 const secciones = [
   { key: "inicio", label: "Inicio", ruta: "/" },
@@ -30,6 +30,14 @@ describe("SECCIONES", () => {
   });
 });
 
+describe("Pagos", () => {
+  it("la cola de pagos tiene su sección en Operación", () => {
+    const pagos = seccionDeRuta("/pagos", SECCIONES);
+    assert.equal(pagos?.key, "pagos");
+    assert.equal(pagos?.grupo, "Operación");
+  });
+});
+
 describe("ordenarPorTramo", () => {
   it("pone primero las sin tramo y después Operación y Gestión, sin mezclar", () => {
     const desordenadas = [
@@ -42,5 +50,31 @@ describe("ordenarPorTramo", () => {
       ordenarPorTramo(desordenadas).map((s) => s.key),
       ["inicio", "cobranza", "reservas", "reportes"],
     );
+  });
+});
+
+describe("seccionesDelModo", () => {
+  it("con datos reales quedan solo las que tienen función", () => {
+    const claves = seccionesDelModo(false).map((s) => s.key);
+    assert.deepEqual(claves, ["inicio", "edificios", "lecturas", "pagos", "usuarios"]);
+  });
+  it("la maqueta muestra las once del mapa más lecturas, pagos y usuarios", () => {
+    assert.equal(seccionesDelModo(true).length, 14);
+  });
+});
+
+describe("seccionesDelRol", () => {
+  it("Usuarios solo la ve el administrador", () => {
+    const claves = (rol?: string) => seccionesDelRol(rol).map((s) => s.key);
+    assert.ok(claves("administrador").includes("usuarios"));
+    assert.equal(claves("personal").includes("usuarios"), false);
+    assert.equal(claves("residente").includes("usuarios"), false);
+    assert.equal(claves(undefined).includes("usuarios"), false);
+    assert.ok(claves("personal").includes("edificios"));
+  });
+  it("el residente no ve la gestión: ni edificios, ni lecturas, ni pagos", () => {
+    const claves = seccionesDelRol("residente").map((s) => s.key);
+    for (const k of ["edificios", "lecturas", "pagos", "cobranza", "usuarios"]) assert.equal(claves.includes(k), false, k);
+    assert.ok(claves.includes("inicio"));
   });
 });

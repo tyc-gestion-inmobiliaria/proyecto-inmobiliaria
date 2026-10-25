@@ -12,6 +12,8 @@
  *   sistema. Si hay error, el error ocupa su sitio.
  * - **El ✕ de limpiar** solo aparece con algo escrito: un ✕ sobre un campo
  *   vacío es un botón que no hace nada.
+ * - **El ojo de una contraseña (`revelable`)** la muestra y la vuelve a
+ *   ocultar; cambia de dibujo y de nombre, no solo de color.
  */
 import { useState, type Ref } from "react";
 import {
@@ -24,12 +26,14 @@ import {
   type NativeSyntheticEvent,
   type StyleProp,
   type TextInputKeyPressEventData,
+  type TextInputProps,
   type ViewStyle,
 } from "react-native";
 
 import { resolveInteraction, type EstadoPresionable } from "../pressable-state";
 import { textStyle } from "../theme/text-style";
 import { useStyles, useTheme } from "../theme/theme-provider";
+import { Icon } from "./icon";
 import { TouchArea } from "./touch-area";
 import type { Tema } from "../tokens";
 
@@ -61,7 +65,15 @@ export interface TextFieldProps {
   mono?: boolean;
   multiline?: boolean;
   secureTextEntry?: boolean;
+  /** Con `secureTextEntry`, dibuja el ojo que muestra lo escrito. */
+  revelable?: boolean;
   autoCapitalize?: "none" | "sentences" | "words" | "characters";
+  /**
+   * Qué es el campo para el gestor de contraseñas y el autocompletado
+   * ("email", "current-password", "new-password"…). En un acceso, sin esto el
+   * gestor no rellena y la persona tiene que recordar y teclear la clave.
+   */
+  autoComplete?: TextInputProps["autoComplete"];
   keyboardType?: KeyboardTypeOptions;
   autoFocus?: boolean;
   accessibilityLabel?: string;
@@ -88,7 +100,9 @@ export function TextField({
   mono = false,
   multiline = false,
   secureTextEntry = false,
+  revelable = false,
   autoCapitalize,
+  autoComplete,
   keyboardType,
   autoFocus = false,
   accessibilityLabel,
@@ -105,6 +119,8 @@ export function TextField({
   const editable = tone === "default";
   const [focused, setFocused] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const conOjo = secureTextEntry && revelable;
   const hasError = Boolean(error);
   const fuente = mono ? textStyle(t, "data") : textStyle(t, "body");
 
@@ -127,8 +143,12 @@ export function TextField({
             placeholder={placeholder}
             placeholderTextColor={t.color.text.placeholder}
             keyboardType={keyboardType}
-            secureTextEntry={secureTextEntry}
+            secureTextEntry={secureTextEntry && !visible}
             autoCapitalize={autoCapitalize}
+            autoComplete={autoComplete}
+            // Un correo o una clave no se corrigen: el corrector los "arregla" y los rompe.
+            spellCheck={keyboardType === "email-address" || secureTextEntry ? false : undefined}
+            autoCorrect={keyboardType === "email-address" || secureTextEntry ? false : undefined}
             autoFocus={autoFocus}
             multiline={multiline}
             onFocus={() => setFocused(true)}
@@ -141,10 +161,25 @@ export function TextField({
               hovered && !focused && s.inputHovered,
               hasError && s.inputError,
               focused && (hasError ? s.focusedError : s.focused),
-              onClear && s.withClear,
+              (onClear || conOjo) && s.withClear,
             ]}
           />
-          {onClear && value.length > 0 ? (
+          {conOjo ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={visible ? "Ocultar la contraseña" : "Mostrar la contraseña"}
+              accessibilityState={{ selected: visible }}
+              onPress={() => setVisible((v) => !v)}
+              style={(state: EstadoPresionable) => {
+                const i = resolveInteraction(state);
+                return [s.clear, i === "hovered" && s.clearHovered, i === "pressed" && s.clearPressed];
+              }}
+            >
+              <Icon name={visible ? "eye-off" : "eye"} size="sm" color={t.color.text.secondary} />
+              <TouchArea height={32} width={32} border={0} />
+            </Pressable>
+          ) : null}
+          {onClear && !conOjo && value.length > 0 ? (
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={clearLabel}

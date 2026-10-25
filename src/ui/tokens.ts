@@ -119,7 +119,8 @@ export interface TypeStyle {
   lineHeight: number;
   fontWeight: "400" | "500" | "600" | "700";
   letterSpacing?: number;
-  family: "sans" | "mono";
+  /** `display`: la de los títulos, si el tema la define; si no, cae en `sans`. */
+  family: "sans" | "mono" | "display";
   textTransform?: "uppercase" | "none";
   /**
    * `tabular`: todas las cifras miden lo mismo, así una columna de montos
@@ -134,7 +135,7 @@ export interface TypographyTokens {
    * pila empiece por un nombre entre comillas (una fuente que el proyecto
    * incrusta con el plugin de `expo-font`): entonces se usa ese nombre.
    */
-  family: { sans: string; mono: string };
+  family: { sans: string; mono: string; display?: string };
   scale: {
     display: TypeStyle;
     title: TypeStyle;

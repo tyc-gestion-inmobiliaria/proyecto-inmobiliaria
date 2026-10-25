@@ -14,6 +14,10 @@ export interface Lectura {
   actual: number | null;
   /** Ruta en el bucket privado `lecturas`. */
   foto: string | null;
+  /** Quién cargó por última vez la actual o la foto (su correo), si se sabe. Lo pone la base. */
+  tomadaPor?: string | null;
+  /** Cuándo, ISO 8601. */
+  tomadaEn?: string | null;
 }
 
 export type TipoDeAviso = "vacia" | "menor" | "sin-anterior" | "invalida";

@@ -1,9 +1,9 @@
 import { useLocalSearchParams } from "expo-router";
 
-import { edificiosSupabase } from "@/modulos/padron/infraestructura/edificios-supabase";
+import { edificios } from "@/modulos/padron/infraestructura/padron";
 import { PantallaEdificio } from "@/modulos/padron/ui/pantalla-edificio";
 
 export default function EditarEdificio() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  return <PantallaEdificio edificios={edificiosSupabase} id={id} />;
+  return <PantallaEdificio edificios={edificios} id={id} />;
 }

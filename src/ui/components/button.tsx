@@ -9,6 +9,9 @@
  *   (`accessibilityState.disabled`).
  * - **Cargando**: el texto se queda (el botón no cambia de ancho) y un
  *   indicador al lado; no se puede volver a tocar mientras tanto.
+ * - **Solo ícono** (`iconOnly`): cuadrado, para filas apretadas. El texto
+ *   pasa a ser lo que se lee a quien no ve; el ícono tiene que decirlo solo
+ *   (cámara, descargar), si no, va con texto.
  */
 import { ActivityIndicator, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 
@@ -42,6 +45,8 @@ export interface ButtonProps {
   icon?: IconName;
   /** Dónde va el ícono: antes del texto (acciones) o después (avanzar, abrir). */
   iconPosition?: "start" | "end";
+  /** Sin texto a la vista: solo el ícono, en un botón cuadrado. Pide `icon`. */
+  iconOnly?: boolean;
   accessibilityLabel?: string;
   /** Solo para vitrina, Storybook y Figma: pinta un estado sin el puntero. */
   forcedState?: ForcedInteraction;
@@ -59,6 +64,7 @@ export function Button({
   full = false,
   icon,
   iconPosition = "start",
+  iconOnly = false,
   accessibilityLabel,
   forcedState,
   style,
@@ -82,7 +88,9 @@ export function Button({
         const i = resolveInteraction(state, { disabled, forced: forcedState });
         return [
           s.base,
-          { minHeight: height, paddingHorizontal: size === "sm" ? t.space.md : t.space.lg + 4 },
+          iconOnly
+            ? { minHeight: height, width: height, paddingHorizontal: 0 }
+            : { minHeight: height, paddingHorizontal: size === "sm" ? t.space.md : t.space.lg + 4 },
           full && s.full,
           pickByInteraction(i, containerByVariant(t)[variant]),
           style,
@@ -97,21 +105,23 @@ export function Button({
             accessibilityElementsHidden
           />
         ) : null}
-        {icon && iconPosition === "start" && !loading ? (
+        {icon && (iconPosition === "start" || iconOnly) && !loading ? (
           <Icon name={icon} size={size === "lg" ? "md" : "sm"} color={disabled ? t.color.text.disabled : labelColor(t, variant)} />
         ) : null}
-        <Text
-          numberOfLines={1}
-          style={[
-            textStyle(t, size === "lg" ? "subtitle" : "body"),
-            size === "sm" && s.labelSm,
-            s.label,
-            { color: disabled ? t.color.text.disabled : labelColor(t, variant) },
-          ]}
-        >
-          {label}
-        </Text>
-        {icon && iconPosition === "end" ? (
+        {iconOnly ? null : (
+          <Text
+            numberOfLines={1}
+            style={[
+              textStyle(t, size === "lg" ? "subtitle" : "body"),
+              size === "sm" && s.labelSm,
+              s.label,
+              { color: disabled ? t.color.text.disabled : labelColor(t, variant) },
+            ]}
+          >
+            {label}
+          </Text>
+        )}
+        {icon && iconPosition === "end" && !iconOnly ? (
           <Icon name={icon} size={size === "lg" ? "md" : "sm"} color={disabled ? t.color.text.disabled : labelColor(t, variant)} />
         ) : null}
       </View>

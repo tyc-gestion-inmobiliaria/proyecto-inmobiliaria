@@ -5,12 +5,32 @@
  *   de emitir. Si una validación bloquea, el motivo va junto al botón.
  * - La base emite en una transacción y numera por edificio; si el botón se
  *   pulsa dos veces, no se duplica nada.
- * - Después: los recibos emitidos, cada uno con su PDF.
+ * - Después: cuántos se emitieron, cuándo vencen y cuánto suman, y una fila
+ *   por recibo que lo abre como lo recibe el propietario, con su PDF.
  */
-import { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { useState, type ReactNode } from "react";
+import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
-import { Card, ConfirmButton, KeyValueRow, SectionTitle, TextField, textStyle, useStyles, useTheme, type Tema } from "@/ui";
+import { FlechaDeFila } from "@/compartido/ui/piezas";
+import {
+  Button,
+  Card,
+  ConfirmButton,
+  DataTable,
+  Dialog,
+  Icon,
+  SectionTitle,
+  TableHead,
+  TableRow,
+  Td,
+  TdView,
+  TextField,
+  Th,
+  textStyle,
+  useStyles,
+  useTheme,
+  type Tema,
+} from "@/ui";
 
 import { emitirCierre } from "../aplicacion/casos-de-uso";
 import type { CobranzaPuerto } from "../aplicacion/puertos";
@@ -20,6 +40,9 @@ import { leerFecha, textoDeFecha, textoDePeriodo, vencimientoSugerido } from "..
 import { resumenDePrevia, textoDeNumero, type FilaPrevia, type Recibo } from "../dominio/recibo";
 import { descargar } from "./recibos";
 import { VistaDelRecibo } from "./vista-del-recibo";
+
+/** Por debajo de este ancho de ventana, el número del recibo va bajo la unidad. */
+const ANCHO_ANGOSTO = 720;
 
 export function PasoEmision({
   cobranza,
@@ -31,6 +54,7 @@ export function PasoEmision({
   motivo,
   editable,
   onEmitido,
+  correos,
 }: {
   cobranza: CobranzaPuerto;
   orgId: string;
@@ -42,38 +66,88 @@ export function PasoEmision({
   motivo: string | null;
   editable: boolean;
   onEmitido: () => void;
+  /** El estado de los correos de los recibos, si la ruta lo pone. */
+  correos?: ReactNode;
 }) {
   const t = useTheme();
   const s = useStyles(makeStyles);
   const [vence, setVence] = useState(textoDeFecha(vencimientoSugerido(cierre.periodo)));
   const [error, setError] = useState<string | null>(null);
   const [fallo, setFallo] = useState<string | null>(null);
+  const [abierto, setAbierto] = useState<Recibo | null>(null);
+  const angosto = useWindowDimensions().width < ANCHO_ANGOSTO;
+
+  async function bajar(r: Recibo) {
+    setFallo(null);
+    if (!(await descargar(cobranza, orgId, r))) setFallo(`No se pudo preparar el PDF del ${textoDeNumero(r.numero)}.`);
+  }
 
   if (cierre.estado === "emitido") {
+    const total = recibos.reduce((n, r) => n + r.total, 0);
     return (
       <View style={s.paso}>
-        <Text accessibilityRole="header" style={textStyle(t, "subtitle", t.color.success.fg)}>
-          {`✓ ${recibos.length} recibos emitidos${cierre.vence ? `, vencen el ${textoDeFecha(cierre.vence)}` : ""}`}
-        </Text>
+        <Card padding="lg" style={s.hecho}>
+          <View style={s.signoHecho}>
+            <Icon name="check" color={t.color.success.fg} />
+          </View>
+          <View style={s.textoHecho}>
+            <Text accessibilityRole="header" style={textStyle(t, "subtitle")}>
+              {`${recibos.length} recibos emitidos`}
+            </Text>
+            <Text style={textStyle(t, "bodySmall", t.color.text.secondary)}>
+              {cierre.vence ? `Vencen el ${textoDeFecha(cierre.vence)}` : textoDePeriodo(cierre.periodo)}
+            </Text>
+          </View>
+          <View style={s.totalHecho}>
+            <Text style={textStyle(t, "bodySmall", t.color.text.secondary)}>Total a cobrar</Text>
+            <Text style={textStyle(t, "title")}>{textoDeSoles(total)}</Text>
+          </View>
+        </Card>
+        {correos}
         {fallo ? (
           <Text accessibilityRole="alert" style={textStyle(t, "body", t.color.danger.fg)}>
             {`! ${fallo}`}
           </Text>
         ) : null}
-        <View style={s.recibos}>
+        <DataTable minWidth={0}>
+          <TableHead>
+            {angosto ? null : <Th flex={1}>Recibo</Th>}
+            <Th flex={1}>Unidad</Th>
+            <Th flex={1} align="right">
+              Total
+            </Th>
+            <View style={s.colFlecha} />
+          </TableHead>
           {recibos.map((r) => (
-            <Card key={r.id} padding="lg" style={s.recibo}>
-              <VistaDelRecibo
-                edificio={edificio}
-                recibo={r}
-                onDescargar={async () => {
-                  setFallo(null);
-                  if (!(await descargar(cobranza, orgId, r))) setFallo(`No se pudo preparar el PDF del ${textoDeNumero(r.numero)}.`);
-                }}
-              />
-            </Card>
+            <TableRow key={r.id} onPress={() => setAbierto(r)} accessibilityLabel={`Ver el ${textoDeNumero(r.numero)}, unidad ${r.unidadNumero}`}>
+              {angosto ? (
+                <TdView flex={1}>
+                  <Text style={textStyle(t, "body")}>{r.unidadNumero}</Text>
+                  <Text style={textStyle(t, "caption", t.color.text.secondary)}>{textoDeNumero(r.numero)}</Text>
+                </TdView>
+              ) : (
+                <>
+                  <Td flex={1} muted>
+                    {textoDeNumero(r.numero)}
+                  </Td>
+                  <Td flex={1}>{r.unidadNumero}</Td>
+                </>
+              )}
+              <Td flex={1} align="right" mono>
+                {textoDeSoles(r.total)}
+              </Td>
+              <FlechaDeFila />
+            </TableRow>
           ))}
-        </View>
+        </DataTable>
+        <Dialog
+          visible={abierto !== null}
+          title={abierto ? `Recibo de la unidad ${abierto.unidadNumero}` : undefined}
+          onClose={() => setAbierto(null)}
+          footer={abierto ? <Button variant="secondary" icon="download" label="Descargar PDF" onPress={() => bajar(abierto)} /> : undefined}
+        >
+          {abierto ? <VistaDelRecibo edificio={edificio} recibo={abierto} /> : null}
+        </Dialog>
       </View>
     );
   }
@@ -96,8 +170,11 @@ export function PasoEmision({
     <View style={s.paso}>
       <Card padding="lg" style={s.tarjeta}>
         <SectionTitle>{`Recibos de ${textoDePeriodo(cierre.periodo)}`}</SectionTitle>
-        <KeyValueRow label="Recibos" value={String(resumen.unidades)} />
-        <KeyValueRow label="Total a cobrar" value={textoDeSoles(resumen.total)} strong />
+        <View>
+          <Text style={textStyle(t, "bodySmall", t.color.text.secondary)}>Total a cobrar</Text>
+          <Text style={textStyle(t, "display")}>{textoDeSoles(resumen.total)}</Text>
+          <Text style={textStyle(t, "bodySmall", t.color.text.secondary)}>{`${resumen.unidades} recibos`}</Text>
+        </View>
         {editable ? (
           <TextField
             label="Vencen el"
@@ -146,6 +223,17 @@ const makeStyles = (t: Tema) =>
     fecha: { maxWidth: 220 },
     accion: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.md },
     motivo: { flex: 1, minWidth: 220 },
-    recibos: { flexDirection: "row", flexWrap: "wrap", gap: t.space.md },
-    recibo: { flexGrow: 1, flexBasis: 280, maxWidth: 420 },
+    hecho: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.md },
+    signoHecho: {
+      width: 40,
+      height: 40,
+      borderRadius: t.radius.full,
+      backgroundColor: t.color.success.bg,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    textoHecho: { flex: 1, minWidth: 160, gap: t.space.xxs },
+    totalHecho: { alignItems: "flex-end" },
+    // El ancho de la flecha de la fila, para que las columnas caigan en el mismo sitio.
+    colFlecha: { minWidth: 32 },
   });

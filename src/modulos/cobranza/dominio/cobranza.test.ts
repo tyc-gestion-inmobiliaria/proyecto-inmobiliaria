@@ -7,7 +7,7 @@ import { avanceDeLecturas, avisoDeLectura, consumo, leerMedida, rutaDeFoto } fro
 import { leerFecha, periodoDe, sumarMeses, textoDePeriodo, vencimientoSugerido } from "./periodo";
 import { leerPartidas, totalDeFilas } from "./presupuesto";
 import { repartir } from "./prorrateo";
-import { cargosDeLaUnidad, estadoDeLaUnidad, htmlDelRecibo, resumenDePrevia, saldoDeLaUnidad, type FilaPrevia, type Recibo } from "./recibo";
+import { cargosDeLaUnidad, estadoDeLaUnidad, htmlDelRecibo, resumenDePrevia, type FilaPrevia, type Recibo } from "./recibo";
 import { bloqueantes, motivoParaNoEmitir, validacionesDelCierre, type EstadoDelPadron } from "./validaciones";
 
 describe("repartir", () => {
@@ -182,6 +182,8 @@ const recibo = (r: Partial<Recibo>): Recibo => ({
   total: 525.01,
   vence: "2026-10-15",
   emitidoEn: "2026-09-30T12:00:00Z",
+  pagado: 0,
+  pendiente: 525.01,
   ...r,
 });
 
@@ -206,17 +208,32 @@ describe("recibo y estado de cuenta", () => {
     assert.equal(r.conAlerta, 1);
   });
 
-  it("separa los cargos, suma el saldo y dice el estado en palabras", () => {
-    const recibos = [recibo({}), recibo({ id: "r2", numero: 4, periodo: "2026-10-01", vence: "2026-11-15", agua: 0, cuota: 100 })];
+  it("separa los cargos y dice el estado en palabras", () => {
+    const recibos = [recibo({}), recibo({ id: "r2", numero: 4, periodo: "2026-10-01", vence: "2026-11-15", agua: 0, cuota: 100, pendiente: 100 })];
     const cargos = cargosDeLaUnidad(recibos, "2026-10-20");
     assert.deepEqual(
       cargos.map((c) => `${c.concepto} ${c.periodo} ${c.estado}`),
       ["Mantenimiento 2026-10-01 por-vencer", "Mantenimiento 2026-09-01 vencido", "Agua 2026-09-01 vencido"],
     );
-    assert.equal(saldoDeLaUnidad(recibos), 625.01);
-    assert.equal(estadoDeLaUnidad(recibos, "2026-10-20").texto, "Con deuda vencida");
-    assert.equal(estadoDeLaUnidad([recibo({})], "2026-10-01").texto, "Con deuda por vencer");
-    assert.equal(estadoDeLaUnidad([], "2026-10-01").texto, "Sin recibos");
+    assert.equal(estadoDeLaUnidad(recibos, 625.01, "2026-10-20").texto, "Con deuda vencida");
+    assert.equal(estadoDeLaUnidad([recibo({})], 525.01, "2026-10-01").texto, "Con deuda por vencer");
+    assert.equal(estadoDeLaUnidad([], 0, "2026-10-01").texto, "Sin recibos");
+  });
+
+  it("un recibo cubierto por pagos queda pagado y la unidad al día", () => {
+    const pagado = recibo({ pagado: 525.01, pendiente: 0 });
+    assert.deepEqual(
+      cargosDeLaUnidad([pagado], "2026-10-20").map((c) => c.estado),
+      ["pagado", "pagado"],
+    );
+    assert.deepEqual(estadoDeLaUnidad([pagado], 0, "2026-10-20"), { texto: "Al día", tono: "success" });
+    // Lo que queda a favor también deja la unidad al día.
+    assert.equal(estadoDeLaUnidad([recibo({ pendiente: 25 })], -10, "2026-10-20").texto, "Al día");
+  });
+
+  it("un recibo pagado en parte sigue debiendo", () => {
+    const parcial = recibo({ pagado: 500, pendiente: 25.01 });
+    assert.equal(estadoDeLaUnidad([parcial], 25.01, "2026-10-20").texto, "Con deuda vencida");
   });
 
   it("arma el recibo imprimible escapando el texto", () => {
