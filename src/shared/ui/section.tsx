@@ -6,6 +6,7 @@
  *   edificio es una tarjeta con su foto de portada (genérica por ahora), para
  *   reconocerlo de un vistazo, como en Inicio y en Edificios; elegirlo cambia
  *   también el selector de arriba.
+ * - Con un solo edificio no se pregunta: es ese.
  */
 import type { ReactNode } from "react";
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -21,6 +22,7 @@ export function ConEdificio({ titulo, children }: { titulo: string; children: (e
   const s = useStyles(makeStyles);
   const { edificio, edificios, elegirEdificio } = useContextoDeTrabajo();
   if (edificio) return <>{children(edificio.id)}</>;
+  if (edificios.length === 1) return <>{children(edificios[0].id)}</>;
 
   return (
     <ScrollView contentContainerStyle={s.pantalla}>
@@ -29,7 +31,7 @@ export function ConEdificio({ titulo, children }: { titulo: string; children: (e
         <EmptyState icon="building" title="Todavía no hay edificios" description="Registra uno en Edificios para empezar." />
       ) : (
         <>
-          <Text style={textStyle(t, "body", t.color.text.secondary)}>¿En qué edificio vas a trabajar?</Text>
+          <Text style={textStyle(t, "body", t.color.text.secondary)}>Elige un edificio.</Text>
           <CardGrid minItemWidth={240} maxColumns={4}>
             {edificios.map((e) => (
               <Card

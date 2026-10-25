@@ -9,7 +9,9 @@
  *   leen en el ancho de un teléfono.
  * - **El selector de edificio** dice siempre dónde se está: "Toda la cartera"
  *   o el nombre del edificio. Con un edificio elegido el control queda
- *   marcado aunque esté cerrado, porque lo que se ve es un recorte.
+ *   marcado aunque esté cerrado, porque lo que se ve es un recorte. El
+ *   residente lo ve solo si vive o es dueño en más de un edificio, y sin
+ *   hablar de cartera.
  */
 import { router, usePathname, type Href } from "expo-router";
 import { useState, type ReactNode } from "react";
@@ -58,9 +60,13 @@ const EN_LA_BARRA: Record<string, string[]> = {
 };
 const MAS = "mas";
 
-/** Las secciones que ve el rol, para el menú lateral, la barra del teléfono y su "Más". */
+/**
+ * Las secciones que ve el rol, para el menú lateral, la barra del teléfono y su "Más".
+ * El residente tiene cuatro: los tramos (Operación, Gestión) son de la administración y ahí solo estorban.
+ */
 function entradasDelRol(rol: string | undefined) {
-  const todas = ordenarPorTramo(seccionesDelRol(rol)).map((x) => ({ key: x.key, label: x.label, group: x.grupo, icon: x.icono }));
+  const conTramos = rol !== "residente";
+  const todas = ordenarPorTramo(seccionesDelRol(rol)).map((x) => ({ key: x.key, label: x.label, group: conTramos ? x.grupo : undefined, icon: x.icono }));
   const conMas = todas.length > 5;
   const enLaBarra = EN_LA_BARRA[rol ?? ""] ?? EN_LA_BARRA.otro;
   const barra = conMas
@@ -95,6 +101,8 @@ export function Marco({ children }: { children: ReactNode }) {
   const entradas = entradasDelRol(enCurso?.rol);
   const activa = seccionDeRuta(ruta)?.key;
   const correo = cuenta?.correo ?? "";
+  const residente = enCurso?.rol === "residente";
+  const conSelector = edificios.length > (residente ? 1 : 0);
 
   const selectorDeOrg =
     membresias.length > 1 && enCurso ? (
@@ -125,8 +133,8 @@ export function Marco({ children }: { children: ReactNode }) {
               </Text>
             </View>
           ) : null)}
-        {!angosto && edificios.length > 0 && enCurso?.rol !== "residente" ? <View style={s.separador} /> : null}
-        {edificios.length > 0 && enCurso?.rol !== "residente" ? (
+        {!angosto && conSelector ? <View style={s.separador} /> : null}
+        {conSelector ? (
           <View style={angosto ? s.selectorAngosto : s.selector}>
             <Select
               size="sm"
@@ -142,7 +150,7 @@ export function Marco({ children }: { children: ReactNode }) {
               placeholder="Edificio"
               accessibilityLabel="Edificio"
               options={[
-                { id: TODA_LA_CARTERA, label: "Toda la cartera" },
+                { id: TODA_LA_CARTERA, label: residente ? "Tus edificios" : "Toda la cartera" },
                 ...edificios.map((e) => ({ id: e.id, label: e.nombre })),
               ]}
             />
