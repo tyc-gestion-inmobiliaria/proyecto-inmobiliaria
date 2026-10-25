@@ -279,11 +279,16 @@ function ResumenDelMes({ filas, style }: { filas: FilaCartera[]; style?: StylePr
   );
 }
 
-/** Lo que hay que hacer, una fila por tarea, cada una con su destino. */
-function PorHacer({ tareas, editable, conEdificio, style }: { tareas: Tarea[]; editable: boolean; conEdificio: boolean; style?: StyleProp<ViewStyle> }) {
+/**
+ * Lo que hay que hacer, una fila por tarea, cada una con su destino. Solo va
+ * lo que quien mira puede resolver: al personal no le sirve una fila de
+ * "Registrar cuenta bancaria" que no abre nada.
+ */
+function PorHacer({ tareas: todas, editable, conEdificio, style }: { tareas: Tarea[]; editable: boolean; conEdificio: boolean; style?: StyleProp<ViewStyle> }) {
   const t = useTheme();
   const s = useStyles(makeStyles);
   const { elegirEdificio } = useContextoDeTrabajo();
+  const tareas = todas.filter((x) => irALaTarea(x, editable, elegirEdificio) !== null);
   return (
     // La tabla ya es la tarjeta: dentro de otra, en un teléfono, el texto se queda sin ancho.
     <View style={[s.columna, style]}>
@@ -312,7 +317,7 @@ function PorHacer({ tareas, editable, conEdificio, style }: { tareas: Tarea[]; e
                   <Text style={[textStyle(t, "body"), s.fuerte]}>{tarea.paso}</Text>
                   <Text style={textStyle(t, "bodySmall", t.color.text.secondary)}>{detalle}</Text>
                 </TdView>
-                {ir ? <FlechaDeFila /> : null}
+                <FlechaDeFila />
               </TableRow>
             );
           })}
@@ -405,9 +410,11 @@ function DelEdificio({ fila, editable }: { fila: FilaCartera; editable: boolean 
   const { elegirEdificio } = useContextoDeTrabajo();
   const estado = estadoDelEdificio(fila);
   const tareas = tareasDeLaCartera([fila]);
-  const siguiente = tareas[0];
+  // El siguiente paso es el primero que quien mira puede resolver.
+  const siguiente = tareas.find((x) => irALaTarea(x, editable, elegirEdificio) !== null);
   const ir = siguiente ? irALaTarea(siguiente, editable, elegirEdificio) : null;
-  const deLosPagos = tareas.filter((x) => x.tipo === "pagos");
+  // Si validar pagos ya es el botón de arriba, no se repite como fila.
+  const deLosPagos = tareas.filter((x) => x.tipo === "pagos" && x !== siguiente);
   const paso = fila.cierre?.paso ?? null;
 
   return (
