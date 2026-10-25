@@ -96,6 +96,13 @@ function irALaTarea(tarea: Tarea, editable: boolean, elegirEdificio: (id: string
   const id = tarea.edificioId;
   switch (tarea.tipo) {
     case "cierre":
+      // El personal no lleva el cierre: las lecturas las carga en su recorrido.
+      if (!editable && tarea.pasoDelCierre === 1) {
+        return () => {
+          elegirEdificio(id);
+          router.push("/readings");
+        };
+      }
       return () => irAlCierre(id, tarea.pasoDelCierre ?? null);
     case "pagos":
       // La cola de pagos se recorta con el selector de arriba: se elige el edificio y se va a ella.
