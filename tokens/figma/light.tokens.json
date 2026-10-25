@@ -408,6 +408,20 @@
       "axis": {
         "$type": "color",
         "$value": "#cfcfd5"
+      },
+      "status": {
+        "done": {
+          "$type": "color",
+          "$value": "#18744a"
+        },
+        "progress": {
+          "$type": "color",
+          "$value": "#2c5b97"
+        },
+        "attention": {
+          "$type": "color",
+          "$value": "#955600"
+        }
       }
     }
   },
