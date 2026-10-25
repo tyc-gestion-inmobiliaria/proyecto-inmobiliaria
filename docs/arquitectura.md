@@ -147,16 +147,16 @@ Figura 2. Contenedores del sistema.
 Cada módulo sigue las capas que ya se usaron en Ysique: el dominio no depende de la pantalla ni de Supabase.
 
 ```
-src/modulos/<modulo>/
-  dominio/          reglas puras y tipos (sin React, sin Supabase), con pruebas unitarias
-  aplicacion/       casos de uso y puertos (interfaces de repositorio)
-  infraestructura/  adaptadores: Supabase, y uno falso para pruebas y demo
+src/modules/<module>/
+  domain/           reglas puras y tipos (sin React, sin Supabase), con pruebas unitarias
+  application/      casos de uso y puertos (interfaces de repositorio)
+  infrastructure/   adaptadores: Supabase, y uno falso para pruebas y demo
   ui/               pantallas y componentes del módulo
 ```
 
-Módulos iniciales, uno por flujo de la Visión: `organizaciones` (inquilinos, usuarios, roles), `padron` (edificios, unidades, personas, espacios, medidores), `cobranza` (cierre, recibos, pagos, moras), `cartera` (inicio), `auditoria`.
+Módulos iniciales, uno por flujo de la Visión: `organizations` (inquilinos, usuarios, roles), `registry` (edificios, unidades, personas, espacios, medidores), `billing` (cierre, recibos, pagos, moras), `portfolio` (inicio), `audit`.
 
-Con el Sprint 3 los pagos salen de `cobranza` a su propio contexto, `pagos`, y se suman `residente` (portal del residente), `campo` (el personal en el edificio) y `notificaciones` (correo). El mapa de contextos, sus agregados y qué puede importar cada uno está en la skill `ddd-modulos` (`.claude/skills/ddd-modulos/SKILL.md`).
+Con el Sprint 3 los pagos salen de `billing` a su propio contexto, `payments`, y se suman `resident` (portal del residente), `field` (el personal en el edificio) y `notifications` (correo). El mapa de contextos, sus agregados y qué puede importar cada uno está en la skill `ddd-modules` (`.claude/skills/ddd-modules/SKILL.md`).
 
 ## 6. Vista de ejecución
 
@@ -245,7 +245,7 @@ Las apps usan `runtimeVersion` con política `fingerprint`: EAS Update solo entr
   ```
 
   Las políticas de escritura agregan el rol: `private.tiene_rol(org_id, 'administrador')`.
-- **Alcance por rol dentro de la administradora** (supuesto de PB-04): el administrador lee y escribe todo; el personal lee todo y no escribe; el residente ve solo lo suyo. Por eso, desde que hay datos personales en la base, la lectura del padrón pide `org_id in (select private.orgs_del_equipo())` (administrador o personal) **o** que la fila sea del residente: `private.mis_personas()`, `private.mis_unidades()` y `private.edificios_de_mis_unidades()`, que parten de `persona.usuario_id` y respetan la membresía activa. `organizacion` sigue con `private.mis_orgs()`. Las pruebas están en `supabase/tests/04_alcance_por_rol.sql`.
+- **Alcance por rol dentro de la administradora** (supuesto de PB-04): el administrador lee y escribe todo; el personal lee todo y no escribe; el residente ve solo lo suyo. Por eso, desde que hay datos personales en la base, la lectura del padrón pide `org_id in (select private.orgs_del_equipo())` (administrador o personal) **o** que la fila sea del residente: `private.mis_personas()`, `private.mis_unidades()` y `private.edificios_de_mis_unidades()`, que parten de `persona.usuario_id` y respetan la membresía activa. `organizacion` sigue con `private.mis_orgs()`. Las pruebas están en `supabase/tests/04_role_scope.sql`.
 - **Integridad entre inquilinos:** las claves foráneas incluyen `org_id` (`foreign key (org_id, edificio_id) references edificio (org_id, id)`), así una unidad no puede colgar de un edificio de otra administradora aunque alguien lo intente con la clave de servicio.
 - **Acceso por edificio**, si T&C lo confirma (pregunta P4 de la Visión): una tabla `acceso_edificio` y una segunda función `private.mis_edificios()`, con el mismo patrón.
 - **Storage:** buckets privados; la ruta empieza por `org_id` y la política compara `(storage.foldername(name))[1]::uuid` con `private.mis_orgs()`. Los recibos se comparten con enlaces firmados de vida corta.
@@ -262,7 +262,7 @@ Montos en `numeric(12,2)`, moneda soles. El prorrateo, las moras y los totales d
 
 ### 8.4 Auditoría
 
-Trigger genérico en las tablas de negocio que escribe en `auditoria` (tabla, fila, `org_id`, usuario, acción, antes, después, fecha). La tabla no admite `update` ni `delete` para nadie. Es una de las fortalezas del portal actual.
+Trigger genérico en las tablas de negocio que escribe en `audit` (tabla, fila, `org_id`, usuario, acción, antes, después, fecha). La tabla no admite `update` ni `delete` para nadie. Es una de las fortalezas del portal actual.
 
 ### 8.5 Accesibilidad y diseño
 
@@ -321,7 +321,7 @@ Validación en el campo, con mensaje junto a él (H9). Las reglas se comprueban 
 ```
 /
   src/app/               rutas de Expo Router (solo rutas)
-  src/modulos/           un módulo por flujo (dominio, aplicacion, infraestructura, ui)
+  src/modules/           un módulo por flujo (domain, application, infrastructure, ui)
   src/ui/                el kit de componentes (de JTM_templates)
   supabase/
     migrations/          SQL versionado

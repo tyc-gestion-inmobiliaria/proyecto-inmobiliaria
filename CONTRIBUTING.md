@@ -111,5 +111,5 @@ Una historia se cierra cuando:
 3. RLS activada y políticas por operación (lectura, alta, edición y baja)
    con `private.orgs_del_equipo()`, el alcance del residente y
    `private.tiene_rol()`.
-4. La tabla en la lista de `supabase/tests/01_rls_activada.sql` y su caso en
-   `supabase/tests/02_aislamiento.sql`. Sin eso el CI falla.
+4. La tabla en la lista de `supabase/tests/01_rls_enabled.sql` y su caso en
+   `supabase/tests/02_isolation.sql`. Sin eso el CI falla.

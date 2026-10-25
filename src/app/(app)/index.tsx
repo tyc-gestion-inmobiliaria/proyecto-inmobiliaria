@@ -1,13 +1,13 @@
-import { estadoCartera } from "@/modulos/cartera/infraestructura/estado-cartera";
-import { PantallaInicio } from "@/modulos/cartera/ui/pantalla-inicio";
-import { cobranza } from "@/modulos/cobranza/infraestructura/cobranza";
-import { descargar } from "@/modulos/cobranza/ui/recibos";
-import { useOrganizacion } from "@/modulos/organizaciones/ui/organizacion";
-import { edificios } from "@/modulos/padron/infraestructura/padron";
-import { pagos } from "@/modulos/pagos/infraestructura/pagos";
-import { ReportarPago } from "@/modulos/pagos/ui/reportar-pago";
-import { residente } from "@/modulos/residente/infraestructura/residente";
-import { PantallaMiUnidad, type PropsDeReportar } from "@/modulos/residente/ui/pantalla-mi-unidad";
+import { estadoCartera } from "@/modules/portfolio/infrastructure/portfolio-status";
+import { PantallaInicio } from "@/modules/portfolio/ui/home-screen";
+import { cobranza } from "@/modules/billing/infrastructure/billing";
+import { descargar } from "@/modules/billing/ui/receipts";
+import { useOrganizacion } from "@/modules/organizations/ui/organization";
+import { edificios } from "@/modules/registry/infrastructure/registry";
+import { pagos } from "@/modules/payments/infrastructure/payments";
+import { ReportarPago } from "@/modules/payments/ui/report-payment";
+import { residente } from "@/modules/resident/infrastructure/resident";
+import { PantallaMiUnidad, type PropsDeReportar } from "@/modules/resident/ui/my-unit-screen";
 
 // La ruta junta los módulos: el residente ve su unidad (cobranza y pagos);
 // el equipo, la cartera.

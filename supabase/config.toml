@@ -422,13 +422,13 @@ enabled = true
 # Invitar a una administradora (PB-23). La función comprueba la sesión ella
 # misma (`auth.getUser`), así el preflight CORS del navegador, que no lleva
 # token, no se corta en la puerta.
-[functions.invitar]
+[functions.invite]
 enabled = true
 verify_jwt = false
-import_map = "./functions/invitar/deno.json"
+import_map = "./functions/invite/deno.json"
 
-[functions.enviar-correos]
+[functions.send-emails]
 enabled = true
 # La llama el programador de tareas con la clave de servicio, no una persona con sesión.
 verify_jwt = false
-import_map = "./functions/enviar-correos/deno.json"
+import_map = "./functions/send-emails/deno.json"
