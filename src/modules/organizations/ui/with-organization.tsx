@@ -4,7 +4,7 @@
  * cuenta no está en ninguna administradora. Con una en curso, pinta
  * `children` con ella.
  */
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
 import { ANCHO_DE_PANTALLA } from "@/shared/ui/layout";
@@ -45,9 +45,19 @@ export function ConOrganizacion({ children }: { children: (enCurso: Membresia) =
   return <>{children(enCurso)}</>;
 }
 
+/** Lo que tarda menos que esto no muestra la rueda: aparecer y desaparecer enseguida se lee como un parpadeo. */
+const ESPERA_ANTES_DE_LA_RUEDA = 300;
+
 export function Cargando() {
   const t = useTheme();
   const s = useStyles(makeStyles);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const espera = setTimeout(() => setVisible(true), ESPERA_ANTES_DE_LA_RUEDA);
+    return () => clearTimeout(espera);
+  }, []);
+  // El hueco se reserva igual, para que la pantalla no salte cuando aparece.
+  if (!visible) return <View style={s.cargando} />;
   return (
     <View style={s.cargando} accessibilityLiveRegion="polite">
       <ActivityIndicator color={t.color.text.secondary} />
