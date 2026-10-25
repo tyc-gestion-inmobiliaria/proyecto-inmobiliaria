@@ -17,7 +17,7 @@ import { useCarga } from "@/shared/ui/use-load";
 import { textoDeFecha } from "@/shared/format";
 import { Cargando } from "@/modules/organizations/ui/with-organization";
 import { ANCHO_DE_PANTALLA } from "@/shared/ui/layout";
-import { Badge, Button, Card, Dialog, EmptyState, PageHeader, Tabs, TextField, textStyle, useStyles, useTheme, type Tema } from "@/ui";
+import { Badge, Button, Card, CardGrid, Dialog, EmptyState, PageHeader, Tabs, TextField, textStyle, useStyles, useTheme, type Tema } from "@/ui";
 
 import type { ComunicadosPuerto } from "../application/ports";
 import {
@@ -80,7 +80,7 @@ export function PantallaComunicados({ comunicados, edificioId }: { comunicados: 
       {carga.estado === "listo" && visibles.length === 0 ? (
         <EmptyState icon="send" title={pestana === "publicado" ? "Todavía no hay comunicados publicados" : "No hay borradores"} />
       ) : null}
-      <View style={s.lista}>
+      <CardGrid minItemWidth={480}>
         {visibles.map((c) => (
           <TarjetaDeComunicado
             key={c.id}
@@ -88,7 +88,7 @@ export function PantallaComunicados({ comunicados, edificioId }: { comunicados: 
             onPress={() => setAbierto(c.estado === "borrador" ? { modo: "editar", comunicado: c } : { modo: "leer", comunicado: c })}
           />
         ))}
-      </View>
+      </CardGrid>
       {abierto?.modo === "leer" ? <Lectura comunicado={abierto.comunicado} onCerrar={() => setAbierto(null)} /> : null}
       {abierto?.modo === "editar" ? (
         <Editor
@@ -232,8 +232,7 @@ const makeStyles = (t: Tema) =>
   StyleSheet.create({
     pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
     // Dos comunicados por fila en pantalla ancha: cada uno queda con un ancho cómodo de leer.
-    lista: { flexDirection: "row", flexWrap: "wrap", alignItems: "flex-start", gap: t.space.md },
-    tarjeta: { flexGrow: 1, flexShrink: 1, flexBasis: 480, minWidth: 0, gap: t.space.sm },
+    tarjeta: { flexGrow: 1, gap: t.space.sm },
     cabeza: { flexDirection: "row", alignItems: "flex-start", gap: t.space.md },
     titulo: { flex: 1, minWidth: 0 },
     meta: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.sm },

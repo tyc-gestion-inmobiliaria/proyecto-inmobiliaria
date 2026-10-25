@@ -132,6 +132,7 @@ function DelMes({ resumen: r }: { resumen: ResumenDelMes }) {
           <ChoiceChips
             accessibilityLabel="Filtrar movimientos"
             clearable
+            allLabel="Todos"
             options={[
               { id: "ingreso", label: "Ingresos" },
               { id: "egreso", label: "Egresos" },

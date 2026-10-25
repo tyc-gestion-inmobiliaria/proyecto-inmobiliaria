@@ -32,6 +32,7 @@ import {
   Badge,
   Button,
   Card,
+  CardGrid,
   DataTable,
   EmptyState,
   Icon,
@@ -220,11 +221,11 @@ function DeLaCartera({ filas, editable, abrir }: { filas: FilaCartera[]; editabl
       </View>
       <View style={s.columna}>
         <SectionTitle>Edificios</SectionTitle>
-        <View style={s.rejilla}>
+        <CardGrid minItemWidth={280} maxColumns={4}>
           {filas.map((f) => (
             <TarjetaDeEdificio key={f.id} fila={f} onPress={() => abrir(f.id)} />
           ))}
-        </View>
+        </CardGrid>
       </View>
     </>
   );
@@ -473,9 +474,8 @@ const makeStyles = (t: Tema) =>
     apilada: { gap: t.space.xxs },
     fuerte: { fontWeight: "600" },
     iconoTarea: { width: 36, height: 36, borderRadius: t.radius.sm, alignItems: "center", justifyContent: "center" },
-    rejilla: { flexDirection: "row", flexWrap: "wrap", gap: t.space.md },
     // La foto llega al borde de la tarjeta: sin relleno ni separación arriba.
-    edificio: { flexGrow: 1, flexShrink: 1, flexBasis: 280, padding: 0, gap: 0, overflow: "hidden" },
+    edificio: { flexGrow: 1, padding: 0, gap: 0, overflow: "hidden" },
     portada: { height: 132 },
     foto: { width: "100%", height: "100%" },
     insigniaSobreFoto: { position: "absolute", top: t.space.md, left: t.space.md },

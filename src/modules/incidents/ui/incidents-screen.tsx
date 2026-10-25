@@ -20,7 +20,7 @@ import { useCarga } from "@/shared/ui/use-load";
 import { hoyEnLima, textoDeHace } from "@/shared/format";
 import { Cargando } from "@/modules/organizations/ui/with-organization";
 import { ANCHO_DE_PANTALLA } from "@/shared/ui/layout";
-import { Badge, Button, Card, Dialog, EmptyState, PageHeader, Select, Tabs, TextField, textStyle, useStyles, useTheme, type StatusTone, type Tema } from "@/ui";
+import { Badge, Button, Card, CardGrid, Dialog, EmptyState, PageHeader, Select, Tabs, TextField, textStyle, useStyles, useTheme, type StatusTone, type Tema } from "@/ui";
 
 import type { IncidenciasPuerto, UnidadCorta } from "../application/ports";
 import {
@@ -110,11 +110,11 @@ export function PantallaIncidencias({ incidencias, edificioId }: { incidencias: 
       ) : null}
       {carga.estado === "listo" && visibles.length === 0 ? <EmptyState icon="check-circle" title={VACIO[estado]} /> : null}
       {visibles.length > 0 ? (
-        <View style={s.lista}>
+        <CardGrid minItemWidth={480} gap="sm">
           {visibles.map((i) => (
             <FilaDeIncidencia key={i.id} incidencia={i} hoy={hoy} onAccion={(a) => actuar(i, a)} />
           ))}
-        </View>
+        </CardGrid>
       ) : null}
       {registrando ? (
         <Registro
@@ -268,9 +268,8 @@ function Registro({
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
     pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
-    // En pantalla ancha, dos incidencias por fila; en el teléfono, una.
-    lista: { flexDirection: "row", flexWrap: "wrap", alignItems: "stretch", gap: t.space.sm },
-    fila: { flexGrow: 1, flexShrink: 1, flexBasis: 480, minWidth: 0, flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.md },
+    // En pantalla ancha, dos incidencias por fila (`CardGrid`); en el teléfono, una.
+    fila: { flexGrow: 1, flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.md },
     texto: { flexGrow: 1, flexShrink: 1, flexBasis: 260, gap: t.space.xxs },
     cabeza: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.sm },
     titulo: { fontWeight: "600", flexShrink: 1 },

@@ -12,7 +12,7 @@ import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { useContextoDeTrabajo } from "@/shared/context/context-provider";
 import { ANCHO_DE_PANTALLA } from "@/shared/ui/layout";
-import { Card, EmptyState, Icon, ScreenTitle, textStyle, useStyles, useTheme, type Tema } from "@/ui";
+import { Card, CardGrid, EmptyState, Icon, ScreenTitle, textStyle, useStyles, useTheme, type Tema } from "@/ui";
 
 import { fotoDeEdificio } from "./building-photo";
 
@@ -30,7 +30,7 @@ export function ConEdificio({ titulo, children }: { titulo: string; children: (e
       ) : (
         <>
           <Text style={textStyle(t, "body", t.color.text.secondary)}>¿En qué edificio vas a trabajar?</Text>
-          <View style={s.rejilla}>
+          <CardGrid minItemWidth={240} maxColumns={4}>
             {edificios.map((e) => (
               <Card
                 key={e.id}
@@ -49,7 +49,7 @@ export function ConEdificio({ titulo, children }: { titulo: string; children: (e
                 </View>
               </Card>
             ))}
-          </View>
+          </CardGrid>
         </>
       )}
     </ScrollView>
@@ -59,8 +59,7 @@ export function ConEdificio({ titulo, children }: { titulo: string; children: (e
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
     pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
-    rejilla: { flexDirection: "row", flexWrap: "wrap", gap: t.space.md },
-    tarjeta: { flexGrow: 1, flexShrink: 1, flexBasis: 220, maxWidth: 340, gap: t.space.md },
+    tarjeta: { flexGrow: 1, gap: t.space.md },
     foto: { width: "100%", height: 120, borderRadius: t.radius.sm },
     pie: { flexDirection: "row", alignItems: "center", gap: t.space.sm, paddingHorizontal: t.space.xs },
     nombre: { flex: 1 },

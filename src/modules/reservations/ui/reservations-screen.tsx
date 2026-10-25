@@ -117,6 +117,7 @@ export function PantallaReservas({ reservas, edificioId }: { reservas: ReservasP
         <ChoiceChips
           accessibilityLabel="Filtrar por área"
           clearable
+          allLabel="Todas las áreas"
           options={datos.areas.map((a) => ({ id: a.id, label: a.nombre }))}
           value={area}
           onChange={setArea}

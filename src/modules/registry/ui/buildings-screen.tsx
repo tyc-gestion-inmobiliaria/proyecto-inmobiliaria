@@ -23,7 +23,7 @@ import { fotoDeEdificio } from "@/shared/ui/building-photo";
 import { useCarga } from "@/shared/ui/use-load";
 import { Cargando, ConOrganizacion } from "@/modules/organizations/ui/with-organization";
 import { ANCHO_DE_PANTALLA } from "@/shared/ui/layout";
-import { Badge, Button, Card, EmptyState, Icon, PageHeader, StatusDot, TextField, textStyle, useStyles, useTheme, type Tema } from "@/ui";
+import { Badge, Button, Card, CardGrid, EmptyState, Icon, PageHeader, StatusDot, TextField, textStyle, useStyles, useTheme, type Tema } from "@/ui";
 
 import type { PuertosDelPadron } from "../application/ports";
 import type { CuentaBancaria } from "../domain/bank-account";
@@ -125,11 +125,11 @@ function ListaEdificios({ orgId, editable, padron }: { orgId: string; editable: 
           {visibles.length === 0 ? (
             <EmptyState icon="building" title="Ningún edificio coincide con la búsqueda" />
           ) : (
-            <View style={s.rejilla}>
+            <CardGrid minItemWidth={320} maxColumns={3}>
               {visibles.map((f) => (
                 <Tarjeta key={f.edificio.id} ficha={f} editable={editable} />
               ))}
-            </View>
+            </CardGrid>
           )}
         </>
       )}
@@ -249,9 +249,8 @@ const makeStyles = (t: Tema) =>
   StyleSheet.create({
     pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
     busqueda: { maxWidth: 420 },
-    rejilla: { flexDirection: "row", flexWrap: "wrap", gap: t.space.lg },
     // La foto llega al borde de la tarjeta.
-    tarjeta: { flexGrow: 1, flexShrink: 1, flexBasis: 320, maxWidth: 560, padding: 0, gap: 0, overflow: "hidden" },
+    tarjeta: { flexGrow: 1, padding: 0, gap: 0, overflow: "hidden" },
     portada: { height: 150 },
     foto: { width: "100%", height: "100%" },
     insignia: { position: "absolute", top: t.space.md, left: t.space.md },
