@@ -10,11 +10,15 @@
  *   costado.
  * - Los números van alineados a la derecha y con cifras tabulares; la fila
  *   de totales va al pie, en negrita.
+ * - "Descargar CSV" es el primario: baja la tabla que se está viendo para
+ *   abrirla en una hoja de cálculo o mandarla a la junta. Solo aparece cuando
+ *   hay tabla.
  */
 import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
 import { useContextoDeTrabajo } from "@/shared/context/context-provider";
+import { LineaDeAviso } from "@/shared/ui/action-notice";
 import { useCarga } from "@/shared/ui/use-load";
 import { textoDeFecha, textoDeSoles } from "@/shared/format";
 import { Cargando } from "@/modules/organizations/ui/with-organization";
@@ -40,7 +44,8 @@ import {
 } from "@/ui";
 
 import type { ReportesPuerto } from "../application/ports";
-import { REPORTES, type Celda, type Columna, type ReporteId, type TablaDeReporte } from "../domain/reports";
+import { csvDelReporte, REPORTES, type Celda, type Columna, type ReporteId, type TablaDeReporte } from "../domain/reports";
+import { descargarCsv } from "./download-csv";
 
 const ANCHO_ANGOSTO = 720;
 const ANCHO_DOS_COLUMNAS = 960;
@@ -77,10 +82,24 @@ export function PantallaReportes({ reportes }: { reportes: ReportesPuerto }) {
   const { carga, reintentar } = useCarga(leer);
   const reporte = REPORTES.find((r) => r.id === elegido) ?? REPORTES[0];
   const dosColumnas = ancho >= ANCHO_DOS_COLUMNAS;
+  const titulo = edificio ? `${reporte.nombre} · ${edificio.nombre}` : reporte.nombre;
+  const [falloAlBajar, setFalloAlBajar] = useState(false);
+
+  async function bajar(tabla: TablaDeReporte) {
+    setFalloAlBajar(!(await descargarCsv(csvDelReporte(tabla), titulo)));
+  }
 
   return (
     <ScrollView contentContainerStyle={s.pantalla}>
-      <PageHeader title="Reportes" />
+      <PageHeader
+        title="Reportes"
+        actions={
+          carga.estado === "listo" && carga.valor.filas.length > 0 ? (
+            <Button icon="download" label="Descargar CSV" onPress={() => bajar(carga.valor)} testID="reportes-descargar" />
+          ) : undefined
+        }
+      />
+      {falloAlBajar ? <LineaDeAviso aviso={{ tono: "error", texto: "No se pudo descargar el reporte. Vuelve a intentarlo." }} /> : null}
       <View style={dosColumnas ? s.dosColumnas : s.columna}>
         <View style={dosColumnas ? s.colLista : undefined}>
           <DataTable minWidth={0}>
@@ -97,7 +116,7 @@ export function PantallaReportes({ reportes }: { reportes: ReportesPuerto }) {
           </DataTable>
         </View>
         <View style={[s.columna, dosColumnas ? s.colTabla : undefined]}>
-          <SectionTitle>{edificio ? `${reporte.nombre} · ${edificio.nombre}` : reporte.nombre}</SectionTitle>
+          <SectionTitle>{titulo}</SectionTitle>
           {carga.estado === "cargando" ? <Cargando /> : null}
           {carga.estado === "error" ? (
             <EmptyState

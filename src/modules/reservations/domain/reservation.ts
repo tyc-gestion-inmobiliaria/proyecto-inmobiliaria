@@ -12,6 +12,10 @@
  *   (`ANTICIPACION_DIAS`). Sin confirmar.
  * - Un turno de un área no se reserva dos veces el mismo día (las
  *   canceladas no cuentan).
+ * - Supuesto: el residente ve solo las reservas de sus unidades (las de los
+ *   vecinos aparecen como turno "ocupado", sin decir de quién), reserva
+ *   para sus unidades y puede cancelar las suyas; confirmar es de la
+ *   administración. Sin confirmar con el cliente.
  */
 
 export const ESTADOS = ["pendiente", "confirmada", "cancelada"] as const;
@@ -59,7 +63,8 @@ export interface Reserva {
 
 export type AccionDeReserva = "confirmar" | "cancelar";
 
-export function accionesDeLaReserva(estado: EstadoDeReserva): AccionDeReserva[] {
+export function accionesDeLaReserva(estado: EstadoDeReserva, residente = false): AccionDeReserva[] {
+  if (residente) return estado === "cancelada" ? [] : ["cancelar"];
   if (estado === "pendiente") return ["confirmar", "cancelar"];
   if (estado === "confirmada") return ["cancelar"];
   return [];
@@ -129,4 +134,9 @@ export function validarReserva(d: DatosDeReserva, ctx: ContextoDeReserva): Error
   else if (d.areaId && d.fecha && turnosOcupados(ctx.reservas, d.areaId, d.fecha).has(d.turno)) e.turno = "Ese turno ya está reservado.";
   for (const k of Object.keys(e) as (keyof ErroresDeReserva)[]) if (!e[k]) delete e[k];
   return e;
+}
+
+/** Lo que ve quien mira: todo, para el equipo (`null`); solo lo de sus unidades, para el residente. */
+export function reservasVisibles(lista: readonly Reserva[], unidadesPropias: ReadonlySet<string> | null): Reserva[] {
+  return unidadesPropias ? lista.filter((r) => unidadesPropias.has(r.unidadId)) : [...lista];
 }

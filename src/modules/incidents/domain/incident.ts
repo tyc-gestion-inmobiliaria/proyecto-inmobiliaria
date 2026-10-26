@@ -8,6 +8,9 @@
  * - Supuesto: tres prioridades (alta, media, baja); "alta" es lo que no
  *   puede esperar al día siguiente (agua, luz, ascensor). Sin confirmar.
  * - La cola va por prioridad y, dentro de la misma, la más antigua primero.
+ * - Supuesto: el residente ve las incidencias de sus unidades y las de las
+ *   áreas comunes de su edificio, y registra las suyas; cambiar el estado es
+ *   del equipo. Sin confirmar con el cliente.
  */
 
 export const ESTADOS = ["abierta", "en_curso", "resuelta"] as const;
@@ -44,7 +47,8 @@ const PESO: Record<Prioridad, number> = { alta: 0, media: 1, baja: 2 };
 
 export type AccionDeIncidencia = "empezar" | "resolver" | "reabrir";
 
-export function accionesDeLaIncidencia(estado: EstadoDeIncidencia): AccionDeIncidencia[] {
+export function accionesDeLaIncidencia(estado: EstadoDeIncidencia, residente = false): AccionDeIncidencia[] {
+  if (residente) return [];
   switch (estado) {
     case "abierta":
       return ["empezar", "resolver"];
@@ -97,4 +101,9 @@ export function validarIncidencia(d: DatosDeIncidencia): ErroresDeIncidencia {
   if (d.unidadId === undefined) e.unidadId = "Elige dónde pasó.";
   if (!d.prioridad) e.prioridad = "Elige la prioridad.";
   return e;
+}
+
+/** Lo que ve quien mira: todo, para el equipo (`null`); sus unidades y las áreas comunes, para el residente. */
+export function incidenciasVisibles(lista: readonly Incidencia[], unidadesPropias: ReadonlySet<string> | null): Incidencia[] {
+  return unidadesPropias ? lista.filter((i) => i.unidadId === null || unidadesPropias.has(i.unidadId)) : [...lista];
 }

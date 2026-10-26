@@ -33,6 +33,13 @@ const estadoDeMaqueta: EstadoDeLaCarteraPuerto = {
     const cierres = mundo.cierres.filter((c) => c.orgId === orgId && c.periodo === periodo);
     return demora(new Map(cierres.map((c): [string, CierreDelMes] => [c.edificioId, { estado: c.estado, paso: c.paso }])));
   },
+  pagosPorValidar(orgId) {
+    const porEdificio = new Map<string, number>();
+    for (const p of mundo.pagos.filter((x) => x.orgId === orgId && x.estado === "por_validar")) {
+      porEdificio.set(p.edificioId, (porEdificio.get(p.edificioId) ?? 0) + 1);
+    }
+    return demora(porEdificio);
+  },
 };
 
 export const estadoCartera: EstadoDeLaCarteraPuerto = EN_MAQUETA ? estadoDeMaqueta : estadoCarteraSupabase;

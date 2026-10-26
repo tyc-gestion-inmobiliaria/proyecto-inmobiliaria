@@ -42,6 +42,7 @@ import {
   textStyle,
   useStyles,
   useTheme,
+  type PageHeaderProps,
   type StatusTone,
   type Tema,
 } from "@/ui";
@@ -152,6 +153,8 @@ function Contenido({ orgId, editable, padron, edificioId, unidadId, modo = "fich
   }
 
   const { unidades, vinculos, personas } = carga.valor;
+  const nombreDelEdificio = carga.valor.edificio?.nombre ?? "Unidades";
+  const aEdificios = [{ label: "Edificios", onPress: () => router.navigate("/buildings") }];
 
   if (unidad && (modo === "ficha" || !editable)) {
     const ficha = (cuenta: CuentaDeLaUnidad) => (
@@ -160,12 +163,12 @@ function Contenido({ orgId, editable, padron, edificioId, unidadId, modo = "fich
         edificioId={edificioId}
         editable={editable}
         cuenta={cuenta}
-        volver={volver}
+        volver={{ label: nombreDelEdificio, onPress: volver, trail: aEdificios }}
         personas={<Personas edificioId={edificioId} unidad={unidad} vinculos={vinculos} personas={personas} editable={editable} />}
       />
     );
     return (
-      <ScrollView contentContainerStyle={[s.pantalla, s.pantallaFicha]}>
+      <ScrollView contentContainerStyle={s.pantalla}>
         {Cuenta ? (
           <Cuenta orgId={orgId} unidadId={unidad.id}>
             {ficha}
@@ -182,7 +185,15 @@ function Contenido({ orgId, editable, padron, edificioId, unidadId, modo = "fich
       <ScrollView contentContainerStyle={s.pantalla} keyboardShouldPersistTaps="handled">
         <PageHeader
           title={unidad ? `Editar unidad ${unidad.numero}` : "Registrar unidad"}
-          back={unidad ? { label: `Unidad ${unidad.numero}`, onPress: () => irALaFicha(edificioId, unidad.id) } : { label: "Unidades", onPress: volver }}
+          back={
+            unidad
+              ? {
+                  label: `Unidad ${unidad.numero}`,
+                  onPress: () => irALaFicha(edificioId, unidad.id),
+                  trail: [...aEdificios, { label: nombreDelEdificio, onPress: volver }],
+                }
+              : { label: nombreDelEdificio, onPress: volver, trail: aEdificios }
+          }
         />
         <Formulario padron={padron} orgId={orgId} edificioId={edificioId} unidad={unidad} unidades={unidades} />
       </ScrollView>
@@ -209,7 +220,7 @@ function FichaConPestanas({
   editable: boolean;
   cuenta: CuentaDeLaUnidad;
   personas: ReactNode;
-  volver: () => void;
+  volver: NonNullable<PageHeaderProps["back"]>;
 }) {
   const s = useStyles(makeStyles);
   // En una ventana ancha la ficha va en dos columnas: los datos y la cuenta a un lado, las personas al otro.
@@ -221,7 +232,7 @@ function FichaConPestanas({
     <>
       <PageHeader
         title={`Unidad ${unidad.numero}`}
-        back={{ label: "Unidades", onPress: volver }}
+        back={volver}
         status={cuenta.estado ? <Badge tone={cuenta.estado.tono} label={cuenta.estado.texto} /> : null}
         actions={
           <>
@@ -495,7 +506,6 @@ const makeStyles = (t: Tema) =>
     flex: { flex: 1 },
     pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
     tarjeta: { width: "100%", maxWidth: 640, gap: t.space.lg },
-    pantallaFicha: { maxWidth: 1200 },
     bloque: { width: "100%", gap: t.space.md },
     columnas: { flexDirection: "row", alignItems: "flex-start", gap: t.space.lg },
     columnaAncha: { flex: 1, minWidth: 0, gap: t.space.lg },

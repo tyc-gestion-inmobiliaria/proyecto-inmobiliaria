@@ -10,6 +10,9 @@
  *   reabrir. Hecha una, sale de la pestaña y arriba queda dicho qué pasó.
  * - "Registrar incidencia" es el único botón primario de la vista.
  * - En una ventana angosta las acciones bajan debajo del texto.
+ * - Con `propias` (el residente), se ven las de sus unidades y las de las
+ *   áreas comunes, sin acciones; registra en una de sus unidades o en un
+ *   área común.
  */
 import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
@@ -20,13 +23,14 @@ import { useCarga } from "@/shared/ui/use-load";
 import { hoyEnLima, textoDeHace } from "@/shared/format";
 import { Cargando } from "@/modules/organizations/ui/with-organization";
 import { ANCHO_DE_PANTALLA } from "@/shared/ui/layout";
-import { Badge, Button, Card, Dialog, EmptyState, PageHeader, Select, Tabs, TextField, textStyle, useStyles, useTheme, type StatusTone, type Tema } from "@/ui";
+import { Badge, Button, Card, CardGrid, Dialog, EmptyState, PageHeader, Select, Tabs, TextField, textStyle, useStyles, useTheme, type StatusTone, type Tema } from "@/ui";
 
 import type { IncidenciasPuerto, UnidadCorta } from "../application/ports";
 import {
   accionesDeLaIncidencia,
   contarPorEstado,
   estadoTrasLaAccion,
+  incidenciasVisibles,
   ordenarIncidencias,
   PRIORIDADES,
   TEXTO_DE_PRIORIDAD,
@@ -66,7 +70,16 @@ const ACCION: Record<AccionDeIncidencia, { label: string; hecho: string }> = {
 /** "Área común" es una opción más del lugar; su id no choca con el de una unidad. */
 const AREA_COMUN = "area-comun";
 
-export function PantallaIncidencias({ incidencias, edificioId }: { incidencias: IncidenciasPuerto; edificioId: string }) {
+export function PantallaIncidencias({
+  incidencias,
+  edificioId,
+  propias,
+}: {
+  incidencias: IncidenciasPuerto;
+  edificioId: string;
+  /** Las unidades del residente en este edificio; sin esto, mira el equipo. */
+  propias?: UnidadCorta[];
+}) {
   const s = useStyles(makeStyles);
   const [estado, setEstado] = useState<EstadoDeIncidencia>("abierta");
   const [aviso, setAviso] = useState<AvisoDeAccion | null>(null);
@@ -75,8 +88,10 @@ export function PantallaIncidencias({ incidencias, edificioId }: { incidencias: 
   const { carga, reintentar } = useCarga(leer);
   const hoy = hoyEnLima();
 
-  const cuentas = carga.estado === "listo" ? contarPorEstado(carga.valor) : null;
-  const visibles = carga.estado === "listo" ? ordenarIncidencias(carga.valor.filter((i) => i.estado === estado)) : [];
+  const ids = propias ? new Set(propias.map((u) => u.id)) : null;
+  const deQuienMira = carga.estado === "listo" ? incidenciasVisibles(carga.valor, ids) : [];
+  const cuentas = carga.estado === "listo" ? contarPorEstado(deQuienMira) : null;
+  const visibles = ordenarIncidencias(deQuienMira.filter((i) => i.estado === estado));
 
   async function actuar(i: Incidencia, accion: AccionDeIncidencia) {
     const r = await incidencias.cambiarEstado(i.id, estadoTrasLaAccion(accion));
@@ -110,16 +125,17 @@ export function PantallaIncidencias({ incidencias, edificioId }: { incidencias: 
       ) : null}
       {carga.estado === "listo" && visibles.length === 0 ? <EmptyState icon="check-circle" title={VACIO[estado]} /> : null}
       {visibles.length > 0 ? (
-        <View style={s.lista}>
+        <CardGrid minItemWidth={480} gap="sm">
           {visibles.map((i) => (
-            <FilaDeIncidencia key={i.id} incidencia={i} hoy={hoy} onAccion={(a) => actuar(i, a)} />
+            <FilaDeIncidencia key={i.id} incidencia={i} hoy={hoy} residente={propias !== undefined} onAccion={(a) => actuar(i, a)} />
           ))}
-        </View>
+        </CardGrid>
       ) : null}
       {registrando ? (
         <Registro
           incidencias={incidencias}
           edificioId={edificioId}
+          propias={ids}
           onCerrar={() => setRegistrando(false)}
           onHecho={(i) => {
             setRegistrando(false);
@@ -133,13 +149,23 @@ export function PantallaIncidencias({ incidencias, edificioId }: { incidencias: 
   );
 }
 
-function FilaDeIncidencia({ incidencia: i, hoy, onAccion }: { incidencia: Incidencia; hoy: string; onAccion: (a: AccionDeIncidencia) => Promise<void> }) {
+function FilaDeIncidencia({
+  incidencia: i,
+  hoy,
+  residente,
+  onAccion,
+}: {
+  incidencia: Incidencia;
+  hoy: string;
+  residente: boolean;
+  onAccion: (a: AccionDeIncidencia) => Promise<void>;
+}) {
   const t = useTheme();
   const s = useStyles(makeStyles);
   const [enCurso, setEnCurso] = useState<AccionDeIncidencia | null>(null);
   const lugar = i.unidadNumero ? `Unidad ${i.unidadNumero}` : "Área común";
   const cuando = i.estado === "resuelta" ? `resuelta ${textoDeHace(i.actualizadaEl, hoy)}` : `reportada ${textoDeHace(i.reportadaEl, hoy)}`;
-  const acciones = accionesDeLaIncidencia(i.estado);
+  const acciones = accionesDeLaIncidencia(i.estado, residente);
 
   async function actuar(a: AccionDeIncidencia) {
     setEnCurso(a);
@@ -157,20 +183,22 @@ function FilaDeIncidencia({ incidencia: i, hoy, onAccion }: { incidencia: Incide
         <Text style={textStyle(t, "bodySmall", t.color.text.secondary)}>{`${lugar} · ${cuando}`}</Text>
         {i.detalle ? <Text style={textStyle(t, "bodySmall")}>{i.detalle}</Text> : null}
       </View>
-      <View style={s.acciones}>
-        {acciones.map((a, n) => (
-          <Button
-            key={a}
-            size="sm"
-            variant={n === 0 && a !== "reabrir" ? "secondary" : "ghost"}
-            label={ACCION[a].label}
-            accessibilityLabel={`${ACCION[a].label.replace("✓ ", "")}: ${i.titulo}`}
-            loading={enCurso === a}
-            disabled={enCurso !== null && enCurso !== a}
-            onPress={() => actuar(a)}
-          />
-        ))}
-      </View>
+      {acciones.length > 0 ? (
+        <View style={s.acciones}>
+          {acciones.map((a, n) => (
+            <Button
+              key={a}
+              size="sm"
+              variant={n === 0 && a !== "reabrir" ? "secondary" : "ghost"}
+              label={ACCION[a].label}
+              accessibilityLabel={`${ACCION[a].label.replace("✓ ", "")}: ${i.titulo}`}
+              loading={enCurso === a}
+              disabled={enCurso !== null && enCurso !== a}
+              onPress={() => actuar(a)}
+            />
+          ))}
+        </View>
+      ) : null}
     </Card>
   );
 }
@@ -178,11 +206,14 @@ function FilaDeIncidencia({ incidencia: i, hoy, onAccion }: { incidencia: Incide
 function Registro({
   incidencias,
   edificioId,
+  propias,
   onCerrar,
   onHecho,
 }: {
   incidencias: IncidenciasPuerto;
   edificioId: string;
+  /** Las unidades del residente; `null`, el equipo registra en cualquiera. */
+  propias: ReadonlySet<string> | null;
   onCerrar: () => void;
   onHecho: (i: Incidencia) => void;
 }) {
@@ -194,7 +225,9 @@ function Registro({
   const { carga } = useCarga<UnidadCorta[]>(leer);
   const opciones = [
     { id: AREA_COMUN, label: "Área común" },
-    ...(carga.estado === "listo" ? carga.valor.map((u) => ({ id: u.id, label: `Unidad ${u.numero}` })) : []),
+    ...(carga.estado === "listo"
+      ? carga.valor.filter((u) => !propias || propias.has(u.id)).map((u) => ({ id: u.id, label: `Unidad ${u.numero}` }))
+      : []),
   ];
 
   function cambiar<K extends keyof DatosDeIncidencia>(campo: K, valor: DatosDeIncidencia[K]) {
@@ -243,6 +276,7 @@ function Registro({
       />
       <Select
         label="Dónde"
+        required
         placeholder="Elige la unidad o el área común"
         accessibilityLabel="Dónde pasó"
         options={opciones}
@@ -268,9 +302,8 @@ function Registro({
 const makeStyles = (t: Tema) =>
   StyleSheet.create({
     pantalla: { flexGrow: 1, gap: t.space.lg, padding: t.space.xl, maxWidth: ANCHO_DE_PANTALLA, width: "100%" },
-    // En pantalla ancha, dos incidencias por fila; en el teléfono, una.
-    lista: { flexDirection: "row", flexWrap: "wrap", alignItems: "stretch", gap: t.space.sm },
-    fila: { flexGrow: 1, flexShrink: 1, flexBasis: 480, minWidth: 0, flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.md },
+    // En pantalla ancha, dos incidencias por fila (`CardGrid`); en el teléfono, una.
+    fila: { flexGrow: 1, flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.md },
     texto: { flexGrow: 1, flexShrink: 1, flexBasis: 260, gap: t.space.xxs },
     cabeza: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: t.space.sm },
     titulo: { fontWeight: "600", flexShrink: 1 },

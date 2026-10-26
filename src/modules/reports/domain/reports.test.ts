@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { deudaVencida, generar, morosidad, porValidar, recaudacion, type Datos } from "./reports";
+import { csvDelReporte, deudaVencida, generar, morosidad, porValidar, recaudacion, type Datos } from "./reports";
 
 const DATOS: Datos = {
   edificios: [
@@ -62,5 +62,22 @@ describe("reportes", () => {
     const r = porValidar(DATOS, null);
     assert.deepEqual(r.filas[0], { edificio: "Edificio A", pagos: 1, monto: 20000, desde: "2026-10-07" });
     assert.equal(generar("por-validar", DATOS, { hoy: "2026-10-24", edificioId: "b" }).filas.length, 0);
+  });
+});
+
+describe("csvDelReporte", () => {
+  it("pone los títulos, los montos en soles sin símbolo y el total al final", () => {
+    const csv = csvDelReporte({
+      columnas: [
+        { clave: "unidad", titulo: "Unidad", tipo: "texto" },
+        { clave: "monto", titulo: "Por cobrar", tipo: "soles" },
+      ],
+      filas: [
+        { unidad: "101", monto: 33980 },
+        { unidad: "Local \"A\", piso 1", monto: null },
+      ],
+      total: { unidad: "Total", monto: 33980 },
+    });
+    assert.equal(csv, 'Unidad,Por cobrar\n101,339.80\n"Local ""A"", piso 1",\nTotal,339.80');
   });
 });

@@ -18,6 +18,7 @@
  * | Real contra meta | `BulletChart` |
  * | Antes y después | `DumbbellChart` |
  * | Un número | `StatTile` (con `Sparkline`) |
+ * | Un total repartido en pocos estados | `StatusBar` |
  * | Cuántos llegan a cada etapa | `FunnelChart` |
  */
 export { Y_AXIS_WIDTH, YGrid } from "./axis";
@@ -71,6 +72,8 @@ export type { MatrixAxisItem } from "./matrix-heatmap";
 export { ScatterChart } from "./scatter-chart";
 export type { ScatterGroup, ScatterPoint } from "./scatter-chart";
 export { Sparkline, StatTile } from "./stat-tile";
+export { StatusBar } from "./status-bar";
+export type { StatusBarItem } from "./status-bar";
 export type { StatDelta } from "./stat-tile";
 export { Treemap } from "./treemap";
 export type { TreemapItem } from "./treemap";

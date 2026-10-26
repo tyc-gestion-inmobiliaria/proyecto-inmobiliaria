@@ -1,7 +1,8 @@
 /**
- * `EstadoDeLaCarteraPuerto` sobre Supabase: la vista
- * `participacion_por_edificio` y la tabla `cuenta_bancaria`, una consulta
- * cada una para toda la administradora. El filtro por `org_id` acompaña a la
+ * `EstadoDeLaCarteraPuerto` sobre Supabase: las vistas
+ * `participacion_por_edificio` y `cierre_por_edificio`, y las tablas
+ * `cuenta_bancaria` y `pago`, una consulta cada una para toda la
+ * administradora. El filtro por `org_id` acompaña a la
  * RLS, no la reemplaza.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -62,5 +63,19 @@ export const estadoCarteraSupabase: EstadoDeLaCarteraPuerto = {
       .returns<{ edificio_id: string; estado: CierreDelMes["estado"]; paso: CierreDelMes["paso"] }[]>();
     if (error) throw error;
     return new Map((data ?? []).map((f): [string, CierreDelMes] => [f.edificio_id, { estado: f.estado, paso: f.paso }]));
+  },
+
+  async pagosPorValidar(orgId) {
+    // Se cuentan filas, no se suman montos: el dinero lo calcula el servidor.
+    const { data, error } = await cliente()
+      .from("pago")
+      .select("edificio_id")
+      .eq("org_id", orgId)
+      .eq("estado", "por_validar")
+      .returns<{ edificio_id: string }[]>();
+    if (error) throw error;
+    const porEdificio = new Map<string, number>();
+    for (const f of data ?? []) porEdificio.set(f.edificio_id, (porEdificio.get(f.edificio_id) ?? 0) + 1);
+    return porEdificio;
   },
 };

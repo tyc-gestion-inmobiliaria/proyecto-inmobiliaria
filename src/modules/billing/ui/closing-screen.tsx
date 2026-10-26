@@ -363,7 +363,11 @@ function Asistente({
       <ScrollView style={s.marco} contentContainerStyle={s.pantalla} keyboardShouldPersistTaps="handled">
         <PageHeader
           title={`Cierre de ${textoDePeriodo(cierre.periodo)}`}
-          back={{ label: edificio.nombre, onPress: () => irAlEdificio(cierre.edificioId) }}
+          back={{
+            label: edificio.nombre,
+            onPress: () => irAlEdificio(cierre.edificioId),
+            trail: [{ label: "Edificios", onPress: () => router.navigate("/buildings") }],
+          }}
           status={cierre.estado === "emitido" ? <Badge tone="success" label="✓ Emitido" /> : <Badge label="Borrador" />}
         />
 

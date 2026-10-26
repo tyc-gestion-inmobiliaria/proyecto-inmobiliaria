@@ -1,6 +1,6 @@
 /**
  * Lee la cartera de la administradora: la lista de edificios del padrón y su
- * estado, en cuatro pedidos que van a la vez. Si uno falla, falla todo: una
+ * estado, en cinco pedidos que van a la vez. Si uno falla, falla todo: una
  * fila a medias diría pendientes que no son.
  */
 import type { EdificiosPuerto } from "@/modules/registry/application/ports";
@@ -15,11 +15,12 @@ export async function leerCartera(
   orgId: string,
   periodo: string = periodoEnCurso(),
 ): Promise<FilaCartera[]> {
-  const [lista, padron, conCuenta, cierres] = await Promise.all([
+  const [lista, padron, conCuenta, cierres, porValidar] = await Promise.all([
     edificios.listar(orgId),
     estado.padronPorEdificio(orgId),
     estado.edificiosConCuenta(orgId),
     estado.cierresDelPeriodo(orgId, periodo),
+    estado.pagosPorValidar(orgId),
   ]);
-  return armarCartera(ordenarEdificios(lista), padron, conCuenta, cierres);
+  return armarCartera(ordenarEdificios(lista), padron, conCuenta, cierres, porValidar);
 }

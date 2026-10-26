@@ -5,6 +5,7 @@ import {
   accionesDeLaIncidencia,
   contarPorEstado,
   estadoTrasLaAccion,
+  incidenciasVisibles,
   ordenarIncidencias,
   puedeCambiar,
   validarIncidencia,
@@ -64,5 +65,18 @@ describe("incidencias", () => {
       "unidadId",
     ]);
     assert.deepEqual(validarIncidencia({ titulo: "Fuga", unidadId: "", prioridad: "alta", detalle: "" }), {});
+  });
+});
+
+describe("lo que ve el residente", () => {
+  it("no cambia el estado de ninguna", () => {
+    assert.deepEqual(accionesDeLaIncidencia("abierta", true), []);
+    assert.deepEqual(accionesDeLaIncidencia("resuelta", true), []);
+  });
+
+  it("ve las de sus unidades y las de las áreas comunes", () => {
+    const lista = [inc("comun"), inc("mia", { unidadId: "u1" }), inc("vecino", { unidadId: "u2" })];
+    assert.deepEqual(incidenciasVisibles(lista, new Set(["u1"])).map((i) => i.id), ["comun", "mia"]);
+    assert.equal(incidenciasVisibles(lista, null).length, 3);
   });
 });

@@ -6,10 +6,14 @@
  * la cartera entera en vez de arrastrar un edificio de otra. La lista se
  * vuelve a leer al cambiar de ruta (`ruta`), para que un edificio recién dado
  * de alta aparezca en el selector sin recargar la app.
+ *
+ * Dentro de un edificio (`/buildings/<id>/…`) el elegido es el de la
+ * dirección: entrar por un enlace a la ficha de otro edificio cambia también
+ * el selector, y el resto de las secciones sigue en ese edificio.
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
-import { edificioEnCurso, type EdificioDelContexto, type EdificiosDelContextoPuerto } from "./context";
+import { edificioDeLaRuta, edificioEnCurso, type EdificioDelContexto, type EdificiosDelContextoPuerto } from "./context";
 
 type Carga = "cargando" | "lista" | "error";
 
@@ -89,6 +93,19 @@ export function ProveedorContexto({
     };
   }, [orgId, puerto, ruta]);
 
+  // Cuando la dirección pasa a otro edificio, ese es el elegido, en el mismo render (un efecto pintaría antes
+  // el viejo). Solo al cambiar la dirección: elegir otro arriba, o toda la cartera, no lo pisa mientras se navega.
+  const deLaRuta = edificioDeLaRuta(ruta);
+  const delEnlace = deLaRuta && edificios.some((e) => e.id === deLaRuta) ? deLaRuta : null;
+  const [enlaceVisto, setEnlaceVisto] = useState<string | null>(null);
+  if (delEnlace !== enlaceVisto) {
+    setEnlaceVisto(delEnlace);
+    if (delEnlace && delEnlace !== elegido) setElegido(delEnlace);
+  }
+  useEffect(() => {
+    if (orgId && delEnlace) guardarElegido(orgId, delEnlace);
+  }, [orgId, delEnlace]);
+
   const elegirEdificio = useCallback(
     (id: string | null) => {
       setElegido(id);
@@ -102,6 +119,12 @@ export function ProveedorContexto({
     [orgId, carga, edificios, edificio, elegirEdificio],
   );
   return <ContextoDeTrabajo.Provider value={valor}>{children}</ContextoDeTrabajo.Provider>;
+}
+
+/** El nombre de un edificio de la administradora, para las migas; `null` mientras no se sabe. */
+export function useNombreDelEdificio(id: string): string | null {
+  const { edificios } = useContextoDeTrabajo();
+  return edificios.find((e) => e.id === id)?.nombre ?? null;
 }
 
 export function useContextoDeTrabajo(): EstadoContexto {
