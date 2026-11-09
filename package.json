@@ -21,7 +21,7 @@
     "db:lint": "supabase db lint"
   },
   "dependencies": {
-    "@supabase/supabase-js": "2.118.0",
+    "@supabase/supabase-js": "2.119.0",
     "expo": "~57.0.12",
     "expo-constants": "~57.0.10",
     "expo-linking": "~57.0.5",
